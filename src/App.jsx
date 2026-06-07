@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { supabase } from "./supabase";
 
 const PAYMENT_APPS = [
   { id: "bankily", name: "Bankily", color: "#00A651" },
@@ -11,23 +12,14 @@ const PAYMENT_APPS = [
 
 const HOURS = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
 const today = new Date().toISOString().split("T")[0];
-const getKey = (sid, date, hour) => `${sid}_${date}_${hour}`;
 const genCode = () => Math.random().toString(36).substring(2,8).toUpperCase();
 
 export default function App() {
   const [tab, setTab] = useState("client");
-  const [wilayas, setWilayas] = useState(() => {
-    const saved = localStorage.getItem("wilayas");
-    return saved ? JSON.parse(saved) : ["انواكشوط", "انواذيبو", "ازويرات"];
-  });
-  const [stadiums, setStadiums] = useState(() => {
-    const saved = localStorage.getItem("stadiums");
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [bookings, setBookings] = useState(() => {
-    const saved = localStorage.getItem("bookings");
-    return saved ? JSON.parse(saved) : {};
-  });
+  const [wilayas, setWilayas] = useState([]);
+  const [stadiums, setStadiums] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [newWilaya, setNewWilaya] = useState("");
   const [selected, setSelected] = useState(null);
   const [bookDate, setBookDate] = useState(today);
@@ -47,16 +39,21 @@ export default function App() {
   const [filterWilaya, setFilterWilaya] = useState("الكل");
 
   useEffect(() => {
-    localStorage.setItem("stadiums", JSON.stringify(stadiums));
-  }, [stadiums]);
+    loadData();
+  }, []);
 
-  useEffect(() => {
-    localStorage.setItem("bookings", JSON.stringify(bookings));
-  }, [bookings]);
-
-  useEffect(() => {
-    localStorage.setItem("wilayas", JSON.stringify(wilayas));
-  }, [wilayas]);
+  const loadData = async () => {
+    setLoading(true);
+    const [w, s, b] = await Promise.all([
+      supabase.from("wilayas").select("*").order("id"),
+      supabase.from("stadiums").select("*").order("id"),
+      supabase.from("bookings").select("*").order("id"),
+    ]);
+    if (w.data) setWilayas(w.data.map(x => x.name));
+    if (s.data) setStadiums(s.data);
+    if (b.data) setBookings(b.data);
+    setLoading(false);
+  };
 
   const showToast = (msg, color="#00C853") => {
     setToast({msg, color});
@@ -70,58 +67,83 @@ export default function App() {
     setTransactionNum("");
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
+    await supabase.from("stadiums").delete().eq("id", id);
     setStadiums(prev => prev.filter(s => s.id !== id));
     setConfirmDelete(null);
     showToast("تم حذف الملعب", "#FF4444");
   };
 
-  const handleBook = () => {
+  const handleBook = async () => {
     if (!clientName || !clientPhone || !bookHour || !selectedPayApp || !transactionNum) return;
-    const key = getKey(selected.id, bookDate, bookHour);
-    setBookings(prev => ({
-      ...prev,
-      [key]: { clientName, clientPhone, stadiumId: selected.id, stadium: selected.name, date: bookDate, hour: bookHour, payApp: selectedPayApp, transactionNum, status: "pending", code: null, key }
-    }));
+    const { data } = await supabase.from("bookings").insert({
+      stadium_id: selected.id,
+      stadium_name: selected.name,
+      client_name: clientName,
+      client_phone: clientPhone,
+      date: bookDate,
+      hour: bookHour,
+      pay_app: selectedPayApp,
+      transaction_num: transactionNum,
+      status: "pending",
+    }).select().single();
+    if (data) setBookings(prev => [...prev, data]);
     closeModal();
     showToast("تم ارسال طلب الحجز انتظر التاكيد");
   };
 
-  const confirmBooking = (key) => {
+  const confirmBooking = async (id) => {
     const code = genCode();
-    setBookings(prev => ({ ...prev, [key]: { ...prev[key], status: "confirmed", code } }));
+    await supabase.from("bookings").update({ status: "confirmed", code }).eq("id", id);
+    setBookings(prev => prev.map(b => b.id === id ? { ...b, status: "confirmed", code } : b));
     showToast("تم التاكيد الكود: " + code);
   };
 
-  const rejectBooking = (key) => {
-    setBookings(prev => ({ ...prev, [key]: { ...prev[key], status: "rejected" } }));
+  const rejectBooking = async (id) => {
+    await supabase.from("bookings").update({ status: "rejected" }).eq("id", id);
+    setBookings(prev => prev.map(b => b.id === id ? { ...b, status: "rejected" } : b));
     showToast("تم رفض الحجز", "#FF4444");
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!newName || !newWilayaSelect || !newHood || !newPrice) return;
     const colors = ["#00C853","#2979FF","#FF6D00","#FF4081","#7C4DFF","#00BCD4"];
-    setStadiums(prev => [...prev, { id: Date.now(), name: newName, wilaya: newWilayaSelect, hood: newHood, price: parseInt(newPrice), color: colors[prev.length % colors.length], payments: { ...newPayments } }]);
+    const { data } = await supabase.from("stadiums").insert({
+      name: newName, wilaya: newWilayaSelect, hood: newHood,
+      price: parseInt(newPrice), color: colors[stadiums.length % colors.length],
+      payments: newPayments
+    }).select().single();
+    if (data) setStadiums(prev => [...prev, data]);
     setNewName(""); setNewWilayaSelect(""); setNewHood(""); setNewPrice(""); setNewPayments({});
     showToast("تمت الاضافة");
   };
 
-  const handleAddWilaya = () => {
+  const handleAddWilaya = async () => {
     if (!newWilaya || wilayas.includes(newWilaya)) return;
+    await supabase.from("wilayas").insert({ name: newWilaya });
     setWilayas(prev => [...prev, newWilaya]);
     setNewWilaya("");
     showToast("تمت اضافة الولاية");
   };
 
+  const isBooked = (stadiumId, date, hour) => {
+    return bookings.some(b => b.stadium_id === stadiumId && b.date === date && b.hour === hour && b.status !== "rejected");
+  };
+
   const filteredStadiums = filterWilaya === "الكل" ? stadiums : stadiums.filter(s => s.wilaya === filterWilaya);
-  const allBookings = Object.values(bookings);
-  const pendingBookings = allBookings.filter(b => b.status === "pending");
+  const pendingBookings = bookings.filter(b => b.status === "pending");
   const payApp = selectedPayApp ? PAYMENT_APPS.find(p => p.id === selectedPayApp) : null;
   const stadiumPayNum = selected && payApp ? (selected.payments?.[selectedPayApp] || "") : "";
 
   const inp = { width:"100%", background:"#1f2937", border:"1px solid #374151", borderRadius:"10px", padding:"10px 14px", color:"#fff", fontSize:"14px", fontFamily:"inherit", marginBottom:"12px", boxSizing:"border-box", outline:"none" };
   const lbl = { color:"#9ca3af", fontSize:"13px", marginBottom:"6px", display:"block" };
   const sel = { width:"100%", background:"#1f2937", border:"1px solid #374151", borderRadius:"10px", padding:"10px 14px", color:"#fff", fontSize:"14px", fontFamily:"inherit", marginBottom:"12px", boxSizing:"border-box", outline:"none" };
+
+  if (loading) return (
+    <div style={{minHeight:"100vh", background:"#0a0a0f", display:"flex", alignItems:"center", justifyContent:"center", color:"#00C853", fontSize:"20px", fontFamily:"Tajawal,sans-serif"}}>
+      جاري التحميل...
+    </div>
+  );
 
   return (
     <div style={{minHeight:"100vh", background:"#0a0a0f", fontFamily:"Tajawal,sans-serif", direction:"rtl", color:"#fff"}}>
@@ -159,7 +181,7 @@ export default function App() {
             ) : (
               <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))", gap:"20px"}}>
                 {filteredStadiums.map(st => {
-                  const free = HOURS.filter(h => { const b = bookings[getKey(st.id,today,h)]; return !b || b.status==="rejected"; }).length;
+                  const free = HOURS.filter(h => !isBooked(st.id, today, h)).length;
                   return (
                     <div key={st.id} style={{background:"#111827", borderRadius:"20px", border:`1px solid ${st.color}33`, overflow:"hidden"}}>
                       <div style={{background:`${st.color}22`, padding:"24px", display:"flex", gap:"16px", alignItems:"center"}}>
@@ -192,25 +214,25 @@ export default function App() {
               <div style={{background:"#111827", borderRadius:"20px", border:"1px solid #FF6D0033", padding:"28px", marginBottom:"24px"}}>
                 <div style={{fontWeight:"700", color:"#FF6D00", marginBottom:"20px"}}>طلبات تنتظر التاكيد ({pendingBookings.length})</div>
                 {pendingBookings.map((b,i) => {
-                  const pa = PAYMENT_APPS.find(p => p.id===b.payApp);
+                  const pa = PAYMENT_APPS.find(p => p.id===b.pay_app);
                   return (
                     <div key={i} style={{background:"#1f2937", borderRadius:"12px", padding:"16px 20px", marginBottom:"12px", borderRight:"4px solid #FF6D00"}}>
                       <div style={{display:"flex", justifyContent:"space-between", marginBottom:"12px"}}>
                         <div>
-                          <div style={{fontWeight:"700"}}>{b.clientName}</div>
-                          <div style={{color:"#9ca3af", fontSize:"13px"}}>📞 {b.clientPhone}</div>
-                          <div style={{color:"#9ca3af", fontSize:"13px"}}>🏟 {b.stadium} - {b.date} - {b.hour}:00</div>
+                          <div style={{fontWeight:"700"}}>{b.client_name}</div>
+                          <div style={{color:"#9ca3af", fontSize:"13px"}}>📞 {b.client_phone}</div>
+                          <div style={{color:"#9ca3af", fontSize:"13px"}}>🏟 {b.stadium_name} - {b.date} - {b.hour}:00</div>
                         </div>
                         <div style={{background:`${pa?.color}22`, color:pa?.color, padding:"4px 10px", borderRadius:"20px", fontSize:"12px", fontWeight:"700", height:"fit-content"}}>
                           {pa?.name}
                         </div>
                       </div>
                       <div style={{background:"#111827", borderRadius:"10px", padding:"10px 14px", marginBottom:"12px", fontSize:"13px"}}>
-                        الرقم التسلسلي: <span style={{color:"#00C853", fontWeight:"700"}}>{b.transactionNum}</span>
+                        الرقم التسلسلي: <span style={{color:"#00C853", fontWeight:"700"}}>{b.transaction_num}</span>
                       </div>
                       <div style={{display:"flex", gap:"10px"}}>
-                        <button onClick={() => confirmBooking(b.key)} style={{flex:1, padding:"10px", background:"#00C853", border:"none", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit"}}>تاكيد</button>
-                        <button onClick={() => rejectBooking(b.key)} style={{flex:1, padding:"10px", background:"#FF444422", color:"#FF4444", border:"1px solid #FF444444", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit"}}>رفض</button>
+                        <button onClick={() => confirmBooking(b.id)} style={{flex:1, padding:"10px", background:"#00C853", border:"none", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit"}}>تاكيد</button>
+                        <button onClick={() => rejectBooking(b.id)} style={{flex:1, padding:"10px", background:"#FF444422", color:"#FF4444", border:"1px solid #FF444444", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit"}}>رفض</button>
                       </div>
                     </div>
                   );
@@ -274,15 +296,15 @@ export default function App() {
             </div>
 
             <div style={{background:"#111827", borderRadius:"20px", border:"1px solid #1f2937", padding:"28px"}}>
-              <div style={{fontWeight:"700", color:"#2979FF", marginBottom:"20px"}}>كل الحجوزات ({allBookings.length})</div>
-              {allBookings.length===0 ? (
+              <div style={{fontWeight:"700", color:"#2979FF", marginBottom:"20px"}}>كل الحجوزات ({bookings.length})</div>
+              {bookings.length===0 ? (
                 <div style={{color:"#4b5563", textAlign:"center", padding:"32px"}}>لا توجد حجوزات بعد</div>
-              ) : allBookings.map((b,i) => (
+              ) : bookings.map((b,i) => (
                 <div key={i} style={{background:"#1f2937", borderRadius:"12px", padding:"16px 20px", marginBottom:"10px", borderRight:`4px solid ${b.status==="confirmed"?"#00C853":b.status==="rejected"?"#FF4444":"#FF6D00"}`}}>
                   <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
                     <div>
-                      <div style={{fontWeight:"700"}}>{b.clientName}</div>
-                      <div style={{color:"#9ca3af", fontSize:"13px"}}>{b.stadium} - {b.date} - {b.hour}:00</div>
+                      <div style={{fontWeight:"700"}}>{b.client_name}</div>
+                      <div style={{color:"#9ca3af", fontSize:"13px"}}>{b.stadium_name} - {b.date} - {b.hour}:00</div>
                       {b.code && <div style={{color:"#00C853", fontWeight:"700", fontSize:"13px", marginTop:"4px"}}>الكود: {b.code}</div>}
                     </div>
                     <div style={{background: b.status==="confirmed"?"#00C85322":b.status==="rejected"?"#FF444422":"#FF6D0022", color: b.status==="confirmed"?"#00C853":b.status==="rejected"?"#FF4444":"#FF6D00", padding:"4px 12px", borderRadius:"20px", fontSize:"12px", fontWeight:"700"}}>
@@ -308,8 +330,7 @@ export default function App() {
                 <label style={lbl}>اختر الساعة</label>
                 <div style={{display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:"8px", marginBottom:"20px"}}>
                   {HOURS.map(h => {
-                    const b = bookings[getKey(selected.id, bookDate, h)];
-                    const taken = b && b.status !== "rejected";
+                    const taken = isBooked(selected.id, bookDate, h);
                     const s = bookHour===h;
                     return (
                       <button key={h} disabled={taken} onClick={() => !taken && setBookHour(h)} style={{padding:"10px 4px", borderRadius:"10px", border: s?`2px solid ${selected.color}`:"2px solid transparent", background: taken?"#1f2937":s?`${selected.color}22`:"#1f2937", color: taken?"#374151":s?selected.color:"#9ca3af", cursor:taken?"not-allowed":"pointer", fontSize:"13px", fontWeight:"600", fontFamily:"inherit"}}>
