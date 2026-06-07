@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const PAYMENT_APPS = [
   { id: "bankily", name: "Bankily", color: "#00A651" },
@@ -16,10 +16,19 @@ const genCode = () => Math.random().toString(36).substring(2,8).toUpperCase();
 
 export default function App() {
   const [tab, setTab] = useState("client");
-  const [wilayas, setWilayas] = useState(["انواكشوط", "انواذيبو", "ازويرات"]);
+  const [wilayas, setWilayas] = useState(() => {
+    const saved = localStorage.getItem("wilayas");
+    return saved ? JSON.parse(saved) : ["انواكشوط", "انواذيبو", "ازويرات"];
+  });
+  const [stadiums, setStadiums] = useState(() => {
+    const saved = localStorage.getItem("stadiums");
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [bookings, setBookings] = useState(() => {
+    const saved = localStorage.getItem("bookings");
+    return saved ? JSON.parse(saved) : {};
+  });
   const [newWilaya, setNewWilaya] = useState("");
-  const [stadiums, setStadiums] = useState([]);
-  const [bookings, setBookings] = useState({});
   const [selected, setSelected] = useState(null);
   const [bookDate, setBookDate] = useState(today);
   const [bookHour, setBookHour] = useState(null);
@@ -36,6 +45,18 @@ export default function App() {
   const [newPayments, setNewPayments] = useState({});
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [filterWilaya, setFilterWilaya] = useState("الكل");
+
+  useEffect(() => {
+    localStorage.setItem("stadiums", JSON.stringify(stadiums));
+  }, [stadiums]);
+
+  useEffect(() => {
+    localStorage.setItem("bookings", JSON.stringify(bookings));
+  }, [bookings]);
+
+  useEffect(() => {
+    localStorage.setItem("wilayas", JSON.stringify(wilayas));
+  }, [wilayas]);
 
   const showToast = (msg, color="#00C853") => {
     setToast({msg, color});
@@ -106,7 +127,6 @@ export default function App() {
     <div style={{minHeight:"100vh", background:"#0a0a0f", fontFamily:"Tajawal,sans-serif", direction:"rtl", color:"#fff"}}>
       <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet"/>
 
-      {/* Header */}
       <div style={{background:"#111827", borderBottom:"1px solid #1f2937", padding:"20px 32px", display:"flex", justifyContent:"space-between", alignItems:"center", position:"sticky", top:0, zIndex:50}}>
         <div style={{fontSize:"22px", fontWeight:"800", color:"#00C853"}}>ملاعبي</div>
         <div style={{display:"flex", gap:"8px", background:"#0a0a0f", borderRadius:"10px", padding:"4px"}}>
@@ -120,22 +140,17 @@ export default function App() {
 
       <div style={{maxWidth:"1100px", margin:"0 auto", padding:"32px 24px"}}>
 
-        {/* CLIENT */}
         {tab==="client" && (
           <>
             <div style={{fontSize:"28px", fontWeight:"800", marginBottom:"8px"}}>احجز ملعبك</div>
             <div style={{color:"#6b7280", marginBottom:"24px"}}>اختر الولاية والملعب المناسب</div>
-
-            {/* Filter */}
             <div style={{display:"flex", gap:"10px", flexWrap:"wrap", marginBottom:"28px"}}>
               {["الكل", ...wilayas].map(w => (
-                <button key={w} onClick={() => setFilterWilaya(w)}
-                  style={{padding:"8px 18px", borderRadius:"20px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"14px", background: filterWilaya===w?"#00C853":"#1f2937", color: filterWilaya===w?"#000":"#9ca3af"}}>
+                <button key={w} onClick={() => setFilterWilaya(w)} style={{padding:"8px 18px", borderRadius:"20px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"14px", background: filterWilaya===w?"#00C853":"#1f2937", color: filterWilaya===w?"#000":"#9ca3af"}}>
                   {w}
                 </button>
               ))}
             </div>
-
             {filteredStadiums.length===0 ? (
               <div style={{textAlign:"center", padding:"80px 20px", color:"#4b5563"}}>
                 <div style={{fontSize:"60px", marginBottom:"16px"}}>🏟</div>
@@ -157,8 +172,7 @@ export default function App() {
                       <div style={{padding:"20px 24px"}}>
                         <div style={{color:st.color, fontWeight:"700", marginBottom:"8px"}}>💰 {st.price} اوقية/ساعة</div>
                         <div style={{color:"#6b7280", fontSize:"13px", marginBottom:"16px"}}>{free} ساعة متاحة اليوم</div>
-                        <button onClick={() => { setSelected(st); setStep(1); setBookDate(today); }}
-                          style={{width:"100%", padding:"12px", background:st.color, border:"none", borderRadius:"12px", fontWeight:"700", fontSize:"15px", cursor:"pointer", fontFamily:"inherit"}}>
+                        <button onClick={() => { setSelected(st); setStep(1); setBookDate(today); }} style={{width:"100%", padding:"12px", background:st.color, border:"none", borderRadius:"12px", fontWeight:"700", fontSize:"15px", cursor:"pointer", fontFamily:"inherit"}}>
                           احجز الان
                         </button>
                       </div>
@@ -170,12 +184,10 @@ export default function App() {
           </>
         )}
 
-        {/* ADMIN */}
         {tab==="admin" && (
           <>
             <div style={{fontSize:"28px", fontWeight:"800", marginBottom:"32px"}}>لوحة التحكم</div>
 
-            {/* Pending */}
             {pendingBookings.length>0 && (
               <div style={{background:"#111827", borderRadius:"20px", border:"1px solid #FF6D0033", padding:"28px", marginBottom:"24px"}}>
                 <div style={{fontWeight:"700", color:"#FF6D00", marginBottom:"20px"}}>طلبات تنتظر التاكيد ({pendingBookings.length})</div>
@@ -206,7 +218,6 @@ export default function App() {
               </div>
             )}
 
-            {/* Add Wilaya */}
             <div style={{background:"#111827", borderRadius:"20px", border:"1px solid #1f2937", padding:"28px", marginBottom:"24px"}}>
               <div style={{fontWeight:"700", color:"#00BCD4", marginBottom:"20px"}}>اضافة ولاية جديدة</div>
               <div style={{display:"flex", gap:"12px"}}>
@@ -220,7 +231,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Stadiums List */}
             {stadiums.length>0 && (
               <div style={{background:"#111827", borderRadius:"20px", border:"1px solid #1f2937", padding:"28px", marginBottom:"24px"}}>
                 <div style={{fontWeight:"700", color:"#7C4DFF", marginBottom:"20px"}}>الملاعب المسجلة ({stadiums.length})</div>
@@ -238,7 +248,6 @@ export default function App() {
               </div>
             )}
 
-            {/* Add Stadium */}
             <div style={{background:"#111827", borderRadius:"20px", border:"1px solid #1f2937", padding:"28px", marginBottom:"24px"}}>
               <div style={{fontWeight:"700", color:"#00C853", marginBottom:"20px"}}>اضافة ملعب جديد</div>
               <label style={lbl}>اسم الملعب</label>
@@ -264,7 +273,6 @@ export default function App() {
               </button>
             </div>
 
-            {/* All Bookings */}
             <div style={{background:"#111827", borderRadius:"20px", border:"1px solid #1f2937", padding:"28px"}}>
               <div style={{fontWeight:"700", color:"#2979FF", marginBottom:"20px"}}>كل الحجوزات ({allBookings.length})</div>
               {allBookings.length===0 ? (
@@ -288,7 +296,6 @@ export default function App() {
         )}
       </div>
 
-      {/* BOOKING MODAL */}
       {selected && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && closeModal()}>
           <div style={{background:"#111827", borderRadius:"24px", border:"1px solid #1f2937", width:"100%", maxWidth:"520px", maxHeight:"90vh", overflow:"auto", padding:"32px"}}>
@@ -358,7 +365,6 @@ export default function App() {
         </div>
       )}
 
-      {/* CONFIRM DELETE */}
       {confirmDelete && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}}>
           <div style={{background:"#111827", borderRadius:"24px", border:"1px solid #FF444444", width:"100%", maxWidth:"400px", padding:"32px", textAlign:"center"}}>
@@ -373,7 +379,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Toast */}
       {toast && (
         <div style={{position:"fixed", bottom:"24px", left:"50%", transform:"translateX(-50%)", background:toast.color, color:"#fff", padding:"14px 28px", borderRadius:"16px", fontWeight:"700", zIndex:999}}>
           {toast.msg}
