@@ -13,7 +13,7 @@ const PAYMENT_APPS = [
 const HOURS = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
 const today = new Date().toISOString().split("T")[0];
 const genCode = () => Math.random().toString(36).substring(2,8).toUpperCase();
-const ADMIN_PASS = "malaabi2024";
+const ADMIN_PASS = "malaabi5964";
 
 export default function App() {
   const [tab, setTab] = useState("client");
