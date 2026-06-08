@@ -13,9 +13,11 @@ const PAYMENT_APPS = [
 const HOURS = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
 const today = new Date().toISOString().split("T")[0];
 const genCode = () => Math.random().toString(36).substring(2,8).toUpperCase();
+const ADMIN_PASS = "malaabi2024";
 
 export default function App() {
   const [tab, setTab] = useState("client");
+  const [logoClicks, setLogoClicks] = useState(0);
   const [wilayas, setWilayas] = useState([]);
   const [stadiums, setStadiums] = useState([]);
   const [bookings, setBookings] = useState([]);
@@ -38,9 +40,7 @@ export default function App() {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [filterWilaya, setFilterWilaya] = useState("الكل");
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     setLoading(true);
@@ -67,6 +67,21 @@ export default function App() {
     setTransactionNum("");
   };
 
+  const handleLogoClick = () => {
+    setLogoClicks(prev => {
+      const n = prev + 1;
+      if (n >= 5) {
+        const pass = prompt("كلمة السر:");
+        if (pass === ADMIN_PASS) {
+          setTab("admin");
+          showToast("مرحباً بك في لوحة التحكم");
+        }
+        return 0;
+      }
+      return n;
+    });
+  };
+
   const handleDelete = async (id) => {
     await supabase.from("stadiums").delete().eq("id", id);
     setStadiums(prev => prev.filter(s => s.id !== id));
@@ -77,15 +92,10 @@ export default function App() {
   const handleBook = async () => {
     if (!clientName || !clientPhone || !bookHour || !selectedPayApp || !transactionNum) return;
     const { data } = await supabase.from("bookings").insert({
-      stadium_id: selected.id,
-      stadium_name: selected.name,
-      client_name: clientName,
-      client_phone: clientPhone,
-      date: bookDate,
-      hour: bookHour,
-      pay_app: selectedPayApp,
-      transaction_num: transactionNum,
-      status: "pending",
+      stadium_id: selected.id, stadium_name: selected.name,
+      client_name: clientName, client_phone: clientPhone,
+      date: bookDate, hour: bookHour, pay_app: selectedPayApp,
+      transaction_num: transactionNum, status: "pending",
     }).select().single();
     if (data) setBookings(prev => [...prev, data]);
     closeModal();
@@ -126,9 +136,8 @@ export default function App() {
     showToast("تمت اضافة الولاية");
   };
 
-  const isBooked = (stadiumId, date, hour) => {
-    return bookings.some(b => b.stadium_id === stadiumId && b.date === date && b.hour === hour && b.status !== "rejected");
-  };
+  const isBooked = (sid, date, hour) =>
+    bookings.some(b => b.stadium_id === sid && b.date === date && b.hour === hour && b.status !== "rejected");
 
   const filteredStadiums = filterWilaya === "الكل" ? stadiums : stadiums.filter(s => s.wilaya === filterWilaya);
   const pendingBookings = bookings.filter(b => b.status === "pending");
@@ -149,22 +158,24 @@ export default function App() {
     <div style={{minHeight:"100vh", background:"#0a0a0f", fontFamily:"Tajawal,sans-serif", direction:"rtl", color:"#fff"}}>
       <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet"/>
 
+      {/* Header - بدون زر لوحة التحكم */}
       <div style={{background:"#111827", borderBottom:"1px solid #1f2937", padding:"20px 32px", display:"flex", justifyContent:"space-between", alignItems:"center", position:"sticky", top:0, zIndex:50}}>
-        <div style={{fontSize:"22px", fontWeight:"800", color:"#00C853"}}>ملاعبي</div>
-        <div style={{display:"flex", gap:"8px", background:"#0a0a0f", borderRadius:"10px", padding:"4px"}}>
-          {["client","admin"].map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{padding:"8px 20px", borderRadius:"8px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", background:tab===t?"#00C853":"transparent", color:tab===t?"#000":"#6b7280"}}>
-              {t==="client"?"للزبناء":"لوحة التحكم"}
-            </button>
-          ))}
+        <div onClick={handleLogoClick} style={{fontSize:"22px", fontWeight:"800", color:"#00C853", cursor:"pointer", userSelect:"none"}}>
+          ملاعبي ⚽
         </div>
+        {tab === "admin" && (
+          <button onClick={() => setTab("client")} style={{padding:"8px 20px", borderRadius:"8px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", background:"#FF444422", color:"#FF4444"}}>
+            خروج
+          </button>
+        )}
       </div>
 
       <div style={{maxWidth:"1100px", margin:"0 auto", padding:"32px 24px"}}>
 
+        {/* CLIENT */}
         {tab==="client" && (
           <>
-            <div style={{fontSize:"28px", fontWeight:"800", marginBottom:"8px"}}>احجز ملعبك</div>
+            <div style={{fontSize:"28px", fontWeight:"800", marginBottom:"8px"}}>احجز ملعبك 🏆</div>
             <div style={{color:"#6b7280", marginBottom:"24px"}}>اختر الولاية والملعب المناسب</div>
             <div style={{display:"flex", gap:"10px", flexWrap:"wrap", marginBottom:"28px"}}>
               {["الكل", ...wilayas].map(w => (
@@ -206,9 +217,10 @@ export default function App() {
           </>
         )}
 
+        {/* ADMIN */}
         {tab==="admin" && (
           <>
-            <div style={{fontSize:"28px", fontWeight:"800", marginBottom:"32px"}}>لوحة التحكم</div>
+            <div style={{fontSize:"28px", fontWeight:"800", marginBottom:"32px"}}>لوحة التحكم ⚙️</div>
 
             {pendingBookings.length>0 && (
               <div style={{background:"#111827", borderRadius:"20px", border:"1px solid #FF6D0033", padding:"28px", marginBottom:"24px"}}>
@@ -318,6 +330,7 @@ export default function App() {
         )}
       </div>
 
+      {/* BOOKING MODAL */}
       {selected && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && closeModal()}>
           <div style={{background:"#111827", borderRadius:"24px", border:"1px solid #1f2937", width:"100%", maxWidth:"520px", maxHeight:"90vh", overflow:"auto", padding:"32px"}}>
@@ -386,6 +399,7 @@ export default function App() {
         </div>
       )}
 
+      {/* CONFIRM DELETE */}
       {confirmDelete && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}}>
           <div style={{background:"#111827", borderRadius:"24px", border:"1px solid #FF444444", width:"100%", maxWidth:"400px", padding:"32px", textAlign:"center"}}>
@@ -400,6 +414,7 @@ export default function App() {
         </div>
       )}
 
+      {/* TOAST */}
       {toast && (
         <div style={{position:"fixed", bottom:"24px", left:"50%", transform:"translateX(-50%)", background:toast.color, color:"#fff", padding:"14px 28px", borderRadius:"16px", fontWeight:"700", zIndex:999}}>
           {toast.msg}
