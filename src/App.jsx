@@ -16,42 +16,55 @@ const genCode = () => Math.random().toString(36).substring(2,8).toUpperCase();
 const ADMIN_PASS = "malaabi5964";
 
 export default function App() {
+  const [screen, setScreen] = useState("login");
+  const [user, setUser] = useState(null);
   const [tab, setTab] = useState("client");
+  const [adminTab, setAdminTab] = useState("pending");
   const [logoClicks, setLogoClicks] = useState(0);
   const [wilayas, setWilayas] = useState([]);
   const [stadiums, setStadiums] = useState([]);
   const [bookings, setBookings] = useState([]);
+  const [usersCount, setUsersCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [newWilaya, setNewWilaya] = useState("");
+  const [filterWilaya, setFilterWilaya] = useState("الكل");
   const [selected, setSelected] = useState(null);
   const [bookDate, setBookDate] = useState(today);
   const [bookHour, setBookHour] = useState(null);
-  const [clientName, setClientName] = useState("");
-  const [clientPhone, setClientPhone] = useState("");
   const [step, setStep] = useState(1);
   const [selectedPayApp, setSelectedPayApp] = useState(null);
   const [transactionNum, setTransactionNum] = useState("");
   const [toast, setToast] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const [newName, setNewName] = useState("");
+  const [newWilaya, setNewWilaya] = useState("");
   const [newWilayaSelect, setNewWilayaSelect] = useState("");
   const [newHood, setNewHood] = useState("");
   const [newPrice, setNewPrice] = useState("");
   const [newPayments, setNewPayments] = useState({});
-  const [confirmDelete, setConfirmDelete] = useState(null);
-  const [filterWilaya, setFilterWilaya] = useState("الكل");
+  const [loginPhone, setLoginPhone] = useState("");
+  const [loginPass, setLoginPass] = useState("");
+  const [regName, setRegName] = useState("");
+  const [regPhone, setRegPhone] = useState("");
+  const [regPass, setRegPass] = useState("");
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    const saved = localStorage.getItem("malaabi_user");
+    if (saved) { setUser(JSON.parse(saved)); setScreen("app"); }
+    loadData();
+  }, []);
 
   const loadData = async () => {
     setLoading(true);
-    const [w, s, b] = await Promise.all([
+    const [w, s, b, u] = await Promise.all([
       supabase.from("wilayas").select("*").order("id"),
       supabase.from("stadiums").select("*").order("id"),
       supabase.from("bookings").select("*").order("id"),
+      supabase.from("users").select("*", { count: "exact", head: true }),
     ]);
     if (w.data) setWilayas(w.data.map(x => x.name));
     if (s.data) setStadiums(s.data);
     if (b.data) setBookings(b.data);
+    if (u.count !== null) setUsersCount(u.count);
     setLoading(false);
   };
 
@@ -60,11 +73,44 @@ export default function App() {
     setTimeout(() => setToast(null), 4000);
   };
 
-  const closeModal = () => {
-    setSelected(null); setStep(1);
-    setBookHour(null); setClientName("");
-    setClientPhone(""); setSelectedPayApp(null);
-    setTransactionNum("");
+  // ✅ تم التعديل: التحقق من طول الرقم وكلمة السر
+  const handleLogin = async () => {
+    if (!loginPhone || !loginPass) return showToast("ادخل رقم الهاتف وكلمة السر", "#FF4444");
+    if (loginPhone.length !== 8) return showToast("رقم الهاتف يجب أن يكون 8 أرقام", "#FF4444");
+    if (loginPass.length !== 4) return showToast("كلمة السر يجب أن تكون 4 أرقام", "#FF4444");
+    const { data } = await supabase.from("users").select("*").eq("phone", loginPhone).eq("password", loginPass).single();
+    if (data) {
+      setUser(data);
+      localStorage.setItem("malaabi_user", JSON.stringify(data));
+      setScreen("app");
+      showToast("مرحبا " + data.name);
+    } else {
+      showToast("رقم الهاتف او كلمة السر غير صحيحة", "#FF4444");
+    }
+  };
+
+  // ✅ تم التعديل: التحقق من طول الرقم وكلمة السر + رسالة واضحة إذا الرقم مسجل
+  const handleRegister = async () => {
+    if (!regName || !regPhone || !regPass) return showToast("ادخل جميع البيانات", "#FF4444");
+    if (regPhone.length !== 8) return showToast("رقم الهاتف يجب أن يكون 8 أرقام", "#FF4444");
+    if (regPass.length !== 4) return showToast("كلمة السر يجب أن تكون 4 أرقام", "#FF4444");
+    const { data, error } = await supabase.from("users").insert({ name: regName, phone: regPhone, password: regPass }).select().single();
+    if (error) {
+      showToast("رقم الهاتف مسجل مسبقاً، سجل الدخول أو استخدم رقماً آخر", "#FF4444");
+    } else {
+      setUser(data);
+      localStorage.setItem("malaabi_user", JSON.stringify(data));
+      setScreen("app");
+      setUsersCount(prev => prev + 1);
+      showToast("تم انشاء حسابك بنجاح!");
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("malaabi_user");
+    setUser(null);
+    setScreen("login");
+    setTab("client");
   };
 
   const handleLogoClick = () => {
@@ -72,10 +118,7 @@ export default function App() {
       const n = prev + 1;
       if (n >= 5) {
         const pass = prompt("كلمة السر:");
-        if (pass === ADMIN_PASS) {
-          setTab("admin");
-          showToast("مرحباً بك في لوحة التحكم");
-        }
+        if (pass === ADMIN_PASS) { setTab("admin"); showToast("مرحبا بك في لوحة التحكم"); }
         return 0;
       }
       return n;
@@ -90,16 +133,21 @@ export default function App() {
   };
 
   const handleBook = async () => {
-    if (!clientName || !clientPhone || !bookHour || !selectedPayApp || !transactionNum) return;
+    if (!bookHour || !selectedPayApp || !transactionNum) return;
     const { data } = await supabase.from("bookings").insert({
       stadium_id: selected.id, stadium_name: selected.name,
-      client_name: clientName, client_phone: clientPhone,
+      client_name: user.name, client_phone: user.phone,
       date: bookDate, hour: bookHour, pay_app: selectedPayApp,
       transaction_num: transactionNum, status: "pending",
     }).select().single();
     if (data) setBookings(prev => [...prev, data]);
     closeModal();
     showToast("تم ارسال طلب الحجز انتظر التاكيد");
+  };
+
+  const closeModal = () => {
+    setSelected(null); setStep(1);
+    setBookHour(null); setSelectedPayApp(null); setTransactionNum("");
   };
 
   const confirmBooking = async (id) => {
@@ -116,7 +164,7 @@ export default function App() {
   };
 
   const handleAdd = async () => {
-    if (!newName || !newWilayaSelect || !newHood || !newPrice) return;
+    if (!newName || !newWilayaSelect || !newHood || !newPrice) return showToast("ادخل جميع البيانات", "#FF4444");
     const colors = ["#00C853","#2979FF","#FF6D00","#FF4081","#7C4DFF","#00BCD4"];
     const { data } = await supabase.from("stadiums").insert({
       name: newName, wilaya: newWilayaSelect, hood: newHood,
@@ -139,14 +187,76 @@ export default function App() {
   const isBooked = (sid, date, hour) =>
     bookings.some(b => b.stadium_id === sid && b.date === date && b.hour === hour && b.status !== "rejected");
 
+  const confirmedBookings = bookings.filter(b => b.status === "confirmed");
   const filteredStadiums = filterWilaya === "الكل" ? stadiums : stadiums.filter(s => s.wilaya === filterWilaya);
   const pendingBookings = bookings.filter(b => b.status === "pending");
   const payApp = selectedPayApp ? PAYMENT_APPS.find(p => p.id === selectedPayApp) : null;
   const stadiumPayNum = selected && payApp ? (selected.payments?.[selectedPayApp] || "") : "";
 
-  const inp = { width:"100%", background:"#1f2937", border:"1px solid #374151", borderRadius:"10px", padding:"10px 14px", color:"#fff", fontSize:"14px", fontFamily:"inherit", marginBottom:"12px", boxSizing:"border-box", outline:"none" };
+  const inp = { width:"100%", background:"#1f2937", border:"1px solid #374151", borderRadius:"10px", padding:"12px 16px", color:"#fff", fontSize:"15px", fontFamily:"inherit", marginBottom:"16px", boxSizing:"border-box", outline:"none" };
   const lbl = { color:"#9ca3af", fontSize:"13px", marginBottom:"6px", display:"block" };
-  const sel = { width:"100%", background:"#1f2937", border:"1px solid #374151", borderRadius:"10px", padding:"10px 14px", color:"#fff", fontSize:"14px", fontFamily:"inherit", marginBottom:"12px", boxSizing:"border-box", outline:"none" };
+  const sel = { width:"100%", background:"#1f2937", border:"1px solid #374151", borderRadius:"10px", padding:"12px 16px", color:"#fff", fontSize:"15px", fontFamily:"inherit", marginBottom:"16px", boxSizing:"border-box", outline:"none" };
+
+  if (screen === "login" || screen === "register") {
+    const isReg = screen === "register";
+    return (
+      <div style={{minHeight:"100vh", background:"#0a0a0f", fontFamily:"Tajawal,sans-serif", direction:"rtl", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", padding:"24px"}}>
+        <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet"/>
+        <div style={{width:"100%", maxWidth:"400px"}}>
+          <div style={{textAlign:"center", marginBottom:"40px"}}>
+            <div style={{fontSize:"56px", marginBottom:"8px"}}>⚽</div>
+            <div style={{fontSize:"28px", fontWeight:"800", color:"#00C853"}}>ملاعبي</div>
+            <div style={{color:"#6b7280", marginTop:"8px"}}>احجز ملعبك بسهولة</div>
+          </div>
+          <div style={{background:"#111827", borderRadius:"20px", padding:"28px", border:"1px solid #1f2937"}}>
+            <div style={{display:"flex", marginBottom:"24px", background:"#1f2937", borderRadius:"10px", padding:"4px"}}>
+              <button onClick={() => setScreen("login")} style={{flex:1, padding:"10px", borderRadius:"8px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", background:!isReg?"#00C853":"transparent", color:!isReg?"#000":"#6b7280"}}>
+                تسجيل الدخول
+              </button>
+              <button onClick={() => setScreen("register")} style={{flex:1, padding:"10px", borderRadius:"8px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", background:isReg?"#00C853":"transparent", color:isReg?"#000":"#6b7280"}}>
+                حساب جديد
+              </button>
+            </div>
+            {isReg && (
+              <>
+                <label style={lbl}>الاسم الكامل</label>
+                <input style={inp} placeholder="ادخل اسمك الكامل" value={regName} onChange={e => setRegName(e.target.value)}/>
+              </>
+            )}
+            <label style={lbl}>رقم الهاتف</label>
+            {/* ✅ تم التعديل: maxLength=8 وأرقام فقط */}
+            <input
+              style={inp}
+              placeholder="8 أرقام"
+              maxLength={8}
+              value={isReg ? regPhone : loginPhone}
+              onChange={e => {
+                const val = e.target.value.replace(/\D/g, "");
+                isReg ? setRegPhone(val) : setLoginPhone(val);
+              }}
+            />
+            <label style={lbl}>كلمة السر (4 أرقام)</label>
+            {/* ✅ تم التعديل: maxLength=4 وأرقام فقط */}
+            <input
+              style={inp}
+              type="password"
+              placeholder="4 أرقام"
+              maxLength={4}
+              value={isReg ? regPass : loginPass}
+              onChange={e => {
+                const val = e.target.value.replace(/\D/g, "");
+                isReg ? setRegPass(val) : setLoginPass(val);
+              }}
+            />
+            <button onClick={isReg ? handleRegister : handleLogin} style={{width:"100%", padding:"14px", background:"#00C853", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"16px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>
+              {isReg ? "انشاء الحساب" : "دخول"}
+            </button>
+          </div>
+        </div>
+        {toast && <div style={{position:"fixed", bottom:"24px", left:"50%", transform:"translateX(-50%)", background:toast.color, color:"#fff", padding:"14px 28px", borderRadius:"16px", fontWeight:"700", zIndex:999}}>{toast.msg}</div>}
+      </div>
+    );
+  }
 
   if (loading) return (
     <div style={{minHeight:"100vh", background:"#0a0a0f", display:"flex", alignItems:"center", justifyContent:"center", color:"#00C853", fontSize:"20px", fontFamily:"Tajawal,sans-serif"}}>
@@ -157,31 +267,25 @@ export default function App() {
   return (
     <div style={{minHeight:"100vh", background:"#0a0a0f", fontFamily:"Tajawal,sans-serif", direction:"rtl", color:"#fff"}}>
       <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet"/>
-
-      {/* Header - بدون زر لوحة التحكم */}
-      <div style={{background:"#111827", borderBottom:"1px solid #1f2937", padding:"20px 32px", display:"flex", justifyContent:"space-between", alignItems:"center", position:"sticky", top:0, zIndex:50}}>
-        <div onClick={handleLogoClick} style={{fontSize:"22px", fontWeight:"800", color:"#00C853", cursor:"pointer", userSelect:"none"}}>
-          ملاعبي ⚽
+      <div style={{background:"#111827", borderBottom:"1px solid #1f2937", padding:"16px 24px", display:"flex", justifyContent:"space-between", alignItems:"center", position:"sticky", top:0, zIndex:50}}>
+        <div onClick={handleLogoClick} style={{fontSize:"20px", fontWeight:"800", color:"#00C853", cursor:"pointer", userSelect:"none"}}>ملاعبي</div>
+        <div style={{display:"flex", alignItems:"center", gap:"12px"}}>
+          {user && <div style={{color:"#9ca3af", fontSize:"13px"}}>مرحبا {user.name}</div>}
+          <button onClick={handleLogout} style={{padding:"6px 14px", background:"#1f2937", border:"none", borderRadius:"8px", color:"#9ca3af", fontWeight:"600", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>خروج</button>
+          {tab === "admin" && (
+            <button onClick={() => setTab("client")} style={{padding:"6px 14px", background:"#FF444422", border:"none", borderRadius:"8px", color:"#FF4444", fontWeight:"600", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>اغلاق التحكم</button>
+          )}
         </div>
-        {tab === "admin" && (
-          <button onClick={() => setTab("client")} style={{padding:"8px 20px", borderRadius:"8px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", background:"#FF444422", color:"#FF4444"}}>
-            خروج
-          </button>
-        )}
       </div>
 
       <div style={{maxWidth:"1100px", margin:"0 auto", padding:"32px 24px"}}>
-
-        {/* CLIENT */}
         {tab==="client" && (
           <>
-            <div style={{fontSize:"28px", fontWeight:"800", marginBottom:"8px"}}>احجز ملعبك 🏆</div>
+            <div style={{fontSize:"28px", fontWeight:"800", marginBottom:"8px"}}>احجز ملعبك</div>
             <div style={{color:"#6b7280", marginBottom:"24px"}}>اختر الولاية والملعب المناسب</div>
             <div style={{display:"flex", gap:"10px", flexWrap:"wrap", marginBottom:"28px"}}>
               {["الكل", ...wilayas].map(w => (
-                <button key={w} onClick={() => setFilterWilaya(w)} style={{padding:"8px 18px", borderRadius:"20px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"14px", background: filterWilaya===w?"#00C853":"#1f2937", color: filterWilaya===w?"#000":"#9ca3af"}}>
-                  {w}
-                </button>
+                <button key={w} onClick={() => setFilterWilaya(w)} style={{padding:"8px 18px", borderRadius:"20px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"14px", background: filterWilaya===w?"#00C853":"#1f2937", color: filterWilaya===w?"#000":"#9ca3af"}}>{w}</button>
               ))}
             </div>
             {filteredStadiums.length===0 ? (
@@ -205,9 +309,7 @@ export default function App() {
                       <div style={{padding:"20px 24px"}}>
                         <div style={{color:st.color, fontWeight:"700", marginBottom:"8px"}}>💰 {st.price} اوقية/ساعة</div>
                         <div style={{color:"#6b7280", fontSize:"13px", marginBottom:"16px"}}>{free} ساعة متاحة اليوم</div>
-                        <button onClick={() => { setSelected(st); setStep(1); setBookDate(today); }} style={{width:"100%", padding:"12px", background:st.color, border:"none", borderRadius:"12px", fontWeight:"700", fontSize:"15px", cursor:"pointer", fontFamily:"inherit"}}>
-                          احجز الان
-                        </button>
+                        <button onClick={() => { setSelected(st); setStep(1); setBookDate(today); }} style={{width:"100%", padding:"12px", background:st.color, border:"none", borderRadius:"12px", fontWeight:"700", fontSize:"15px", cursor:"pointer", fontFamily:"inherit"}}>احجز الان</button>
                       </div>
                     </div>
                   );
@@ -217,29 +319,34 @@ export default function App() {
           </>
         )}
 
-        {/* ADMIN */}
         {tab==="admin" && (
           <>
-            <div style={{fontSize:"28px", fontWeight:"800", marginBottom:"32px"}}>لوحة التحكم ⚙️</div>
+            <div style={{fontSize:"28px", fontWeight:"800", marginBottom:"24px"}}>لوحة التحكم</div>
+            <div style={{display:"flex", gap:"8px", marginBottom:"24px", background:"#111827", borderRadius:"12px", padding:"4px"}}>
+              {[["pending","الطلبات","#FF6D00"],["stadiums","الملاعب","#7C4DFF"],["stats","الاحصائيات","#00C853"],["add","اضافة ملعب","#2979FF"]].map(([key,label,color]) => (
+                <button key={key} onClick={() => setAdminTab(key)} style={{flex:1, padding:"10px", borderRadius:"8px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"13px", background: adminTab===key?color:"transparent", color: adminTab===key?"#fff":"#6b7280"}}>
+                  {label}
+                </button>
+              ))}
+            </div>
 
-            {pendingBookings.length>0 && (
-              <div style={{background:"#111827", borderRadius:"20px", border:"1px solid #FF6D0033", padding:"28px", marginBottom:"24px"}}>
-                <div style={{fontWeight:"700", color:"#FF6D00", marginBottom:"20px"}}>طلبات تنتظر التاكيد ({pendingBookings.length})</div>
-                {pendingBookings.map((b,i) => {
+            {adminTab==="pending" && (
+              <div>
+                {pendingBookings.length===0 ? (
+                  <div style={{textAlign:"center", padding:"60px", color:"#4b5563"}}>لا توجد طلبات معلقة</div>
+                ) : pendingBookings.map((b,i) => {
                   const pa = PAYMENT_APPS.find(p => p.id===b.pay_app);
                   return (
-                    <div key={i} style={{background:"#1f2937", borderRadius:"12px", padding:"16px 20px", marginBottom:"12px", borderRight:"4px solid #FF6D00"}}>
+                    <div key={i} style={{background:"#111827", borderRadius:"12px", padding:"16px 20px", marginBottom:"12px", borderRight:"4px solid #FF6D00"}}>
                       <div style={{display:"flex", justifyContent:"space-between", marginBottom:"12px"}}>
                         <div>
                           <div style={{fontWeight:"700"}}>{b.client_name}</div>
                           <div style={{color:"#9ca3af", fontSize:"13px"}}>📞 {b.client_phone}</div>
                           <div style={{color:"#9ca3af", fontSize:"13px"}}>🏟 {b.stadium_name} - {b.date} - {b.hour}:00</div>
                         </div>
-                        <div style={{background:`${pa?.color}22`, color:pa?.color, padding:"4px 10px", borderRadius:"20px", fontSize:"12px", fontWeight:"700", height:"fit-content"}}>
-                          {pa?.name}
-                        </div>
+                        <div style={{background:`${pa?.color}22`, color:pa?.color, padding:"4px 10px", borderRadius:"20px", fontSize:"12px", fontWeight:"700", height:"fit-content"}}>{pa?.name}</div>
                       </div>
-                      <div style={{background:"#111827", borderRadius:"10px", padding:"10px 14px", marginBottom:"12px", fontSize:"13px"}}>
+                      <div style={{background:"#1f2937", borderRadius:"10px", padding:"10px 14px", marginBottom:"12px", fontSize:"13px"}}>
                         الرقم التسلسلي: <span style={{color:"#00C853", fontWeight:"700"}}>{b.transaction_num}</span>
                       </div>
                       <div style={{display:"flex", gap:"10px"}}>
@@ -252,85 +359,103 @@ export default function App() {
               </div>
             )}
 
-            <div style={{background:"#111827", borderRadius:"20px", border:"1px solid #1f2937", padding:"28px", marginBottom:"24px"}}>
-              <div style={{fontWeight:"700", color:"#00BCD4", marginBottom:"20px"}}>اضافة ولاية جديدة</div>
-              <div style={{display:"flex", gap:"12px"}}>
-                <input style={{...inp, marginBottom:0, flex:1}} placeholder="اسم الولاية" value={newWilaya} onChange={e => setNewWilaya(e.target.value)}/>
-                <button onClick={handleAddWilaya} style={{padding:"10px 20px", background:"#00BCD4", border:"none", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap"}}>اضافة</button>
-              </div>
-              <div style={{display:"flex", gap:"8px", flexWrap:"wrap", marginTop:"16px"}}>
-                {wilayas.map(w => (
-                  <div key={w} style={{background:"#00BCD422", color:"#00BCD4", padding:"4px 14px", borderRadius:"20px", fontSize:"13px", fontWeight:"700"}}>{w}</div>
-                ))}
-              </div>
-            </div>
-
-            {stadiums.length>0 && (
-              <div style={{background:"#111827", borderRadius:"20px", border:"1px solid #1f2937", padding:"28px", marginBottom:"24px"}}>
-                <div style={{fontWeight:"700", color:"#7C4DFF", marginBottom:"20px"}}>الملاعب المسجلة ({stadiums.length})</div>
-                {stadiums.map(st => (
-                  <div key={st.id} style={{background:"#1f2937", borderRadius:"12px", padding:"16px 20px", marginBottom:"10px", display:"flex", justifyContent:"space-between", alignItems:"center", borderRight:`4px solid ${st.color}`}}>
-                    <div>
-                      <div style={{fontWeight:"700"}}>{st.name}</div>
-                      <div style={{color:"#9ca3af", fontSize:"13px"}}>📍 {st.wilaya} - {st.hood} - {st.price} اوقية/ساعة</div>
+            {adminTab==="stadiums" && (
+              <div>
+                {stadiums.length===0 ? (
+                  <div style={{textAlign:"center", padding:"60px", color:"#4b5563"}}>لا توجد ملاعب</div>
+                ) : stadiums.map(st => {
+                  const stConfirmed = confirmedBookings.filter(b => b.stadium_id === st.id).length;
+                  return (
+                    <div key={st.id} style={{background:"#111827", borderRadius:"12px", padding:"16px 20px", marginBottom:"10px", display:"flex", justifyContent:"space-between", alignItems:"center", borderRight:`4px solid ${st.color}`}}>
+                      <div>
+                        <div style={{fontWeight:"700"}}>{st.name}</div>
+                        <div style={{color:"#9ca3af", fontSize:"13px"}}>📍 {st.wilaya} - {st.hood} - {st.price} اوقية/ساعة</div>
+                        <div style={{color:"#00C853", fontSize:"13px", marginTop:"4px"}}>✅ {stConfirmed} حجز مؤكد</div>
+                      </div>
+                      <button onClick={() => setConfirmDelete(st)} style={{padding:"8px 16px", background:"#FF444422", color:"#FF4444", border:"1px solid #FF444444", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>حذف</button>
                     </div>
-                    <button onClick={() => setConfirmDelete(st)} style={{padding:"8px 16px", background:"#FF444422", color:"#FF4444", border:"1px solid #FF444444", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>
-                      حذف
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
-            <div style={{background:"#111827", borderRadius:"20px", border:"1px solid #1f2937", padding:"28px", marginBottom:"24px"}}>
-              <div style={{fontWeight:"700", color:"#00C853", marginBottom:"20px"}}>اضافة ملعب جديد</div>
-              <label style={lbl}>اسم الملعب</label>
-              <input style={inp} placeholder="اسم الملعب" value={newName} onChange={e => setNewName(e.target.value)}/>
-              <label style={lbl}>الولاية</label>
-              <select style={sel} value={newWilayaSelect} onChange={e => setNewWilayaSelect(e.target.value)}>
-                <option value="">اختر الولاية</option>
-                {wilayas.map(w => <option key={w} value={w}>{w}</option>)}
-              </select>
-              <label style={lbl}>الحي</label>
-              <input style={inp} placeholder="اسم الحي" value={newHood} onChange={e => setNewHood(e.target.value)}/>
-              <label style={lbl}>السعر (اوقية/ساعة)</label>
-              <input style={inp} type="number" placeholder="1000" value={newPrice} onChange={e => setNewPrice(e.target.value)}/>
-              <div style={{fontWeight:"700", color:"#2979FF", margin:"16px 0 12px"}}>ارقام الحسابات البنكية</div>
-              {PAYMENT_APPS.map(p => (
-                <div key={p.id}>
-                  <label style={lbl}>{p.name}</label>
-                  <input style={inp} placeholder={"رقم حسابك في " + p.name} value={newPayments[p.id]||""} onChange={e => setNewPayments(prev => ({...prev, [p.id]: e.target.value}))}/>
+            {adminTab==="stats" && (
+              <div>
+                <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:"16px", marginBottom:"24px"}}>
+                  {[
+                    { label:"عدد المسجلين", value: usersCount, icon:"👥", color:"#00C853" },
+                    { label:"عدد الملاعب", value: stadiums.length, icon:"🏟", color:"#2979FF" },
+                    { label:"الحجوزات المؤكدة", value: confirmedBookings.length, icon:"✅", color:"#7C4DFF" },
+                    { label:"الحجوزات المعلقة", value: pendingBookings.length, icon:"⏳", color:"#FF6D00" },
+                  ].map((stat,i) => (
+                    <div key={i} style={{background:"#111827", borderRadius:"16px", padding:"20px", border:`1px solid ${stat.color}33`}}>
+                      <div style={{fontSize:"32px", marginBottom:"8px"}}>{stat.icon}</div>
+                      <div style={{color:"#9ca3af", fontSize:"13px", marginBottom:"4px"}}>{stat.label}</div>
+                      <div style={{fontSize:"32px", fontWeight:"800", color:stat.color}}>{stat.value}</div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-              <button onClick={handleAdd} style={{padding:"12px 24px", background:"#00C853", border:"none", borderRadius:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"15px"}}>
-                اضافة الملعب
-              </button>
-            </div>
+                <div style={{background:"#111827", borderRadius:"16px", padding:"24px", border:"1px solid #1f2937"}}>
+                  <div style={{fontWeight:"700", marginBottom:"16px", color:"#fff"}}>الحجوزات المؤكدة لكل ملعب</div>
+                  {stadiums.map(st => {
+                    const count = confirmedBookings.filter(b => b.stadium_id === st.id).length;
+                    const max = Math.max(...stadiums.map(s => confirmedBookings.filter(b => b.stadium_id === s.id).length), 1);
+                    return (
+                      <div key={st.id} style={{marginBottom:"12px"}}>
+                        <div style={{display:"flex", justifyContent:"space-between", marginBottom:"4px"}}>
+                          <span style={{fontSize:"13px"}}>{st.name}</span>
+                          <span style={{fontSize:"13px", color:st.color, fontWeight:"700"}}>{count} حجز</span>
+                        </div>
+                        <div style={{background:"#1f2937", borderRadius:"20px", height:"8px"}}>
+                          <div style={{background:st.color, borderRadius:"20px", height:"8px", width:`${(count/max)*100}%`, transition:"width 0.3s"}}></div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
-            <div style={{background:"#111827", borderRadius:"20px", border:"1px solid #1f2937", padding:"28px"}}>
-              <div style={{fontWeight:"700", color:"#2979FF", marginBottom:"20px"}}>كل الحجوزات ({bookings.length})</div>
-              {bookings.length===0 ? (
-                <div style={{color:"#4b5563", textAlign:"center", padding:"32px"}}>لا توجد حجوزات بعد</div>
-              ) : bookings.map((b,i) => (
-                <div key={i} style={{background:"#1f2937", borderRadius:"12px", padding:"16px 20px", marginBottom:"10px", borderRight:`4px solid ${b.status==="confirmed"?"#00C853":b.status==="rejected"?"#FF4444":"#FF6D00"}`}}>
-                  <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
-                    <div>
-                      <div style={{fontWeight:"700"}}>{b.client_name}</div>
-                      <div style={{color:"#9ca3af", fontSize:"13px"}}>{b.stadium_name} - {b.date} - {b.hour}:00</div>
-                      {b.code && <div style={{color:"#00C853", fontWeight:"700", fontSize:"13px", marginTop:"4px"}}>الكود: {b.code}</div>}
-                    </div>
-                    <div style={{background: b.status==="confirmed"?"#00C85322":b.status==="rejected"?"#FF444422":"#FF6D0022", color: b.status==="confirmed"?"#00C853":b.status==="rejected"?"#FF4444":"#FF6D00", padding:"4px 12px", borderRadius:"20px", fontSize:"12px", fontWeight:"700"}}>
-                      {b.status==="confirmed"?"مؤكد":b.status==="rejected"?"مرفوض":"انتظار"}
-                    </div>
+            {adminTab==="add" && (
+              <div>
+                <div style={{background:"#111827", borderRadius:"20px", border:"1px solid #1f2937", padding:"28px", marginBottom:"24px"}}>
+                  <div style={{fontWeight:"700", color:"#00BCD4", marginBottom:"20px"}}>اضافة ولاية جديدة</div>
+                  <div style={{display:"flex", gap:"12px"}}>
+                    <input style={{...inp, marginBottom:0, flex:1}} placeholder="اسم الولاية" value={newWilaya} onChange={e => setNewWilaya(e.target.value)}/>
+                    <button onClick={handleAddWilaya} style={{padding:"10px 20px", background:"#00BCD4", border:"none", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap"}}>اضافة</button>
+                  </div>
+                  <div style={{display:"flex", gap:"8px", flexWrap:"wrap", marginTop:"16px"}}>
+                    {wilayas.map(w => <div key={w} style={{background:"#00BCD422", color:"#00BCD4", padding:"4px 14px", borderRadius:"20px", fontSize:"13px", fontWeight:"700"}}>{w}</div>)}
                   </div>
                 </div>
-              ))}
-            </div>
+                <div style={{background:"#111827", borderRadius:"20px", border:"1px solid #1f2937", padding:"28px"}}>
+                  <div style={{fontWeight:"700", color:"#00C853", marginBottom:"20px"}}>اضافة ملعب جديد</div>
+                  <label style={lbl}>اسم الملعب</label>
+                  <input style={inp} placeholder="اسم الملعب" value={newName} onChange={e => setNewName(e.target.value)}/>
+                  <label style={lbl}>الولاية</label>
+                  <select style={sel} value={newWilayaSelect} onChange={e => setNewWilayaSelect(e.target.value)}>
+                    <option value="">اختر الولاية</option>
+                    {wilayas.map(w => <option key={w} value={w}>{w}</option>)}
+                  </select>
+                  <label style={lbl}>الحي</label>
+                  <input style={inp} placeholder="اسم الحي" value={newHood} onChange={e => setNewHood(e.target.value)}/>
+                  <label style={lbl}>السعر (اوقية/ساعة)</label>
+                  <input style={inp} type="number" placeholder="1000" value={newPrice} onChange={e => setNewPrice(e.target.value)}/>
+                  <div style={{fontWeight:"700", color:"#2979FF", margin:"16px 0 12px"}}>ارقام الحسابات البنكية</div>
+                  {PAYMENT_APPS.map(p => (
+                    <div key={p.id}>
+                      <label style={lbl}>{p.name}</label>
+                      <input style={inp} placeholder={"رقم حسابك في " + p.name} value={newPayments[p.id]||""} onChange={e => setNewPayments(prev => ({...prev, [p.id]: e.target.value}))}/>
+                    </div>
+                  ))}
+                  <button onClick={handleAdd} style={{padding:"12px 24px", background:"#00C853", border:"none", borderRadius:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"15px"}}>اضافة الملعب</button>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
 
-      {/* BOOKING MODAL */}
       {selected && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && closeModal()}>
           <div style={{background:"#111827", borderRadius:"24px", border:"1px solid #1f2937", width:"100%", maxWidth:"520px", maxHeight:"90vh", overflow:"auto", padding:"32px"}}>
@@ -353,15 +478,9 @@ export default function App() {
                     );
                   })}
                 </div>
-                <label style={lbl}>الاسم الكامل</label>
-                <input style={inp} placeholder="ادخل اسمك" value={clientName} onChange={e => setClientName(e.target.value)}/>
-                <label style={lbl}>رقم الهاتف</label>
-                <input style={inp} placeholder="رقم هاتفك" value={clientPhone} onChange={e => setClientPhone(e.target.value)}/>
                 <div style={{display:"flex", gap:"12px"}}>
                   <button onClick={closeModal} style={{flex:1, padding:"12px", background:"#1f2937", border:"none", borderRadius:"12px", color:"#9ca3af", fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>الغاء</button>
-                  <button disabled={!bookHour||!clientName||!clientPhone} onClick={() => setStep(2)} style={{flex:2, padding:"12px", background:!bookHour||!clientName||!clientPhone?"#1f2937":selected.color, border:"none", borderRadius:"12px", color:!bookHour||!clientName||!clientPhone?"#4b5563":"#000", fontWeight:"700", cursor:!bookHour||!clientName||!clientPhone?"not-allowed":"pointer", fontFamily:"inherit"}}>
-                    التالي
-                  </button>
+                  <button disabled={!bookHour} onClick={() => setStep(2)} style={{flex:2, padding:"12px", background:!bookHour?"#1f2937":selected.color, border:"none", borderRadius:"12px", color:!bookHour?"#4b5563":"#000", fontWeight:"700", cursor:!bookHour?"not-allowed":"pointer", fontFamily:"inherit"}}>التالي</button>
                 </div>
               </>
             )}
@@ -372,9 +491,7 @@ export default function App() {
                   {PAYMENT_APPS.map(p => {
                     if (!selected.payments?.[p.id]) return null;
                     return (
-                      <button key={p.id} onClick={() => setSelectedPayApp(p.id)} style={{padding:"14px", borderRadius:"12px", border: selectedPayApp===p.id?`2px solid ${p.color}`:"2px solid #374151", background: selectedPayApp===p.id?`${p.color}22`:"#1f2937", color: selectedPayApp===p.id?p.color:"#9ca3af", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"14px"}}>
-                        {p.name}
-                      </button>
+                      <button key={p.id} onClick={() => setSelectedPayApp(p.id)} style={{padding:"14px", borderRadius:"12px", border: selectedPayApp===p.id?`2px solid ${p.color}`:"2px solid #374151", background: selectedPayApp===p.id?`${p.color}22`:"#1f2937", color: selectedPayApp===p.id?p.color:"#9ca3af", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"14px"}}>{p.name}</button>
                     );
                   })}
                 </div>
@@ -389,9 +506,7 @@ export default function App() {
                 <input style={inp} placeholder="ادخل رقم العملية بعد الدفع" value={transactionNum} onChange={e => setTransactionNum(e.target.value)}/>
                 <div style={{display:"flex", gap:"12px"}}>
                   <button onClick={() => setStep(1)} style={{flex:1, padding:"12px", background:"#1f2937", border:"none", borderRadius:"12px", color:"#9ca3af", fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>رجوع</button>
-                  <button disabled={!selectedPayApp||!transactionNum} onClick={handleBook} style={{flex:2, padding:"12px", background:!selectedPayApp||!transactionNum?"#1f2937":"#00C853", border:"none", borderRadius:"12px", color:!selectedPayApp||!transactionNum?"#4b5563":"#000", fontWeight:"700", cursor:!selectedPayApp||!transactionNum?"not-allowed":"pointer", fontFamily:"inherit"}}>
-                    تاكيد الحجز
-                  </button>
+                  <button disabled={!selectedPayApp||!transactionNum} onClick={handleBook} style={{flex:2, padding:"12px", background:!selectedPayApp||!transactionNum?"#1f2937":"#00C853", border:"none", borderRadius:"12px", color:!selectedPayApp||!transactionNum?"#4b5563":"#000", fontWeight:"700", cursor:!selectedPayApp||!transactionNum?"not-allowed":"pointer", fontFamily:"inherit"}}>تاكيد الحجز</button>
                 </div>
               </>
             )}
@@ -399,7 +514,6 @@ export default function App() {
         </div>
       )}
 
-      {/* CONFIRM DELETE */}
       {confirmDelete && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}}>
           <div style={{background:"#111827", borderRadius:"24px", border:"1px solid #FF444444", width:"100%", maxWidth:"400px", padding:"32px", textAlign:"center"}}>
@@ -414,7 +528,6 @@ export default function App() {
         </div>
       )}
 
-      {/* TOAST */}
       {toast && (
         <div style={{position:"fixed", bottom:"24px", left:"50%", transform:"translateX(-50%)", background:toast.color, color:"#fff", padding:"14px 28px", borderRadius:"16px", fontWeight:"700", zIndex:999}}>
           {toast.msg}
