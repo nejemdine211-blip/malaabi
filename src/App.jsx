@@ -25,6 +25,15 @@ const COLORS = {
   muted: "#8892A4",
 };
 
+const STADIUM_IMAGES = [
+  "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=400&h=200&fit=crop",
+  "https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=400&h=200&fit=crop",
+  "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400&h=200&fit=crop",
+  "https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?w=400&h=200&fit=crop",
+  "https://images.unsplash.com/photo-1551958219-acbc595b9b5c?w=400&h=200&fit=crop",
+  "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=400&h=200&fit=crop",
+];
+
 export default function App() {
   const [screen, setScreen] = useState("login");
   const [user, setUser] = useState(null);
@@ -160,7 +169,6 @@ export default function App() {
   const handleBook = async () => {
     if (bookHour === null) return;
     if (!selectedPayApp || !transactionNum) return;
-    // ✅ منع الحجز المكرر
     const duplicate = bookings.some(b =>
       b.stadium_id === selected.id &&
       b.date === bookDate &&
@@ -350,14 +358,7 @@ export default function App() {
               <div style={{position:"absolute", bottom:"-40px", right:"-40px", width:"200px", height:"200px", background:"radial-gradient(circle, #00B0FF15, transparent)", borderRadius:"50%"}}></div>
               <div style={{fontSize:"36px", fontWeight:"800", marginBottom:"8px", background:"linear-gradient(135deg,#00E676,#00B0FF)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>احجز ملعبك 🏟</div>
               <div style={{color:COLORS.muted, fontSize:"16px", marginBottom:"20px"}}>اختر الولاية والملعب المناسب لك</div>
-              {/* ✅ بحث */}
-              <input
-                style={{...inp, marginBottom:"12px", background:"#ffffff11", border:`1px solid ${COLORS.border}`}}
-                placeholder="🔍 ابحث عن ملعب..."
-                value={searchText}
-                onChange={e => setSearchText(e.target.value)}
-              />
-              {/* ✅ ترتيب */}
+              <input style={{...inp, marginBottom:"12px", background:"#ffffff11", border:`1px solid ${COLORS.border}`}} placeholder="🔍 ابحث عن ملعب..." value={searchText} onChange={e => setSearchText(e.target.value)}/>
               <select style={{...sel, marginBottom:0, background:"#ffffff11"}} value={sortBy} onChange={e => setSortBy(e.target.value)}>
                 <option value="default">الترتيب الافتراضي</option>
                 <option value="price_asc">السعر: من الأقل</option>
@@ -366,8 +367,7 @@ export default function App() {
               </select>
             </div>
 
-            {/* ✅ زر حجوزاتي */}
-            <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"20px"}}>
+            <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"20px", flexWrap:"wrap", gap:"10px"}}>
               <div style={{display:"flex", gap:"10px", flexWrap:"wrap"}}>
                 {["الكل", ...wilayas].map(w => (
                   <button key={w} onClick={() => setFilterWilaya(w)} style={{padding:"8px 20px", borderRadius:"20px", border:`1px solid ${filterWilaya===w ? COLORS.accent : COLORS.border}`, cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"14px", background: filterWilaya===w?"linear-gradient(135deg,#00E676,#00B0FF)":COLORS.card, color: filterWilaya===w?"#000":COLORS.muted}}>{w}</button>
@@ -385,22 +385,22 @@ export default function App() {
               </div>
             ) : (
               <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))", gap:"24px"}}>
-                {filteredStadiums.map(st => {
+                {filteredStadiums.map((st, idx) => {
                   const hours = st.working_hours || ALL_HOURS;
                   const free = hours.filter(h => !isBooked(st.id, today, h)).length;
+                  const imgUrl = STADIUM_IMAGES[idx % STADIUM_IMAGES.length];
                   return (
                     <div key={st.id} style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, overflow:"hidden", boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>
-                      <div style={{background:`linear-gradient(135deg, ${st.color}22, ${st.color}11)`, padding:"28px 24px", position:"relative", overflow:"hidden"}}>
-                        <div style={{position:"absolute", top:"-20px", left:"-20px", width:"100px", height:"100px", background:`radial-gradient(circle, ${st.color}20, transparent)`, borderRadius:"50%"}}></div>
-                        <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start"}}>
-                          <div>
-                            <div style={{fontWeight:"800", fontSize:"20px", marginBottom:"6px"}}>{st.name}</div>
-                            <div style={{color:COLORS.muted, fontSize:"13px"}}>📍 {st.wilaya} — {st.hood}</div>
-                          </div>
-                          <div style={{background:`${st.color}33`, borderRadius:"16px", padding:"8px 14px", fontSize:"22px"}}>🏟</div>
+                      {/* ✅ صورة الملعب */}
+                      <div style={{position:"relative"}}>
+                        <img src={imgUrl} alt={st.name} style={{width:"100%", height:"150px", objectFit:"cover", display:"block"}}/>
+                        <div style={{position:"absolute", inset:0, background:`linear-gradient(to bottom, transparent 50%, ${COLORS.card} 100%)`}}></div>
+                        <div style={{position:"absolute", bottom:"12px", right:"16px", left:"16px"}}>
+                          <div style={{fontWeight:"800", fontSize:"20px", color:"#fff", textShadow:"0 2px 8px rgba(0,0,0,0.8)"}}>{st.name}</div>
+                          <div style={{color:"#ffffffaa", fontSize:"13px"}}>📍 {st.wilaya} — {st.hood}</div>
                         </div>
                       </div>
-                      <div style={{padding:"20px 24px"}}>
+                      <div style={{padding:"16px 24px 20px"}}>
                         <div style={{display:"flex", justifyContent:"space-between", marginBottom:"16px"}}>
                           <div style={{background:`${st.color}22`, borderRadius:"12px", padding:"10px 16px", textAlign:"center"}}>
                             <div style={{color:st.color, fontWeight:"800", fontSize:"18px"}}>{st.price}</div>
@@ -570,7 +570,7 @@ export default function App() {
             )}
           </>
         )}
-      </div>{/* ✅ نافذة حجوزاتي */}
+      </div>{/* نافذة حجوزاتي */}
       {showMyBookings && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setShowMyBookings(false)}>
           <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"520px", maxHeight:"90vh", overflow:"auto", padding:"32px"}}>
@@ -601,7 +601,7 @@ export default function App() {
         </div>
       )}
 
-      {/* ✅ نافذة WhatsApp الرفض */}
+      {/* نافذة WhatsApp الرفض */}
       {rejectedBooking && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}}>
           <div style={{background:COLORS.card, borderRadius:"24px", border:"1px solid #FF444444", width:"100%", maxWidth:"400px", padding:"32px", textAlign:"center"}}>
