@@ -10,7 +10,7 @@ const PAYMENT_APPS = [
   { id: "moov", name: "Moov Money", color: "#FFD700" },
 ];
 
-const HOURS = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23];
+const ALL_HOURS = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23];
 const today = new Date().toISOString().split("T")[0];
 const genCode = () => Math.random().toString(36).substring(2,10).toUpperCase();
 const ADMIN_PASS = "malaabi5964";
@@ -37,6 +37,8 @@ export default function App() {
   const [usersCount, setUsersCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [filterWilaya, setFilterWilaya] = useState("الكل");
+  const [searchText, setSearchText] = useState("");
+  const [sortBy, setSortBy] = useState("default");
   const [selected, setSelected] = useState(null);
   const [bookDate, setBookDate] = useState(today);
   const [bookHour, setBookHour] = useState(null);
@@ -52,12 +54,14 @@ export default function App() {
   const [newPrice, setNewPrice] = useState("");
   const [newPayments, setNewPayments] = useState({});
   const [newOwnerPhone, setNewOwnerPhone] = useState("");
+  const [newWorkingHours, setNewWorkingHours] = useState([...ALL_HOURS]);
   const [loginPhone, setLoginPhone] = useState("");
   const [loginPass, setLoginPass] = useState("");
   const [regName, setRegName] = useState("");
   const [regPhone, setRegPhone] = useState("");
   const [regPass, setRegPass] = useState("");
   const [showProfile, setShowProfile] = useState(false);
+  const [showMyBookings, setShowMyBookings] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [editStadium, setEditStadium] = useState(null);
   const [editName, setEditName] = useState("");
@@ -66,7 +70,9 @@ export default function App() {
   const [editPrice, setEditPrice] = useState("");
   const [editOwnerPhone, setEditOwnerPhone] = useState("");
   const [editPayments, setEditPayments] = useState({});
+  const [editWorkingHours, setEditWorkingHours] = useState([...ALL_HOURS]);
   const [confirmedBooking, setConfirmedBooking] = useState(null);
+  const [rejectedBooking, setRejectedBooking] = useState(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("malaabi_user");
@@ -154,6 +160,15 @@ export default function App() {
   const handleBook = async () => {
     if (bookHour === null) return;
     if (!selectedPayApp || !transactionNum) return;
+    // ✅ منع الحجز المكرر
+    const duplicate = bookings.some(b =>
+      b.stadium_id === selected.id &&
+      b.date === bookDate &&
+      b.hour === bookHour &&
+      b.client_phone === user.phone &&
+      b.status !== "rejected"
+    );
+    if (duplicate) return showToast("لديك حجز مسبق في هذا الوقت!", "#FF4444");
     const { data } = await supabase.from("bookings").insert({
       stadium_id: selected.id, stadium_name: selected.name,
       client_name: user.name, client_phone: user.phone,
@@ -181,7 +196,9 @@ export default function App() {
 
   const rejectBooking = async (id) => {
     await supabase.from("bookings").update({ status: "rejected" }).eq("id", id);
+    const booking = bookings.find(b => b.id === id);
     setBookings(prev => prev.map(b => b.id === id ? { ...b, status: "rejected" } : b));
+    setRejectedBooking(booking);
     showToast("تم رفض الحجز", "#FF4444");
   };
 
@@ -193,6 +210,7 @@ export default function App() {
     setEditPrice(st.price);
     setEditOwnerPhone(st.owner_phone || "");
     setEditPayments(st.payments || {});
+    setEditWorkingHours(st.working_hours || [...ALL_HOURS]);
   };
 
   const handleEdit = async () => {
@@ -200,7 +218,7 @@ export default function App() {
     const { data } = await supabase.from("stadiums").update({
       name: editName, wilaya: editWilaya, hood: editHood,
       price: parseInt(editPrice), owner_phone: editOwnerPhone,
-      payments: editPayments
+      payments: editPayments, working_hours: editWorkingHours
     }).eq("id", editStadium.id).select().single();
     if (data) setStadiums(prev => prev.map(s => s.id === editStadium.id ? data : s));
     setEditStadium(null);
@@ -213,10 +231,11 @@ export default function App() {
     const { data } = await supabase.from("stadiums").insert({
       name: newName, wilaya: newWilayaSelect, hood: newHood,
       price: parseInt(newPrice), color: colors[stadiums.length % colors.length],
-      payments: newPayments, owner_phone: newOwnerPhone
+      payments: newPayments, owner_phone: newOwnerPhone,
+      working_hours: newWorkingHours
     }).select().single();
     if (data) setStadiums(prev => [...prev, data]);
-    setNewName(""); setNewWilayaSelect(""); setNewHood(""); setNewPrice(""); setNewPayments({}); setNewOwnerPhone("");
+    setNewName(""); setNewWilayaSelect(""); setNewHood(""); setNewPrice(""); setNewPayments({}); setNewOwnerPhone(""); setNewWorkingHours([...ALL_HOURS]);
     showToast("تمت الاضافة");
   };
 
@@ -228,15 +247,35 @@ export default function App() {
     showToast("تمت اضافة الولاية");
   };
 
+  const toggleHour = (hour, isEdit) => {
+    if (isEdit) {
+      setEditWorkingHours(prev =>
+        prev.includes(hour) ? prev.filter(h => h !== hour) : [...prev, hour].sort((a,b) => a-b)
+      );
+    } else {
+      setNewWorkingHours(prev =>
+        prev.includes(hour) ? prev.filter(h => h !== hour) : [...prev, hour].sort((a,b) => a-b)
+      );
+    }
+  };
+
   const isBooked = (sid, date, hour) =>
     bookings.some(b => b.stadium_id === sid && b.date === date && b.hour === hour && b.status !== "rejected");
 
   const confirmedBookings = bookings.filter(b => b.status === "confirmed");
-  const myConfirmedBookings = user ? confirmedBookings.filter(b => b.client_phone === user.phone) : [];
-  const filteredStadiums = filterWilaya === "الكل" ? stadiums : stadiums.filter(s => s.wilaya === filterWilaya);
+  const myBookings = user ? bookings.filter(b => b.client_phone === user.phone) : [];
+  const myConfirmedBookings = myBookings.filter(b => b.status === "confirmed");
+
+  let filteredStadiums = filterWilaya === "الكل" ? stadiums : stadiums.filter(s => s.wilaya === filterWilaya);
+  if (searchText) filteredStadiums = filteredStadiums.filter(s => s.name.toLowerCase().includes(searchText.toLowerCase()));
+  if (sortBy === "price_asc") filteredStadiums = [...filteredStadiums].sort((a,b) => a.price - b.price);
+  if (sortBy === "price_desc") filteredStadiums = [...filteredStadiums].sort((a,b) => b.price - a.price);
+  if (sortBy === "popular") filteredStadiums = [...filteredStadiums].sort((a,b) => confirmedBookings.filter(x => x.stadium_id === b.id).length - confirmedBookings.filter(x => x.stadium_id === a.id).length);
+
   const pendingBookings = bookings.filter(b => b.status === "pending");
   const payApp = selectedPayApp ? PAYMENT_APPS.find(p => p.id === selectedPayApp) : null;
   const stadiumPayNum = selected && payApp ? (selected.payments?.[selectedPayApp] || "") : "";
+  const stadiumHours = selected ? (selected.working_hours || ALL_HOURS) : ALL_HOURS;
 
   const inp = { width:"100%", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"10px", padding:"12px 16px", color:"#fff", fontSize:"15px", fontFamily:"inherit", marginBottom:"16px", boxSizing:"border-box", outline:"none" };
   const lbl = { color:COLORS.muted, fontSize:"13px", marginBottom:"6px", display:"block" };
@@ -310,22 +349,45 @@ export default function App() {
               <div style={{position:"absolute", top:"-40px", left:"-40px", width:"200px", height:"200px", background:"radial-gradient(circle, #00E67615, transparent)", borderRadius:"50%"}}></div>
               <div style={{position:"absolute", bottom:"-40px", right:"-40px", width:"200px", height:"200px", background:"radial-gradient(circle, #00B0FF15, transparent)", borderRadius:"50%"}}></div>
               <div style={{fontSize:"36px", fontWeight:"800", marginBottom:"8px", background:"linear-gradient(135deg,#00E676,#00B0FF)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>احجز ملعبك 🏟</div>
-              <div style={{color:COLORS.muted, fontSize:"16px"}}>اختر الولاية والملعب المناسب لك</div>
+              <div style={{color:COLORS.muted, fontSize:"16px", marginBottom:"20px"}}>اختر الولاية والملعب المناسب لك</div>
+              {/* ✅ بحث */}
+              <input
+                style={{...inp, marginBottom:"12px", background:"#ffffff11", border:`1px solid ${COLORS.border}`}}
+                placeholder="🔍 ابحث عن ملعب..."
+                value={searchText}
+                onChange={e => setSearchText(e.target.value)}
+              />
+              {/* ✅ ترتيب */}
+              <select style={{...sel, marginBottom:0, background:"#ffffff11"}} value={sortBy} onChange={e => setSortBy(e.target.value)}>
+                <option value="default">الترتيب الافتراضي</option>
+                <option value="price_asc">السعر: من الأقل</option>
+                <option value="price_desc">السعر: من الأعلى</option>
+                <option value="popular">الأكثر حجزاً</option>
+              </select>
             </div>
-            <div style={{display:"flex", gap:"10px", flexWrap:"wrap", marginBottom:"28px"}}>
-              {["الكل", ...wilayas].map(w => (
-                <button key={w} onClick={() => setFilterWilaya(w)} style={{padding:"8px 20px", borderRadius:"20px", border:`1px solid ${filterWilaya===w ? COLORS.accent : COLORS.border}`, cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"14px", background: filterWilaya===w?"linear-gradient(135deg,#00E676,#00B0FF)":COLORS.card, color: filterWilaya===w?"#000":COLORS.muted}}>{w}</button>
-              ))}
+
+            {/* ✅ زر حجوزاتي */}
+            <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"20px"}}>
+              <div style={{display:"flex", gap:"10px", flexWrap:"wrap"}}>
+                {["الكل", ...wilayas].map(w => (
+                  <button key={w} onClick={() => setFilterWilaya(w)} style={{padding:"8px 20px", borderRadius:"20px", border:`1px solid ${filterWilaya===w ? COLORS.accent : COLORS.border}`, cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"14px", background: filterWilaya===w?"linear-gradient(135deg,#00E676,#00B0FF)":COLORS.card, color: filterWilaya===w?"#000":COLORS.muted}}>{w}</button>
+                ))}
+              </div>
+              <button onClick={() => setShowMyBookings(true)} style={{padding:"8px 20px", background:"#7C4DFF22", border:"1px solid #7C4DFF44", borderRadius:"20px", color:"#7C4DFF", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"14px", whiteSpace:"nowrap"}}>
+                📋 حجوزاتي ({myBookings.length})
+              </button>
             </div>
+
             {filteredStadiums.length===0 ? (
               <div style={{textAlign:"center", padding:"80px 20px", color:COLORS.muted}}>
                 <div style={{fontSize:"60px", marginBottom:"16px"}}>🏟</div>
-                <div>لا توجد ملاعب في هذه الولاية</div>
+                <div>لا توجد ملاعب</div>
               </div>
             ) : (
               <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))", gap:"24px"}}>
                 {filteredStadiums.map(st => {
-                  const free = HOURS.filter(h => !isBooked(st.id, today, h)).length;
+                  const hours = st.working_hours || ALL_HOURS;
+                  const free = hours.filter(h => !isBooked(st.id, today, h)).length;
                   return (
                     <div key={st.id} style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, overflow:"hidden", boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>
                       <div style={{background:`linear-gradient(135deg, ${st.color}22, ${st.color}11)`, padding:"28px 24px", position:"relative", overflow:"hidden"}}>
@@ -369,6 +431,7 @@ export default function App() {
                 <button key={key} onClick={() => setAdminTab(key)} style={{flex:1, padding:"10px", borderRadius:"8px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"13px", background: adminTab===key?color:"transparent", color: adminTab===key?"#fff":COLORS.muted}}>{label}</button>
               ))}
             </div>
+
             {adminTab==="pending" && (
               <div>
                 {pendingBookings.length===0 ? (
@@ -397,6 +460,7 @@ export default function App() {
                 })}
               </div>
             )}
+
             {adminTab==="stadiums" && (
               <div>
                 {stadiums.length===0 ? (
@@ -420,6 +484,7 @@ export default function App() {
                 })}
               </div>
             )}
+
             {adminTab==="stats" && (
               <div>
                 <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:"16px", marginBottom:"24px"}}>
@@ -456,6 +521,7 @@ export default function App() {
                 </div>
               </div>
             )}
+
             {adminTab==="add" && (
               <div>
                 <div style={{background:COLORS.card, borderRadius:"20px", border:`1px solid ${COLORS.border}`, padding:"28px", marginBottom:"24px"}}>
@@ -483,6 +549,14 @@ export default function App() {
                   <input style={inp} type="number" placeholder="1000" value={newPrice} onChange={e => setNewPrice(e.target.value)}/>
                   <label style={lbl}>رقم هاتف صاحب الملعب</label>
                   <input style={inp} placeholder="8 أرقام" maxLength={8} value={newOwnerPhone} onChange={e => { const val = e.target.value.replace(/\D/g,""); setNewOwnerPhone(val); }}/>
+                  <div style={{fontWeight:"700", color:COLORS.accent, margin:"16px 0 12px"}}>ساعات العمل</div>
+                  <div style={{display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:"8px", marginBottom:"16px"}}>
+                    {ALL_HOURS.map(h => (
+                      <button key={h} onClick={() => toggleHour(h, false)} style={{padding:"8px 4px", borderRadius:"8px", border: newWorkingHours.includes(h)?`2px solid ${COLORS.accent}`:`2px solid ${COLORS.border}`, background: newWorkingHours.includes(h)?`${COLORS.accent}22`:COLORS.bg, color: newWorkingHours.includes(h)?COLORS.accent:COLORS.muted, cursor:"pointer", fontSize:"12px", fontWeight:"600", fontFamily:"inherit"}}>
+                        {h}:00
+                      </button>
+                    ))}
+                  </div>
                   <div style={{fontWeight:"700", color:COLORS.accent2, margin:"16px 0 12px"}}>ارقام الحسابات البنكية</div>
                   {PAYMENT_APPS.map(p => (
                     <div key={p.id}>
@@ -496,7 +570,57 @@ export default function App() {
             )}
           </>
         )}
-      </div>{confirmedBooking && (
+      </div>{/* ✅ نافذة حجوزاتي */}
+      {showMyBookings && (
+        <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setShowMyBookings(false)}>
+          <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"520px", maxHeight:"90vh", overflow:"auto", padding:"32px"}}>
+            <div style={{fontSize:"20px", fontWeight:"800", marginBottom:"24px"}}>📋 حجوزاتي</div>
+            {myBookings.length===0 ? (
+              <div style={{textAlign:"center", padding:"40px", color:COLORS.muted}}>لا توجد حجوزات</div>
+            ) : myBookings.slice().reverse().map((b,i) => {
+              const statusColor = b.status==="confirmed"?COLORS.accent:b.status==="rejected"?"#FF4444":"#FF6D00";
+              const statusText = b.status==="confirmed"?"✅ مقبول":b.status==="rejected"?"❌ مرفوض":"⏳ معلق";
+              return (
+                <div key={i} style={{background:COLORS.bg, borderRadius:"12px", padding:"16px", marginBottom:"12px", border:`1px solid ${statusColor}33`}}>
+                  <div style={{display:"flex", justifyContent:"space-between", marginBottom:"8px"}}>
+                    <div style={{fontWeight:"700"}}>{b.stadium_name}</div>
+                    <div style={{background:`${statusColor}22`, color:statusColor, padding:"4px 10px", borderRadius:"20px", fontSize:"12px", fontWeight:"700"}}>{statusText}</div>
+                  </div>
+                  <div style={{color:COLORS.muted, fontSize:"13px"}}>📅 {b.date} - الساعة {b.hour}:00</div>
+                  {b.status==="confirmed" && b.code && (
+                    <div style={{marginTop:"8px", background:`${COLORS.accent}22`, borderRadius:"8px", padding:"8px 12px"}}>
+                      <div style={{color:COLORS.muted, fontSize:"11px"}}>الكود</div>
+                      <div style={{color:COLORS.accent, fontWeight:"800", fontSize:"18px", letterSpacing:"2px"}}>{b.code}</div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            <button onClick={() => setShowMyBookings(false)} style={{width:"100%", padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", marginTop:"8px"}}>اغلاق</button>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ نافذة WhatsApp الرفض */}
+      {rejectedBooking && (
+        <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}}>
+          <div style={{background:COLORS.card, borderRadius:"24px", border:"1px solid #FF444444", width:"100%", maxWidth:"400px", padding:"32px", textAlign:"center"}}>
+            <div style={{fontSize:"48px", marginBottom:"16px"}}>❌</div>
+            <div style={{fontSize:"18px", fontWeight:"800", marginBottom:"8px", color:"#FF4444"}}>تم الرفض</div>
+            <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"24px"}}>أرسل إشعار للزبون</div>
+            <button onClick={() => {
+              const msg = `مرحبا ${rejectedBooking.client_name} 👋\nنأسف، لقد تم رفض طلب حجزكم في ${rejectedBooking.stadium_name}\nالساعة ${rejectedBooking.hour}:00 بتاريخ ${rejectedBooking.date}\nيرجى التواصل معنا لمزيد من المعلومات.`;
+              window.open(`https://wa.me/222${rejectedBooking.client_phone}?text=${encodeURIComponent(msg)}`, "_blank");
+            }} style={{width:"100%", padding:"12px", background:"#25D36622", color:"#25D366", border:"1px solid #25D36644", borderRadius:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"14px", marginBottom:"12px"}}>
+              📱 إرسال إشعار للزبون
+            </button>
+            <button onClick={() => setRejectedBooking(null)} style={{width:"100%", padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>اغلاق</button>
+          </div>
+        </div>
+      )}
+
+      {/* نافذة WhatsApp التأكيد */}
+      {confirmedBooking && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}}>
           <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"400px", padding:"32px", textAlign:"center"}}>
             <div style={{fontSize:"48px", marginBottom:"16px"}}>✅</div>
@@ -524,6 +648,7 @@ export default function App() {
         </div>
       )}
 
+      {/* نافذة تعديل الملعب */}
       {editStadium && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setEditStadium(null)}>
           <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"520px", maxHeight:"90vh", overflow:"auto", padding:"32px"}}>
@@ -540,6 +665,14 @@ export default function App() {
             <input style={inp} type="number" value={editPrice} onChange={e => setEditPrice(e.target.value)}/>
             <label style={lbl}>رقم هاتف صاحب الملعب</label>
             <input style={inp} placeholder="8 أرقام" maxLength={8} value={editOwnerPhone} onChange={e => { const val = e.target.value.replace(/\D/g,""); setEditOwnerPhone(val); }}/>
+            <div style={{fontWeight:"700", color:COLORS.accent, margin:"16px 0 12px"}}>ساعات العمل</div>
+            <div style={{display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:"8px", marginBottom:"16px"}}>
+              {ALL_HOURS.map(h => (
+                <button key={h} onClick={() => toggleHour(h, true)} style={{padding:"8px 4px", borderRadius:"8px", border: editWorkingHours.includes(h)?`2px solid ${COLORS.accent}`:`2px solid ${COLORS.border}`, background: editWorkingHours.includes(h)?`${COLORS.accent}22`:COLORS.bg, color: editWorkingHours.includes(h)?COLORS.accent:COLORS.muted, cursor:"pointer", fontSize:"12px", fontWeight:"600", fontFamily:"inherit"}}>
+                  {h}:00
+                </button>
+              ))}
+            </div>
             <div style={{fontWeight:"700", color:COLORS.accent2, margin:"16px 0 12px"}}>ارقام الحسابات البنكية</div>
             {PAYMENT_APPS.map(p => (
               <div key={p.id}>
@@ -555,6 +688,7 @@ export default function App() {
         </div>
       )}
 
+      {/* نافذة الملف الشخصي */}
       {showProfile && user && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setShowProfile(false)}>
           <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"400px", padding:"32px"}}>
@@ -577,15 +711,17 @@ export default function App() {
                 </button>
               </div>
             </div>
-            <div style={{background:COLORS.bg, borderRadius:"12px", padding:"16px", marginBottom:"24px"}}>
+            <div style={{background:COLORS.bg, borderRadius:"12px", padding:"16px", marginBottom:"12px"}}>
               <div style={{color:COLORS.muted, fontSize:"12px", marginBottom:"4px"}}>الحجوزات المقبولة</div>
               <div style={{fontWeight:"800", fontSize:"32px", color:COLORS.accent}}>✅ {myConfirmedBookings.length}</div>
             </div>
+            <button onClick={() => { setShowProfile(false); setShowMyBookings(true); }} style={{width:"100%", padding:"12px", background:"#7C4DFF22", border:"1px solid #7C4DFF44", borderRadius:"12px", color:"#7C4DFF", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", marginBottom:"12px"}}>📋 عرض جميع حجوزاتي</button>
             <button onClick={() => setShowProfile(false)} style={{width:"100%", padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>اغلاق</button>
           </div>
         </div>
       )}
 
+      {/* نافذة الحجز */}
       {selected && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && closeModal()}>
           <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"520px", maxHeight:"90vh", overflow:"auto", padding:"32px"}}>
@@ -597,7 +733,7 @@ export default function App() {
                 <input type="date" style={inp} value={bookDate} min={today} onChange={e => { setBookDate(e.target.value); setBookHour(null); }}/>
                 <label style={lbl}>اختر الساعة</label>
                 <div style={{display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:"8px", marginBottom:"20px"}}>
-                  {HOURS.map(h => {
+                  {stadiumHours.map(h => {
                     const taken = isBooked(selected.id, bookDate, h);
                     const s = bookHour===h;
                     return (
