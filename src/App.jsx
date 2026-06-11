@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "./supabase";
 import { translations } from "./translations";
+import bcrypt from "bcryptjs";
 
 const PAYMENT_APPS = [
   { id: "bankily", name: "Bankily", color: "#00A651" },
@@ -87,11 +88,31 @@ export default function App() {
   const [editWorkingHours, setEditWorkingHours] = useState([...ALL_HOURS]);
   const [confirmedBooking, setConfirmedBooking] = useState(null);
   const [rejectedBooking, setRejectedBooking] = useState(null);
+  const [showLangMenu, setShowLangMenu] = useState(false);
 
   const changeLang = (l) => {
     setLang(l);
     localStorage.setItem("malaabi_lang", l);
   };
+
+  const langLabel = lang === "ar" ? "🌐 ع" : lang === "fr" ? "🌐 FR" : "🌐 EN";
+
+  const LangButton = () => (
+    <div style={{position:"relative"}}>
+      <button onClick={() => setShowLangMenu(!showLangMenu)} style={{padding:"6px 12px", borderRadius:"8px", border:`1px solid ${COLORS.border}`, cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"12px", background:COLORS.card, color:COLORS.accent}}>
+        {langLabel}
+      </button>
+      {showLangMenu && (
+        <div style={{position:"absolute", top:"110%", left:0, background:COLORS.card, border:`1px solid ${COLORS.border}`, borderRadius:"10px", overflow:"hidden", zIndex:200, minWidth:"80px"}}>
+          {[["ar","🇲🇷 ع"],["fr","🇫🇷 FR"],["en","🏴 EN"]].map(([l, label]) => (
+            <button key={l} onClick={() => { changeLang(l); setShowLangMenu(false); }} style={{display:"block", width:"100%", padding:"8px 16px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"12px", background: lang===l?`${COLORS.accent}22`:COLORS.card, color: lang===l?COLORS.accent:COLORS.muted, textAlign:"right"}}>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
   useEffect(() => {
     const saved = localStorage.getItem("malaabi_user");
@@ -119,26 +140,28 @@ export default function App() {
     setTimeout(() => setToast(null), 4000);
   };
 
+  // ✅ تسجيل الدخول مع تشفير
   const handleLogin = async () => {
     if (!loginPhone || !loginPass) return showToast(t.enterAll, "#FF4444");
     if (loginPhone.length !== 8) return showToast(t.phone8, "#FF4444");
     if (loginPass.length !== 4) return showToast(t.pass4, "#FF4444");
-    const { data } = await supabase.from("users").select("*").eq("phone", loginPhone).eq("password", loginPass).single();
-    if (data) {
-      setUser(data);
-      localStorage.setItem("malaabi_user", JSON.stringify(data));
-      setScreen("app");
-      showToast(t.welcome + " " + data.name);
-    } else {
-      showToast(t.wrongCredentials, "#FF4444");
+    const { data } = await supabase.from("users").select("*").eq("phone", loginPhone).single();
+    if (!data || !(await bcrypt.compare(loginPass, data.password))) {
+      return showToast(t.wrongCredentials, "#FF4444");
     }
+    setUser(data);
+    localStorage.setItem("malaabi_user", JSON.stringify(data));
+    setScreen("app");
+    showToast(t.welcome + " " + data.name);
   };
 
+  // ✅ إنشاء حساب مع تشفير
   const handleRegister = async () => {
     if (!regName || !regPhone || !regPass) return showToast(t.enterAll, "#FF4444");
     if (regPhone.length !== 8) return showToast(t.phone8, "#FF4444");
     if (regPass.length !== 4) return showToast(t.pass4, "#FF4444");
-    const { data, error } = await supabase.from("users").insert({ name: regName, phone: regPhone, password: regPass }).select().single();
+    const hashedPassword = await bcrypt.hash(regPass, 10);
+    const { data, error } = await supabase.from("users").insert({ name: regName, phone: regPhone, password: hashedPassword }).select().single();
     if (error) {
       showToast(t.phoneExists, "#FF4444");
     } else {
@@ -301,28 +324,7 @@ export default function App() {
 
   const inp = { width:"100%", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"10px", padding:"12px 16px", color:"#fff", fontSize:"15px", fontFamily:"inherit", marginBottom:"16px", boxSizing:"border-box", outline:"none" };
   const lbl = { color:COLORS.muted, fontSize:"13px", marginBottom:"6px", display:"block" };
-  const sel = { width:"100%", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"10px", padding:"12px 16px", color:"#fff", fontSize:"15px", fontFamily:"inherit", marginBottom:"16px", boxSizing:"border-box", outline:"none" };
-
-  // ✅ زر تغيير اللغة
-  const [showLangMenu, setShowLangMenu] = useState(false);
-  const langLabel = lang === "ar" ? "🌐 ع" : lang === "fr" ? "🌐 FR" : "🌐 EN";
-  const LangButton = () => (
-    <div style={{position:"relative"}}>
-      <button onClick={() => setShowLangMenu(!showLangMenu)} style={{padding:"6px 12px", borderRadius:"8px", border:`1px solid ${COLORS.border}`, cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"12px", background:COLORS.card, color:COLORS.accent}}>
-        {langLabel}
-      </button>
-      {showLangMenu && (
-        <div style={{position:"absolute", top:"110%", left:0, background:COLORS.card, border:`1px solid ${COLORS.border}`, borderRadius:"10px", overflow:"hidden", zIndex:200, minWidth:"80px"}}>
-          {[["ar","🇲 ع"],["fr","🇫🇷 FR"],["en","🏴 EN"]].map(([l, label]) => (
-            <button key={l} onClick={() => { changeLang(l); setShowLangMenu(false); }} style={{display:"block", width:"100%", padding:"8px 16px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"12px", background: lang===l?`${COLORS.accent}22`:COLORS.card, color: lang===l?COLORS.accent:COLORS.muted, textAlign:"right"}}>
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-  if (screen === "login" || screen === "register") {
+  const sel = { width:"100%", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"10px", padding:"12px 16px", color:"#fff", fontSize:"15px", fontFamily:"inherit", marginBottom:"16px", boxSizing:"border-box", outline:"none" };if (screen === "login" || screen === "register") {
     const isReg = screen === "register";
     return (
       <div style={{minHeight:"100vh", background:COLORS.bg, fontFamily:"Tajawal,sans-serif", direction:isRTL?"rtl":"ltr", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", padding:"24px"}}>
@@ -731,17 +733,6 @@ export default function App() {
             <div style={{background:COLORS.bg, borderRadius:"12px", padding:"16px", marginBottom:"12px"}}>
               <div style={{color:COLORS.muted, fontSize:"12px", marginBottom:"4px"}}>{t.myPhone}</div>
               <div style={{fontWeight:"700", fontSize:"16px"}}>📞 {user.phone}</div>
-            </div>
-            <div style={{background:COLORS.bg, borderRadius:"12px", padding:"16px", marginBottom:"12px"}}>
-              <div style={{color:COLORS.muted, fontSize:"12px", marginBottom:"4px"}}>{t.myPassword}</div>
-              <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
-                <div style={{fontWeight:"700", fontSize:"16px", letterSpacing:"4px"}}>
-                  {showPass ? user.password : "••••"}
-                </div>
-                <button onClick={() => setShowPass(!showPass)} style={{background:"none", border:"none", cursor:"pointer", fontSize:"20px", padding:"4px"}}>
-                  {showPass ? "🙈" : "👁"}
-                </button>
-              </div>
             </div>
             <div style={{background:COLORS.bg, borderRadius:"12px", padding:"16px", marginBottom:"12px"}}>
               <div style={{color:COLORS.muted, fontSize:"12px", marginBottom:"4px"}}>{t.acceptedBookings}</div>
