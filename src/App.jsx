@@ -274,8 +274,13 @@ export default function App() {
   const myBookings = user ? bookings.filter(b => b.client_phone === user.phone) : [];
   const myConfirmedBookings = myBookings.filter(b => b.status === "confirmed");
 
+  // ✅ البحث المحسّن
   let filteredStadiums = filterWilaya === "الكل" ? stadiums : stadiums.filter(s => s.wilaya === filterWilaya);
-  if (searchText) filteredStadiums = filteredStadiums.filter(s => s.name.toLowerCase().includes(searchText.toLowerCase()));
+  if (searchText) filteredStadiums = filteredStadiums.filter(s =>
+    s.name.toLowerCase().includes(searchText.toLowerCase()) ||
+    s.hood.toLowerCase().includes(searchText.toLowerCase()) ||
+    s.wilaya.toLowerCase().includes(searchText.toLowerCase())
+  );
   if (sortBy === "price_asc") filteredStadiums = [...filteredStadiums].sort((a,b) => a.price - b.price);
   if (sortBy === "price_desc") filteredStadiums = [...filteredStadiums].sort((a,b) => b.price - a.price);
   if (sortBy === "popular") filteredStadiums = [...filteredStadiums].sort((a,b) => confirmedBookings.filter(x => x.stadium_id === b.id).length - confirmedBookings.filter(x => x.stadium_id === a.id).length);
@@ -358,7 +363,7 @@ export default function App() {
               <div style={{position:"absolute", bottom:"-40px", right:"-40px", width:"200px", height:"200px", background:"radial-gradient(circle, #00B0FF15, transparent)", borderRadius:"50%"}}></div>
               <div style={{fontSize:"36px", fontWeight:"800", marginBottom:"8px", background:"linear-gradient(135deg,#00E676,#00B0FF)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>احجز ملعبك 🏟</div>
               <div style={{color:COLORS.muted, fontSize:"16px", marginBottom:"20px"}}>اختر الولاية والملعب المناسب لك</div>
-              <input style={{...inp, marginBottom:"12px", background:"#ffffff11", border:`1px solid ${COLORS.border}`}} placeholder="🔍 ابحث عن ملعب..." value={searchText} onChange={e => setSearchText(e.target.value)}/>
+              <input style={{...inp, marginBottom:"12px", background:"#ffffff11", border:`1px solid ${COLORS.border}`}} placeholder="🔍 ابحث عن ملعب أو حي أو ولاية..." value={searchText} onChange={e => setSearchText(e.target.value)}/>
               <select style={{...sel, marginBottom:0, background:"#ffffff11"}} value={sortBy} onChange={e => setSortBy(e.target.value)}>
                 <option value="default">الترتيب الافتراضي</option>
                 <option value="price_asc">السعر: من الأقل</option>
@@ -391,7 +396,6 @@ export default function App() {
                   const imgUrl = STADIUM_IMAGES[idx % STADIUM_IMAGES.length];
                   return (
                     <div key={st.id} style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, overflow:"hidden", boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>
-                      {/* ✅ صورة الملعب */}
                       <div style={{position:"relative"}}>
                         <img src={imgUrl} alt={st.name} style={{width:"100%", height:"150px", objectFit:"cover", display:"block"}}/>
                         <div style={{position:"absolute", inset:0, background:`linear-gradient(to bottom, transparent 50%, ${COLORS.card} 100%)`}}></div>
@@ -570,8 +574,7 @@ export default function App() {
             )}
           </>
         )}
-      </div>{/* نافذة حجوزاتي */}
-      {showMyBookings && (
+      </div>{showMyBookings && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setShowMyBookings(false)}>
           <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"520px", maxHeight:"90vh", overflow:"auto", padding:"32px"}}>
             <div style={{fontSize:"20px", fontWeight:"800", marginBottom:"24px"}}>📋 حجوزاتي</div>
@@ -601,7 +604,6 @@ export default function App() {
         </div>
       )}
 
-      {/* نافذة WhatsApp الرفض */}
       {rejectedBooking && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}}>
           <div style={{background:COLORS.card, borderRadius:"24px", border:"1px solid #FF444444", width:"100%", maxWidth:"400px", padding:"32px", textAlign:"center"}}>
@@ -619,7 +621,6 @@ export default function App() {
         </div>
       )}
 
-      {/* نافذة WhatsApp التأكيد */}
       {confirmedBooking && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}}>
           <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"400px", padding:"32px", textAlign:"center"}}>
@@ -648,7 +649,6 @@ export default function App() {
         </div>
       )}
 
-      {/* نافذة تعديل الملعب */}
       {editStadium && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setEditStadium(null)}>
           <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"520px", maxHeight:"90vh", overflow:"auto", padding:"32px"}}>
@@ -688,7 +688,6 @@ export default function App() {
         </div>
       )}
 
-      {/* نافذة الملف الشخصي */}
       {showProfile && user && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setShowProfile(false)}>
           <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"400px", padding:"32px"}}>
@@ -721,7 +720,6 @@ export default function App() {
         </div>
       )}
 
-      {/* نافذة الحجز */}
       {selected && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && closeModal()}>
           <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"520px", maxHeight:"90vh", overflow:"auto", padding:"32px"}}>
