@@ -304,15 +304,25 @@ export default function App() {
   const sel = { width:"100%", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"10px", padding:"12px 16px", color:"#fff", fontSize:"15px", fontFamily:"inherit", marginBottom:"16px", boxSizing:"border-box", outline:"none" };
 
   // ✅ زر تغيير اللغة
+  const [showLangMenu, setShowLangMenu] = useState(false);
+  const langLabel = lang === "ar" ? "🌐 ع" : lang === "fr" ? "🌐 FR" : "🌐 EN";
   const LangButton = () => (
-    <div style={{display:"flex", gap:"4px"}}>
-      {["ar","fr","en"].map(l => (
-        <button key={l} onClick={() => changeLang(l)} style={{padding:"4px 8px", borderRadius:"6px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"11px", background: lang===l?COLORS.accent:COLORS.bg, color: lang===l?"#000":COLORS.muted}}>
-          {l === "ar" ? "ع" : l === "fr" ? "FR" : "EN"}
-        </button>
-      ))}
+    <div style={{position:"relative"}}>
+      <button onClick={() => setShowLangMenu(!showLangMenu)} style={{padding:"6px 12px", borderRadius:"8px", border:`1px solid ${COLORS.border}`, cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"12px", background:COLORS.card, color:COLORS.accent}}>
+        {langLabel}
+      </button>
+      {showLangMenu && (
+        <div style={{position:"absolute", top:"110%", left:0, background:COLORS.card, border:`1px solid ${COLORS.border}`, borderRadius:"10px", overflow:"hidden", zIndex:200, minWidth:"80px"}}>
+          {[["ar","🇲 ع"],["fr","🇫🇷 FR"],["en","🏴 EN"]].map(([l, label]) => (
+            <button key={l} onClick={() => { changeLang(l); setShowLangMenu(false); }} style={{display:"block", width:"100%", padding:"8px 16px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"12px", background: lang===l?`${COLORS.accent}22`:COLORS.card, color: lang===l?COLORS.accent:COLORS.muted, textAlign:"right"}}>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
-  );if (screen === "login" || screen === "register") {
+  );
+  if (screen === "login" || screen === "register") {
     const isReg = screen === "register";
     return (
       <div style={{minHeight:"100vh", background:COLORS.bg, fontFamily:"Tajawal,sans-serif", direction:isRTL?"rtl":"ltr", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", padding:"24px"}}>
