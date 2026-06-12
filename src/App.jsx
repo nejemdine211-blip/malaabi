@@ -34,12 +34,22 @@ const STADIUM_IMAGES = [
   "https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?w=400&h=200&fit=crop",
   "https://images.unsplash.com/photo-1551958219-acbc595b9b5c?w=400&h=200&fit=crop",
   "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=400&h=200&fit=crop",
+  "https://images.unsplash.com/photo-1521537634581-0dced2fee2ef?w=400&h=200&fit=crop",
+  "https://images.unsplash.com/photo-1459865264687-595d652de67e?w=400&h=200&fit=crop",
+  "https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=400&h=200&fit=crop",
+  "https://images.unsplash.com/photo-1518604666860-9ed391f76460?w=400&h=200&fit=crop",
 ];
+
+const getRandomImage = (id) => {
+  const index = id % STADIUM_IMAGES.length;
+  return STADIUM_IMAGES[index];
+};
 
 export default function App() {
   const [lang, setLang] = useState(() => localStorage.getItem("malaabi_lang") || "ar");
   const t = translations[lang];
   const isRTL = lang === "ar";
+  const [splash, setSplash] = useState(true);
 
   const [screen, setScreen] = useState("login");
   const [user, setUser] = useState(null);
@@ -115,10 +125,21 @@ export default function App() {
   );
 
   useEffect(() => {
+    setTimeout(() => setSplash(false), 2500);
     const saved = localStorage.getItem("malaabi_user");
     if (saved) { setUser(JSON.parse(saved)); setScreen("app"); }
     loadData();
   }, []);
+
+  if (splash) return (
+    <div style={{minHeight:"100vh", background:"#000", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Tajawal,sans-serif", flexDirection:"column"}}>
+      <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet"/>
+      <div style={{textAlign:"center"}}>
+        <div style={{fontSize:"56px", fontWeight:"800", color:"#fff", letterSpacing:"6px", marginBottom:"8px"}}>malaabi</div>
+        <div style={{color:COLORS.accent, fontSize:"14px"}}>احجز ملعبك بسهولة ⚽</div>
+      </div>
+    </div>
+  );
 
   const loadData = async () => {
     setLoading(true);
@@ -140,7 +161,6 @@ export default function App() {
     setTimeout(() => setToast(null), 4000);
   };
 
-  // ✅ تسجيل الدخول مع تشفير
   const handleLogin = async () => {
     if (!loginPhone || !loginPass) return showToast(t.enterAll, "#FF4444");
     if (loginPhone.length !== 8) return showToast(t.phone8, "#FF4444");
@@ -155,7 +175,6 @@ export default function App() {
     showToast(t.welcome + " " + data.name);
   };
 
-  // ✅ إنشاء حساب مع تشفير
   const handleRegister = async () => {
     if (!regName || !regPhone || !regPass) return showToast(t.enterAll, "#FF4444");
     if (regPhone.length !== 8) return showToast(t.phone8, "#FF4444");
@@ -329,10 +348,11 @@ export default function App() {
     return (
       <div style={{minHeight:"100vh", background:COLORS.bg, fontFamily:"Tajawal,sans-serif", direction:isRTL?"rtl":"ltr", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", padding:"24px"}}>
         <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet"/>
+        {/* ✅ زر اللغة في الزاوية العلوية */}
+        <div style={{position:"fixed", top:"16px", left:"16px", zIndex:999}}>
+          <LangButton/>
+        </div>
         <div style={{width:"100%", maxWidth:"400px"}}>
-          <div style={{textAlign:"center", marginBottom:"20px"}}>
-            <LangButton/>
-          </div>
           <div style={{textAlign:"center", marginBottom:"40px"}}>
             <div style={{fontSize:"64px", marginBottom:"8px", filter:"drop-shadow(0 0 20px #00E676)"}}>⚽</div>
             <div style={{fontSize:"32px", fontWeight:"800", background:"linear-gradient(135deg, #00E676, #00B0FF)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>{t.appName}</div>
@@ -375,31 +395,29 @@ export default function App() {
   return (
     <div style={{minHeight:"100vh", background:COLORS.bg, fontFamily:"Tajawal,sans-serif", direction:isRTL?"rtl":"ltr", color:"#fff", touchAction:"pan-x pan-y"}}>
       <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet"/>
-      <div style={{background:COLORS.card, borderBottom:`1px solid ${COLORS.border}`, padding:"16px 24px", display:"flex", justifyContent:"space-between", alignItems:"center", position:"sticky", top:0, zIndex:50, backdropFilter:"blur(10px)"}}>
-        <div onClick={handleLogoClick} style={{fontSize:"22px", fontWeight:"800", background:"linear-gradient(135deg,#00E676,#00B0FF)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", cursor:"pointer", userSelect:"none"}}>⚽ {t.appName}</div>
-        <div style={{display:"flex", alignItems:"center", gap:"8px"}}>
+      <div style={{background:COLORS.card, borderBottom:`1px solid ${COLORS.border}`, padding:"12px 16px", display:"flex", justifyContent:"space-between", alignItems:"center", position:"sticky", top:0, zIndex:50, backdropFilter:"blur(10px)"}}>
+        <div onClick={handleLogoClick} style={{fontSize:"18px", fontWeight:"800", background:"linear-gradient(135deg,#00E676,#00B0FF)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", cursor:"pointer", userSelect:"none"}}>⚽ {t.appName}</div>
+        <div style={{display:"flex", alignItems:"center", gap:"6px"}}>
           <LangButton/>
           {user && (
-            <div onClick={() => setShowProfile(true)} style={{color:COLORS.accent, fontSize:"13px", cursor:"pointer", fontWeight:"700", background:"#00E67622", padding:"6px 14px", borderRadius:"8px", border:"1px solid #00E67644"}}>
+            <div onClick={() => setShowProfile(true)} style={{color:COLORS.accent, fontSize:"12px", cursor:"pointer", fontWeight:"700", background:"#00E67622", padding:"5px 10px", borderRadius:"8px", border:"1px solid #00E67644"}}>
               👤 {user.name}
             </div>
           )}
-          <button onClick={handleLogout} style={{padding:"6px 14px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"8px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>{t.logout}</button>
+          <button onClick={handleLogout} style={{padding:"5px 10px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"8px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{t.logout}</button>
           {tab === "admin" && (
-            <button onClick={() => setTab("client")} style={{padding:"6px 14px", background:"#FF444422", border:"none", borderRadius:"8px", color:"#FF4444", fontWeight:"600", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>{t.closeAdmin}</button>
+            <button onClick={() => setTab("client")} style={{padding:"5px 10px", background:"#FF444422", border:"none", borderRadius:"8px", color:"#FF4444", fontWeight:"600", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{t.closeAdmin}</button>
           )}
         </div>
       </div>
 
-      <div style={{maxWidth:"1100px", margin:"0 auto", padding:"32px 24px"}}>
+      <div style={{maxWidth:"1100px", margin:"0 auto", padding:"16px"}}>
         {tab==="client" && (
           <>
-            <div style={{background:`linear-gradient(135deg, ${COLORS.card}, #0a1628)`, borderRadius:"24px", padding:"40px 32px", marginBottom:"32px", border:`1px solid ${COLORS.border}`, position:"relative", overflow:"hidden"}}>
-              <div style={{position:"absolute", top:"-40px", left:"-40px", width:"200px", height:"200px", background:"radial-gradient(circle, #00E67615, transparent)", borderRadius:"50%"}}></div>
-              <div style={{position:"absolute", bottom:"-40px", right:"-40px", width:"200px", height:"200px", background:"radial-gradient(circle, #00B0FF15, transparent)", borderRadius:"50%"}}></div>
-              <div style={{fontSize:"36px", fontWeight:"800", marginBottom:"8px", background:"linear-gradient(135deg,#00E676,#00B0FF)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>{t.bookYourStadium}</div>
-              <div style={{color:COLORS.muted, fontSize:"16px", marginBottom:"20px"}}>{t.chooseStadium}</div>
-              <input style={{...inp, marginBottom:"12px", background:"#ffffff11", border:`1px solid ${COLORS.border}`}} placeholder={t.search} value={searchText} onChange={e => setSearchText(e.target.value)}/>
+            <div style={{background:`linear-gradient(135deg, ${COLORS.card}, #0a1628)`, borderRadius:"16px", padding:"20px 16px", marginBottom:"16px", border:`1px solid ${COLORS.border}`, position:"relative", overflow:"hidden"}}>
+              <div style={{fontSize:"22px", fontWeight:"800", marginBottom:"4px", background:"linear-gradient(135deg,#00E676,#00B0FF)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>{t.bookYourStadium}</div>
+              <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"12px"}}>{t.chooseStadium}</div>
+              <input style={{...inp, marginBottom:"8px", background:"#ffffff11", border:`1px solid ${COLORS.border}`}} placeholder={t.search} value={searchText} onChange={e => setSearchText(e.target.value)}/>
               <select style={{...sel, marginBottom:0, background:"#ffffff11"}} value={sortBy} onChange={e => setSortBy(e.target.value)}>
                 <option value="default">{t.sortDefault}</option>
                 <option value="price_asc">{t.sortPriceAsc}</option>
@@ -408,13 +426,13 @@ export default function App() {
               </select>
             </div>
 
-            <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"20px", flexWrap:"wrap", gap:"10px"}}>
-              <div style={{display:"flex", gap:"10px", flexWrap:"wrap"}}>
+            <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"16px", flexWrap:"wrap", gap:"8px"}}>
+              <div style={{display:"flex", gap:"8px", flexWrap:"wrap"}}>
                 {[t.all, ...wilayas].map((w, idx) => (
-                  <button key={w} onClick={() => setFilterWilaya(idx === 0 ? "الكل" : w)} style={{padding:"8px 20px", borderRadius:"20px", border:`1px solid ${(idx === 0 ? filterWilaya === "الكل" : filterWilaya === w) ? COLORS.accent : COLORS.border}`, cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"14px", background: (idx === 0 ? filterWilaya === "الكل" : filterWilaya === w)?"linear-gradient(135deg,#00E676,#00B0FF)":COLORS.card, color: (idx === 0 ? filterWilaya === "الكل" : filterWilaya === w)?"#000":COLORS.muted}}>{w}</button>
+                  <button key={w} onClick={() => setFilterWilaya(idx === 0 ? "الكل" : w)} style={{padding:"6px 14px", borderRadius:"20px", border:`1px solid ${(idx === 0 ? filterWilaya === "الكل" : filterWilaya === w) ? COLORS.accent : COLORS.border}`, cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"13px", background: (idx === 0 ? filterWilaya === "الكل" : filterWilaya === w)?"linear-gradient(135deg,#00E676,#00B0FF)":COLORS.card, color: (idx === 0 ? filterWilaya === "الكل" : filterWilaya === w)?"#000":COLORS.muted}}>{w}</button>
                 ))}
               </div>
-              <button onClick={() => setShowMyBookings(true)} style={{padding:"8px 20px", background:"#7C4DFF22", border:"1px solid #7C4DFF44", borderRadius:"20px", color:"#7C4DFF", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"14px", whiteSpace:"nowrap"}}>
+              <button onClick={() => setShowMyBookings(true)} style={{padding:"6px 14px", background:"#7C4DFF22", border:"1px solid #7C4DFF44", borderRadius:"20px", color:"#7C4DFF", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px", whiteSpace:"nowrap"}}>
                 📋 {t.myBookings} ({myBookings.length})
               </button>
             </div>
@@ -425,33 +443,33 @@ export default function App() {
                 <div>{t.noStadiums}</div>
               </div>
             ) : (
-              <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))", gap:"24px"}}>
-                {filteredStadiums.map((st, idx) => {
+              <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))", gap:"16px"}}>
+                {filteredStadiums.map((st) => {
                   const hours = st.working_hours || ALL_HOURS;
                   const free = hours.filter(h => !isBooked(st.id, today, h)).length;
-                  const imgUrl = STADIUM_IMAGES[idx % STADIUM_IMAGES.length];
+                  const imgUrl = getRandomImage(st.id);
                   return (
-                    <div key={st.id} style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, overflow:"hidden", boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>
+                    <div key={st.id} style={{background:COLORS.card, borderRadius:"20px", border:`1px solid ${COLORS.border}`, overflow:"hidden", boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>
                       <div style={{position:"relative"}}>
-                        <img src={imgUrl} alt={st.name} style={{width:"100%", height:"150px", objectFit:"cover", display:"block"}}/>
+                        <img src={imgUrl} alt={st.name} style={{width:"100%", height:"140px", objectFit:"cover", display:"block"}}/>
                         <div style={{position:"absolute", inset:0, background:`linear-gradient(to bottom, transparent 50%, ${COLORS.card} 100%)`}}></div>
-                        <div style={{position:"absolute", bottom:"12px", right:"16px", left:"16px"}}>
-                          <div style={{fontWeight:"800", fontSize:"20px", color:"#fff", textShadow:"0 2px 8px rgba(0,0,0,0.8)"}}>{st.name}</div>
-                          <div style={{color:"#ffffffaa", fontSize:"13px"}}>📍 {st.wilaya} — {st.hood}</div>
+                        <div style={{position:"absolute", bottom:"10px", right:"12px", left:"12px"}}>
+                          <div style={{fontWeight:"800", fontSize:"18px", color:"#fff", textShadow:"0 2px 8px rgba(0,0,0,0.8)"}}>{st.name}</div>
+                          <div style={{color:"#ffffffaa", fontSize:"12px"}}>📍 {st.wilaya} — {st.hood}</div>
                         </div>
                       </div>
-                      <div style={{padding:"16px 24px 20px"}}>
-                        <div style={{display:"flex", justifyContent:"space-between", marginBottom:"16px"}}>
-                          <div style={{background:`${st.color}22`, borderRadius:"12px", padding:"10px 16px", textAlign:"center"}}>
-                            <div style={{color:st.color, fontWeight:"800", fontSize:"18px"}}>{st.price}</div>
-                            <div style={{color:COLORS.muted, fontSize:"11px"}}>{t.pricePerHour}</div>
+                      <div style={{padding:"12px 16px 16px"}}>
+                        <div style={{display:"flex", justifyContent:"space-between", marginBottom:"12px"}}>
+                          <div style={{background:`${st.color}22`, borderRadius:"10px", padding:"8px 12px", textAlign:"center"}}>
+                            <div style={{color:st.color, fontWeight:"800", fontSize:"16px"}}>{st.price}</div>
+                            <div style={{color:COLORS.muted, fontSize:"10px"}}>{t.pricePerHour}</div>
                           </div>
-                          <div style={{background:"#00E67622", borderRadius:"12px", padding:"10px 16px", textAlign:"center"}}>
-                            <div style={{color:COLORS.accent, fontWeight:"800", fontSize:"18px"}}>{free}</div>
-                            <div style={{color:COLORS.muted, fontSize:"11px"}}>{t.hourAvailable}</div>
+                          <div style={{background:"#00E67622", borderRadius:"10px", padding:"8px 12px", textAlign:"center"}}>
+                            <div style={{color:COLORS.accent, fontWeight:"800", fontSize:"16px"}}>{free}</div>
+                            <div style={{color:COLORS.muted, fontSize:"10px"}}>{t.hourAvailable}</div>
                           </div>
                         </div>
-                        <button onClick={() => { setSelected(st); setStep(1); setBookDate(today); }} style={{width:"100%", padding:"13px", background:`linear-gradient(135deg, ${st.color}, ${st.color}BB)`, border:"none", borderRadius:"14px", fontWeight:"800", fontSize:"15px", cursor:"pointer", fontFamily:"inherit", color:"#000", boxShadow:`0 4px 15px ${st.color}44`}}>
+                        <button onClick={() => { setSelected(st); setStep(1); setBookDate(today); }} style={{width:"100%", padding:"11px", background:`linear-gradient(135deg, ${st.color}, ${st.color}BB)`, border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"14px", cursor:"pointer", fontFamily:"inherit", color:"#000", boxShadow:`0 4px 15px ${st.color}44`}}>
                           {t.bookNow}
                         </button>
                       </div>
@@ -465,10 +483,10 @@ export default function App() {
 
         {tab==="admin" && (
           <>
-            <div style={{fontSize:"28px", fontWeight:"800", marginBottom:"24px"}}>لوحة التحكم</div>
-            <div style={{display:"flex", gap:"8px", marginBottom:"24px", background:COLORS.card, borderRadius:"12px", padding:"4px"}}>
+            <div style={{fontSize:"24px", fontWeight:"800", marginBottom:"16px"}}>لوحة التحكم</div>
+            <div style={{display:"flex", gap:"6px", marginBottom:"16px", background:COLORS.card, borderRadius:"12px", padding:"4px"}}>
               {[["pending",t.requests,"#FF6D00"],["stadiums",t.stadiums,"#7C4DFF"],["stats",t.stats,COLORS.accent],["add",t.addStadium,COLORS.accent2]].map(([key,label,color]) => (
-                <button key={key} onClick={() => setAdminTab(key)} style={{flex:1, padding:"10px", borderRadius:"8px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"13px", background: adminTab===key?color:"transparent", color: adminTab===key?"#fff":COLORS.muted}}>{label}</button>
+                <button key={key} onClick={() => setAdminTab(key)} style={{flex:1, padding:"8px", borderRadius:"8px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"12px", background: adminTab===key?color:"transparent", color: adminTab===key?"#fff":COLORS.muted}}>{label}</button>
               ))}
             </div>
 
@@ -479,7 +497,7 @@ export default function App() {
                 ) : pendingBookings.map((b,i) => {
                   const pa = PAYMENT_APPS.find(p => p.id===b.pay_app);
                   return (
-                    <div key={i} style={{background:COLORS.card, borderRadius:"12px", padding:"16px 20px", marginBottom:"12px", borderRight:"4px solid #FF6D00", border:`1px solid ${COLORS.border}`}}>
+                    <div key={i} style={{background:COLORS.card, borderRadius:"12px", padding:"16px", marginBottom:"12px", borderRight:"4px solid #FF6D00", border:`1px solid ${COLORS.border}`}}>
                       <div style={{display:"flex", justifyContent:"space-between", marginBottom:"12px"}}>
                         <div>
                           <div style={{fontWeight:"700"}}>{b.client_name}</div>
@@ -508,7 +526,7 @@ export default function App() {
                 ) : stadiums.map(st => {
                   const stConfirmed = confirmedBookings.filter(b => b.stadium_id === st.id).length;
                   return (
-                    <div key={st.id} style={{background:COLORS.card, borderRadius:"12px", padding:"16px 20px", marginBottom:"10px", display:"flex", justifyContent:"space-between", alignItems:"center", borderRight:`4px solid ${st.color}`, border:`1px solid ${COLORS.border}`}}>
+                    <div key={st.id} style={{background:COLORS.card, borderRadius:"12px", padding:"16px", marginBottom:"10px", display:"flex", justifyContent:"space-between", alignItems:"center", borderRight:`4px solid ${st.color}`, border:`1px solid ${COLORS.border}`}}>
                       <div>
                         <div style={{fontWeight:"700"}}>{st.name}</div>
                         <div style={{color:COLORS.muted, fontSize:"13px"}}>📍 {st.wilaya} - {st.hood} - {st.price} {t.pricePerHour}</div>
@@ -516,8 +534,8 @@ export default function App() {
                         {st.owner_phone && <div style={{color:COLORS.muted, fontSize:"13px"}}>📞 {st.owner_phone}</div>}
                       </div>
                       <div style={{display:"flex", gap:"8px"}}>
-                        <button onClick={() => openEdit(st)} style={{padding:"8px 16px", background:"#00B0FF22", color:COLORS.accent2, border:`1px solid #00B0FF44`, borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>{t.edit}</button>
-                        <button onClick={() => setConfirmDelete(st)} style={{padding:"8px 16px", background:"#FF444422", color:"#FF4444", border:"1px solid #FF444444", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>{t.delete}</button>
+                        <button onClick={() => openEdit(st)} style={{padding:"8px 12px", background:"#00B0FF22", color:COLORS.accent2, border:`1px solid #00B0FF44`, borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{t.edit}</button>
+                        <button onClick={() => setConfirmDelete(st)} style={{padding:"8px 12px", background:"#FF444422", color:"#FF4444", border:"1px solid #FF444444", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{t.delete}</button>
                       </div>
                     </div>
                   );
@@ -527,22 +545,22 @@ export default function App() {
 
             {adminTab==="stats" && (
               <div>
-                <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:"16px", marginBottom:"24px"}}>
+                <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))", gap:"12px", marginBottom:"20px"}}>
                   {[
                     { label:t.totalUsers, value: usersCount, icon:"👥", color:COLORS.accent },
                     { label:t.totalStadiums, value: stadiums.length, icon:"🏟", color:COLORS.accent2 },
                     { label:t.totalConfirmed, value: confirmedBookings.length, icon:"✅", color:"#7C4DFF" },
                     { label:t.totalPending, value: pendingBookings.length, icon:"⏳", color:"#FF6D00" },
                   ].map((stat,i) => (
-                    <div key={i} style={{background:COLORS.card, borderRadius:"16px", padding:"20px", border:`1px solid ${stat.color}33`}}>
-                      <div style={{fontSize:"32px", marginBottom:"8px"}}>{stat.icon}</div>
-                      <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"4px"}}>{stat.label}</div>
-                      <div style={{fontSize:"32px", fontWeight:"800", color:stat.color}}>{stat.value}</div>
+                    <div key={i} style={{background:COLORS.card, borderRadius:"14px", padding:"16px", border:`1px solid ${stat.color}33`}}>
+                      <div style={{fontSize:"28px", marginBottom:"6px"}}>{stat.icon}</div>
+                      <div style={{color:COLORS.muted, fontSize:"12px", marginBottom:"4px"}}>{stat.label}</div>
+                      <div style={{fontSize:"28px", fontWeight:"800", color:stat.color}}>{stat.value}</div>
                     </div>
                   ))}
                 </div>
-                <div style={{background:COLORS.card, borderRadius:"16px", padding:"24px", border:`1px solid ${COLORS.border}`}}>
-                  <div style={{fontWeight:"700", marginBottom:"16px"}}>{t.confirmedBookingsPerStadium}</div>
+                <div style={{background:COLORS.card, borderRadius:"14px", padding:"20px", border:`1px solid ${COLORS.border}`}}>
+                  <div style={{fontWeight:"700", marginBottom:"14px"}}>{t.confirmedBookingsPerStadium}</div>
                   {stadiums.map(st => {
                     const count = confirmedBookings.filter(b => b.stadium_id === st.id).length;
                     const max = Math.max(...stadiums.map(s => confirmedBookings.filter(b => b.stadium_id === s.id).length), 1);
@@ -564,18 +582,18 @@ export default function App() {
 
             {adminTab==="add" && (
               <div>
-                <div style={{background:COLORS.card, borderRadius:"20px", border:`1px solid ${COLORS.border}`, padding:"28px", marginBottom:"24px"}}>
-                  <div style={{fontWeight:"700", color:COLORS.accent2, marginBottom:"20px"}}>{t.addWilaya}</div>
+                <div style={{background:COLORS.card, borderRadius:"16px", border:`1px solid ${COLORS.border}`, padding:"20px", marginBottom:"16px"}}>
+                  <div style={{fontWeight:"700", color:COLORS.accent2, marginBottom:"16px"}}>{t.addWilaya}</div>
                   <div style={{display:"flex", gap:"12px"}}>
                     <input style={{...inp, marginBottom:0, flex:1}} placeholder={t.wilaya} value={newWilaya} onChange={e => setNewWilaya(e.target.value)}/>
-                    <button onClick={handleAddWilaya} style={{padding:"10px 20px", background:COLORS.accent2, border:"none", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap", color:"#000"}}>{t.add}</button>
+                    <button onClick={handleAddWilaya} style={{padding:"10px 16px", background:COLORS.accent2, border:"none", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap", color:"#000"}}>{t.add}</button>
                   </div>
-                  <div style={{display:"flex", gap:"8px", flexWrap:"wrap", marginTop:"16px"}}>
-                    {wilayas.map(w => <div key={w} style={{background:"#00B0FF22", color:COLORS.accent2, padding:"4px 14px", borderRadius:"20px", fontSize:"13px", fontWeight:"700"}}>{w}</div>)}
+                  <div style={{display:"flex", gap:"8px", flexWrap:"wrap", marginTop:"12px"}}>
+                    {wilayas.map(w => <div key={w} style={{background:"#00B0FF22", color:COLORS.accent2, padding:"4px 12px", borderRadius:"20px", fontSize:"12px", fontWeight:"700"}}>{w}</div>)}
                   </div>
                 </div>
-                <div style={{background:COLORS.card, borderRadius:"20px", border:`1px solid ${COLORS.border}`, padding:"28px"}}>
-                  <div style={{fontWeight:"700", color:COLORS.accent, marginBottom:"20px"}}>{t.addNewStadium}</div>
+                <div style={{background:COLORS.card, borderRadius:"16px", border:`1px solid ${COLORS.border}`, padding:"20px"}}>
+                  <div style={{fontWeight:"700", color:COLORS.accent, marginBottom:"16px"}}>{t.addNewStadium}</div>
                   <label style={lbl}>{t.stadiumName}</label>
                   <input style={inp} placeholder={t.stadiumName} value={newName} onChange={e => setNewName(e.target.value)}/>
                   <label style={lbl}>{t.wilaya}</label>
@@ -589,22 +607,22 @@ export default function App() {
                   <input style={inp} type="number" placeholder="1000" value={newPrice} onChange={e => setNewPrice(e.target.value)}/>
                   <label style={lbl}>{t.ownerPhone}</label>
                   <input style={inp} placeholder="8" maxLength={8} value={newOwnerPhone} onChange={e => { const val = e.target.value.replace(/\D/g,""); setNewOwnerPhone(val); }}/>
-                  <div style={{fontWeight:"700", color:COLORS.accent, margin:"16px 0 12px"}}>{t.workingHours}</div>
-                  <div style={{display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:"8px", marginBottom:"16px"}}>
+                  <div style={{fontWeight:"700", color:COLORS.accent, margin:"12px 0 10px"}}>{t.workingHours}</div>
+                  <div style={{display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:"6px", marginBottom:"14px"}}>
                     {ALL_HOURS.map(h => (
-                      <button key={h} onClick={() => toggleHour(h, false)} style={{padding:"8px 4px", borderRadius:"8px", border: newWorkingHours.includes(h)?`2px solid ${COLORS.accent}`:`2px solid ${COLORS.border}`, background: newWorkingHours.includes(h)?`${COLORS.accent}22`:COLORS.bg, color: newWorkingHours.includes(h)?COLORS.accent:COLORS.muted, cursor:"pointer", fontSize:"12px", fontWeight:"600", fontFamily:"inherit"}}>
+                      <button key={h} onClick={() => toggleHour(h, false)} style={{padding:"6px 4px", borderRadius:"8px", border: newWorkingHours.includes(h)?`2px solid ${COLORS.accent}`:`2px solid ${COLORS.border}`, background: newWorkingHours.includes(h)?`${COLORS.accent}22`:COLORS.bg, color: newWorkingHours.includes(h)?COLORS.accent:COLORS.muted, cursor:"pointer", fontSize:"11px", fontWeight:"600", fontFamily:"inherit"}}>
                         {h}:00
                       </button>
                     ))}
                   </div>
-                  <div style={{fontWeight:"700", color:COLORS.accent2, margin:"16px 0 12px"}}>{t.bankAccounts}</div>
+                  <div style={{fontWeight:"700", color:COLORS.accent2, margin:"12px 0 10px"}}>{t.bankAccounts}</div>
                   {PAYMENT_APPS.map(p => (
                     <div key={p.id}>
                       <label style={lbl}>{p.name}</label>
                       <input style={inp} placeholder={p.name} value={newPayments[p.id]||""} onChange={e => setNewPayments(prev => ({...prev, [p.id]: e.target.value}))}/>
                     </div>
                   ))}
-                  <button onClick={handleAdd} style={{padding:"12px 24px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"15px", color:"#000"}}>{t.addStadiumBtn}</button>
+                  <button onClick={handleAdd} style={{padding:"12px 24px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"14px", color:"#000"}}>{t.addStadiumBtn}</button>
                 </div>
               </div>
             )}
@@ -612,16 +630,16 @@ export default function App() {
         )}
       </div>{showMyBookings && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setShowMyBookings(false)}>
-          <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"520px", maxHeight:"90vh", overflow:"auto", padding:"32px"}}>
-            <div style={{fontSize:"20px", fontWeight:"800", marginBottom:"24px"}}>📋 {t.myBookingsTitle}</div>
+          <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"520px", maxHeight:"90vh", overflow:"auto", padding:"24px"}}>
+            <div style={{fontSize:"20px", fontWeight:"800", marginBottom:"20px"}}>📋 {t.myBookingsTitle}</div>
             {myBookings.length===0 ? (
               <div style={{textAlign:"center", padding:"40px", color:COLORS.muted}}>{t.noBookings}</div>
             ) : myBookings.slice().reverse().map((b,i) => {
               const statusColor = b.status==="confirmed"?COLORS.accent:b.status==="rejected"?"#FF4444":"#FF6D00";
               const statusText = b.status==="confirmed"?t.accepted:b.status==="rejected"?t.rejected:t.pending;
               return (
-                <div key={i} style={{background:COLORS.bg, borderRadius:"12px", padding:"16px", marginBottom:"12px", border:`1px solid ${statusColor}33`}}>
-                  <div style={{display:"flex", justifyContent:"space-between", marginBottom:"8px"}}>
+                <div key={i} style={{background:COLORS.bg, borderRadius:"12px", padding:"14px", marginBottom:"10px", border:`1px solid ${statusColor}33`}}>
+                  <div style={{display:"flex", justifyContent:"space-between", marginBottom:"6px"}}>
                     <div style={{fontWeight:"700"}}>{b.stadium_name}</div>
                     <div style={{background:`${statusColor}22`, color:statusColor, padding:"4px 10px", borderRadius:"20px", fontSize:"12px", fontWeight:"700"}}>{statusText}</div>
                   </div>
@@ -642,14 +660,14 @@ export default function App() {
 
       {rejectedBooking && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}}>
-          <div style={{background:COLORS.card, borderRadius:"24px", border:"1px solid #FF444444", width:"100%", maxWidth:"400px", padding:"32px", textAlign:"center"}}>
-            <div style={{fontSize:"48px", marginBottom:"16px"}}>❌</div>
+          <div style={{background:COLORS.card, borderRadius:"24px", border:"1px solid #FF444444", width:"100%", maxWidth:"400px", padding:"28px", textAlign:"center"}}>
+            <div style={{fontSize:"48px", marginBottom:"12px"}}>❌</div>
             <div style={{fontSize:"18px", fontWeight:"800", marginBottom:"8px", color:"#FF4444"}}>{t.rejectedTitle}</div>
-            <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"24px"}}>{t.sendRejectNotif}</div>
+            <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"20px"}}>{t.sendRejectNotif}</div>
             <button onClick={() => {
               const msg = `مرحبا ${rejectedBooking.client_name} 👋\nنأسف، لقد تم رفض طلب حجزكم في ${rejectedBooking.stadium_name}\nالساعة ${rejectedBooking.hour}:00 بتاريخ ${rejectedBooking.date}`;
               window.open(`https://wa.me/222${rejectedBooking.client_phone}?text=${encodeURIComponent(msg)}`, "_blank");
-            }} style={{width:"100%", padding:"12px", background:"#25D36622", color:"#25D366", border:"1px solid #25D36644", borderRadius:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"14px", marginBottom:"12px"}}>
+            }} style={{width:"100%", padding:"12px", background:"#25D36622", color:"#25D366", border:"1px solid #25D36644", borderRadius:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"14px", marginBottom:"10px"}}>
               📱 {t.sendNotification}
             </button>
             <button onClick={() => setRejectedBooking(null)} style={{width:"100%", padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>{t.close}</button>
@@ -659,11 +677,11 @@ export default function App() {
 
       {confirmedBooking && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}}>
-          <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"400px", padding:"32px", textAlign:"center"}}>
-            <div style={{fontSize:"48px", marginBottom:"16px"}}>✅</div>
+          <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"400px", padding:"28px", textAlign:"center"}}>
+            <div style={{fontSize:"48px", marginBottom:"12px"}}>✅</div>
             <div style={{fontSize:"18px", fontWeight:"800", marginBottom:"8px"}}>{t.confirmed}</div>
             <div style={{color:COLORS.muted, marginBottom:"8px"}}>{t.code}: <span style={{color:COLORS.accent, fontWeight:"800"}}>{confirmedBooking.code}</span></div>
-            <div style={{display:"flex", flexDirection:"column", gap:"12px", marginBottom:"16px"}}>
+            <div style={{display:"flex", flexDirection:"column", gap:"10px", marginBottom:"14px"}}>
               <button onClick={() => {
                 const msg = `مرحبا ${confirmedBooking.client_name} 👋\nلقد تم قبول حجزكم في ${confirmedBooking.stadium_name} ✅\nيرجى عدم التأخر عن الساعة ${confirmedBooking.hour}:00\nالكود: ${confirmedBooking.code}`;
                 window.open(`https://wa.me/222${confirmedBooking.client_phone}?text=${encodeURIComponent(msg)}`, "_blank");
@@ -686,8 +704,8 @@ export default function App() {
 
       {editStadium && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setEditStadium(null)}>
-          <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"520px", maxHeight:"90vh", overflow:"auto", padding:"32px"}}>
-            <div style={{fontSize:"20px", fontWeight:"800", color:COLORS.accent2, marginBottom:"24px"}}>✏️ {t.editStadium} {editStadium.name}</div>
+          <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"520px", maxHeight:"90vh", overflow:"auto", padding:"24px"}}>
+            <div style={{fontSize:"18px", fontWeight:"800", color:COLORS.accent2, marginBottom:"20px"}}>✏️ {t.editStadium} {editStadium.name}</div>
             <label style={lbl}>{t.stadiumName}</label>
             <input style={inp} value={editName} onChange={e => setEditName(e.target.value)}/>
             <label style={lbl}>{t.wilaya}</label>
@@ -700,15 +718,15 @@ export default function App() {
             <input style={inp} type="number" value={editPrice} onChange={e => setEditPrice(e.target.value)}/>
             <label style={lbl}>{t.ownerPhone}</label>
             <input style={inp} placeholder="8" maxLength={8} value={editOwnerPhone} onChange={e => { const val = e.target.value.replace(/\D/g,""); setEditOwnerPhone(val); }}/>
-            <div style={{fontWeight:"700", color:COLORS.accent, margin:"16px 0 12px"}}>{t.workingHours}</div>
-            <div style={{display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:"8px", marginBottom:"16px"}}>
+            <div style={{fontWeight:"700", color:COLORS.accent, margin:"12px 0 10px"}}>{t.workingHours}</div>
+            <div style={{display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:"6px", marginBottom:"14px"}}>
               {ALL_HOURS.map(h => (
-                <button key={h} onClick={() => toggleHour(h, true)} style={{padding:"8px 4px", borderRadius:"8px", border: editWorkingHours.includes(h)?`2px solid ${COLORS.accent}`:`2px solid ${COLORS.border}`, background: editWorkingHours.includes(h)?`${COLORS.accent}22`:COLORS.bg, color: editWorkingHours.includes(h)?COLORS.accent:COLORS.muted, cursor:"pointer", fontSize:"12px", fontWeight:"600", fontFamily:"inherit"}}>
+                <button key={h} onClick={() => toggleHour(h, true)} style={{padding:"6px 4px", borderRadius:"8px", border: editWorkingHours.includes(h)?`2px solid ${COLORS.accent}`:`2px solid ${COLORS.border}`, background: editWorkingHours.includes(h)?`${COLORS.accent}22`:COLORS.bg, color: editWorkingHours.includes(h)?COLORS.accent:COLORS.muted, cursor:"pointer", fontSize:"11px", fontWeight:"600", fontFamily:"inherit"}}>
                   {h}:00
                 </button>
               ))}
             </div>
-            <div style={{fontWeight:"700", color:COLORS.accent2, margin:"16px 0 12px"}}>{t.bankAccounts}</div>
+            <div style={{fontWeight:"700", color:COLORS.accent2, margin:"12px 0 10px"}}>{t.bankAccounts}</div>
             {PAYMENT_APPS.map(p => (
               <div key={p.id}>
                 <label style={lbl}>{p.name}</label>
@@ -725,41 +743,41 @@ export default function App() {
 
       {showProfile && user && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setShowProfile(false)}>
-          <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"400px", padding:"32px"}}>
-            <div style={{textAlign:"center", marginBottom:"24px"}}>
-              <div style={{fontSize:"56px", marginBottom:"8px"}}>👤</div>
-              <div style={{fontSize:"20px", fontWeight:"800", color:COLORS.accent}}>{user.name}</div>
+          <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"400px", padding:"28px"}}>
+            <div style={{textAlign:"center", marginBottom:"20px"}}>
+              <div style={{fontSize:"48px", marginBottom:"8px"}}>👤</div>
+              <div style={{fontSize:"18px", fontWeight:"800", color:COLORS.accent}}>{user.name}</div>
             </div>
-            <div style={{background:COLORS.bg, borderRadius:"12px", padding:"16px", marginBottom:"12px"}}>
+            <div style={{background:COLORS.bg, borderRadius:"12px", padding:"14px", marginBottom:"10px"}}>
               <div style={{color:COLORS.muted, fontSize:"12px", marginBottom:"4px"}}>{t.myPhone}</div>
-              <div style={{fontWeight:"700", fontSize:"16px"}}>📞 {user.phone}</div>
+              <div style={{fontWeight:"700", fontSize:"15px"}}>📞 {user.phone}</div>
             </div>
-            <div style={{background:COLORS.bg, borderRadius:"12px", padding:"16px", marginBottom:"12px"}}>
+            <div style={{background:COLORS.bg, borderRadius:"12px", padding:"14px", marginBottom:"10px"}}>
               <div style={{color:COLORS.muted, fontSize:"12px", marginBottom:"4px"}}>{t.acceptedBookings}</div>
-              <div style={{fontWeight:"800", fontSize:"32px", color:COLORS.accent}}>✅ {myConfirmedBookings.length}</div>
+              <div style={{fontWeight:"800", fontSize:"28px", color:COLORS.accent}}>✅ {myConfirmedBookings.length}</div>
             </div>
-            <button onClick={() => { setShowProfile(false); setShowMyBookings(true); }} style={{width:"100%", padding:"12px", background:"#7C4DFF22", border:"1px solid #7C4DFF44", borderRadius:"12px", color:"#7C4DFF", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", marginBottom:"12px"}}>{t.viewAllBookings}</button>
-            <button onClick={() => setShowProfile(false)} style={{width:"100%", padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>{t.close}</button>
+            <button onClick={() => { setShowProfile(false); setShowMyBookings(true); }} style={{width:"100%", padding:"11px", background:"#7C4DFF22", border:"1px solid #7C4DFF44", borderRadius:"12px", color:"#7C4DFF", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", marginBottom:"10px"}}>{t.viewAllBookings}</button>
+            <button onClick={() => setShowProfile(false)} style={{width:"100%", padding:"11px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>{t.close}</button>
           </div>
         </div>
       )}
 
       {selected && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && closeModal()}>
-          <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"520px", maxHeight:"90vh", overflow:"auto", padding:"32px"}}>
-            <div style={{fontSize:"20px", fontWeight:"800", color:selected.color, marginBottom:"4px"}}>🏟 {selected.name}</div>
-            <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"24px"}}>📍 {selected.wilaya} - {selected.hood} - {selected.price} {t.pricePerHour}</div>
+          <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"520px", maxHeight:"90vh", overflow:"auto", padding:"24px"}}>
+            <div style={{fontSize:"18px", fontWeight:"800", color:selected.color, marginBottom:"4px"}}>🏟 {selected.name}</div>
+            <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"20px"}}>📍 {selected.wilaya} - {selected.hood} - {selected.price} {t.pricePerHour}</div>
             {step===1 && (
               <>
                 <label style={lbl}>{t.date}</label>
                 <input type="date" style={inp} value={bookDate} min={today} onChange={e => { setBookDate(e.target.value); setBookHour(null); }}/>
                 <label style={lbl}>{t.chooseHour}</label>
-                <div style={{display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:"8px", marginBottom:"20px"}}>
+                <div style={{display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:"6px", marginBottom:"16px"}}>
                   {stadiumHours.map(h => {
                     const taken = isBooked(selected.id, bookDate, h);
                     const s = bookHour===h;
                     return (
-                      <button key={h} disabled={taken} onClick={() => !taken && setBookHour(h)} style={{padding:"10px 4px", borderRadius:"10px", border: s?`2px solid ${selected.color}`:"2px solid transparent", background: taken?COLORS.bg:s?`${selected.color}22`:COLORS.bg, color: taken?"#374151":s?selected.color:COLORS.muted, cursor:taken?"not-allowed":"pointer", fontSize:"12px", fontWeight:"600", fontFamily:"inherit"}}>
+                      <button key={h} disabled={taken} onClick={() => !taken && setBookHour(h)} style={{padding:"8px 4px", borderRadius:"10px", border: s?`2px solid ${selected.color}`:"2px solid transparent", background: taken?COLORS.bg:s?`${selected.color}22`:COLORS.bg, color: taken?"#374151":s?selected.color:COLORS.muted, cursor:taken?"not-allowed":"pointer", fontSize:"11px", fontWeight:"600", fontFamily:"inherit"}}>
                         {h}:00
                         {taken && <span style={{display:"block", fontSize:"9px", color:"#4b5563"}}>{t.booked}</span>}
                       </button>
@@ -774,19 +792,19 @@ export default function App() {
             )}
             {step===2 && (
               <>
-                <div style={{fontWeight:"700", marginBottom:"16px"}}>{t.choosePayment}</div>
-                <div style={{display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:"10px", marginBottom:"20px"}}>
+                <div style={{fontWeight:"700", marginBottom:"14px"}}>{t.choosePayment}</div>
+                <div style={{display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:"8px", marginBottom:"16px"}}>
                   {PAYMENT_APPS.map(p => {
                     if (!selected.payments?.[p.id]) return null;
                     return (
-                      <button key={p.id} onClick={() => setSelectedPayApp(p.id)} style={{padding:"14px", borderRadius:"12px", border: selectedPayApp===p.id?`2px solid ${p.color}`:`2px solid ${COLORS.border}`, background: selectedPayApp===p.id?`${p.color}22`:COLORS.bg, color: selectedPayApp===p.id?p.color:COLORS.muted, cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"14px"}}>{p.name}</button>
+                      <button key={p.id} onClick={() => setSelectedPayApp(p.id)} style={{padding:"12px", borderRadius:"12px", border: selectedPayApp===p.id?`2px solid ${p.color}`:`2px solid ${COLORS.border}`, background: selectedPayApp===p.id?`${p.color}22`:COLORS.bg, color: selectedPayApp===p.id?p.color:COLORS.muted, cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"13px"}}>{p.name}</button>
                     );
                   })}
                 </div>
                 {selectedPayApp && stadiumPayNum && (
-                  <div style={{background:COLORS.bg, borderRadius:"12px", padding:"16px", marginBottom:"20px"}}>
+                  <div style={{background:COLORS.bg, borderRadius:"12px", padding:"14px", marginBottom:"16px"}}>
                     <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"8px"}}>{t.sendAmount} <strong style={{color:"#fff"}}>{selected.price} {t.pricePerHour}</strong></div>
-                    <div style={{fontSize:"22px", fontWeight:"800", color:payApp?.color, letterSpacing:"2px"}}>{stadiumPayNum}</div>
+                    <div style={{fontSize:"20px", fontWeight:"800", color:payApp?.color, letterSpacing:"2px"}}>{stadiumPayNum}</div>
                     <div style={{color:COLORS.muted, fontSize:"12px", marginTop:"4px"}}>{t.via} {payApp?.name}</div>
                   </div>
                 )}
@@ -804,10 +822,10 @@ export default function App() {
 
       {confirmDelete && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}}>
-          <div style={{background:COLORS.card, borderRadius:"24px", border:"1px solid #FF444444", width:"100%", maxWidth:"400px", padding:"32px", textAlign:"center"}}>
-            <div style={{fontSize:"48px", marginBottom:"16px"}}>🗑</div>
-            <div style={{fontSize:"18px", fontWeight:"800", marginBottom:"8px"}}>{t.deleteStadium}</div>
-            <div style={{color:COLORS.muted, marginBottom:"24px"}}>{t.deleteConfirm} {confirmDelete.name}؟</div>
+          <div style={{background:COLORS.card, borderRadius:"24px", border:"1px solid #FF444444", width:"100%", maxWidth:"400px", padding:"28px", textAlign:"center"}}>
+            <div style={{fontSize:"40px", marginBottom:"12px"}}>🗑</div>
+            <div style={{fontSize:"16px", fontWeight:"800", marginBottom:"8px"}}>{t.deleteStadium}</div>
+            <div style={{color:COLORS.muted, marginBottom:"20px"}}>{t.deleteConfirm} {confirmDelete.name}؟</div>
             <div style={{display:"flex", gap:"12px"}}>
               <button onClick={() => setConfirmDelete(null)} style={{flex:1, padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>{t.cancel}</button>
               <button onClick={() => handleDelete(confirmDelete.id)} style={{flex:1, padding:"12px", background:"#FF4444", border:"none", borderRadius:"12px", color:"#fff", fontWeight:"700", cursor:"pointer", fontFamily:"inherit"}}>{t.delete}</button>
