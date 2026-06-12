@@ -124,23 +124,6 @@ export default function App() {
     </div>
   );
 
-  useEffect(() => {
-    setTimeout(() => setSplash(false), 2500);
-    const saved = localStorage.getItem("malaabi_user");
-    if (saved) { setUser(JSON.parse(saved)); setScreen("app"); }
-    loadData();
-  }, []);
-
-  if (splash) return (
-    <div style={{minHeight:"100vh", background:"#000", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Tajawal,sans-serif", flexDirection:"column"}}>
-      <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet"/>
-      <div style={{textAlign:"center"}}>
-        <div style={{fontSize:"56px", fontWeight:"800", color:"#fff", letterSpacing:"6px", marginBottom:"8px"}}>malaabi</div>
-        <div style={{color:COLORS.accent, fontSize:"14px"}}>احجز ملعبك بسهولة ⚽</div>
-      </div>
-    </div>
-  );
-
   const loadData = async () => {
     setLoading(true);
     const [w, s, b, u] = await Promise.all([
@@ -155,6 +138,22 @@ export default function App() {
     if (u.count !== null) setUsersCount(u.count);
     setLoading(false);
   };
+
+  useEffect(() => {
+    setTimeout(() => setSplash(false), 2500);
+    const saved = localStorage.getItem("malaabi_user");
+    if (saved) { setUser(JSON.parse(saved)); setScreen("app"); }
+    loadData();
+  }, []);
+
+  if (splash) return (
+    <div style={{minHeight:"100vh", background:"#111", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Arial,sans-serif"}}>
+      <div style={{textAlign:"center"}}>
+        <div style={{fontSize:"48px", fontWeight:"900", color:"#ffffff", letterSpacing:"6px", marginBottom:"8px"}}>malaabi</div>
+        <div style={{color:"#00E676", fontSize:"14px"}}>⚽ احجز ملعبك بسهولة</div>
+      </div>
+    </div>
+  );
 
   const showToast = (msg, color=COLORS.accent) => {
     setToast({msg, color});
