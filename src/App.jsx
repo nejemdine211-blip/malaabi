@@ -40,8 +40,10 @@ const STADIUM_IMAGES = [
   "https://images.unsplash.com/photo-1553778263-73a83bab9b0c?w=400&h=200&fit=crop",
 ];
 
+// ✅ صورة عشوائية حقيقية
 const getRandomImage = (id) => {
-  const index = id % STADIUM_IMAGES.length;
+  const str = String(id);
+  const index = str.charCodeAt(str.length - 1) % STADIUM_IMAGES.length;
   return STADIUM_IMAGES[index];
 };
 
@@ -114,7 +116,7 @@ export default function App() {
       </button>
       {showLangMenu && (
         <div style={{position:"absolute", top:"110%", left:0, background:COLORS.card, border:`1px solid ${COLORS.border}`, borderRadius:"10px", overflow:"hidden", zIndex:200, minWidth:"80px"}}>
-          {[["ar","🇲 ع"],["fr","🇫🇷 FR"],["en","🏴 EN"]].map(([l, label]) => (
+          {[["ar","🇲🇷 ع"],["fr","🇫🇷 FR"],["en","🏴 EN"]].map(([l, label]) => (
             <button key={l} onClick={() => { changeLang(l); setShowLangMenu(false); }} style={{display:"block", width:"100%", padding:"8px 16px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"12px", background: lang===l?`${COLORS.accent}22`:COLORS.card, color: lang===l?COLORS.accent:COLORS.muted, textAlign:"right"}}>
               {label}
             </button>
