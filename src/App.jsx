@@ -43,12 +43,19 @@ const STADIUM_IMAGES = [
 
 const getRandomImage = () => STADIUM_IMAGES[Math.floor(Math.random() * STADIUM_IMAGES.length)];
 
+const aboutText = {
+  ar: "ملاعبي هو أول تطبيق موريتاني متخصص في حجز ملاعب كرة القدم. نهدف إلى تسهيل عملية الحجز بين الزبائن وأصحاب الملاعب بطريقة سريعة وآمنة. يمكنك اختيار الملعب المناسب لك، تحديد الوقت، والدفع عبر تطبيقات الدفع المحلية مثل Bankily وMasrvi وSEDAD. نسعى دائماً لتطوير خدماتنا لتقديم أفضل تجربة ممكنة لمستخدمينا في جميع أنحاء موريتانيا.",
+  fr: "Malaabi est la première application mauritanienne spécialisée dans la réservation de terrains de football. Notre objectif est de faciliter le processus de réservation entre les clients et les propriétaires de terrains de manière rapide et sécurisée. Vous pouvez choisir le terrain qui vous convient, fixer l'heure et payer via les applications de paiement locales comme Bankily, Masrvi et SEDAD. Nous cherchons toujours à améliorer nos services pour offrir la meilleure expérience possible à nos utilisateurs dans toute la Mauritanie.",
+  en: "Malaabi is the first Mauritanian app specialized in booking football fields. We aim to facilitate the booking process between clients and field owners in a fast and secure way. You can choose the right field for you, set the time, and pay via local payment apps like Bankily, Masrvi and SEDAD. We always strive to improve our services to provide the best possible experience for our users across Mauritania.",
+};
+
 export default function App() {
   const [lang, setLang] = useState(() => localStorage.getItem("malaabi_lang") || "ar");
   const t = translations[lang];
   const isRTL = lang === "ar";
   const [splash, setSplash] = useState(true);
   const [showContact, setShowContact] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
 
   const [screen, setScreen] = useState("login");
   const [user, setUser] = useState(null);
@@ -342,13 +349,7 @@ export default function App() {
 
   const inp = { width:"100%", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"10px", padding:"12px 16px", color:"#fff", fontSize:"15px", fontFamily:"inherit", marginBottom:"16px", boxSizing:"border-box", outline:"none" };
   const lbl = { color:COLORS.muted, fontSize:"13px", marginBottom:"6px", display:"block" };
-  const sel = { width:"100%", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"10px", padding:"12px 16px", color:"#fff", fontSize:"15px", fontFamily:"inherit", marginBottom:"16px", boxSizing:"border-box", outline:"none" };
-
-  const aboutText = {
-    ar: "ملاعبي هو تطبيق موريتاني لحجز ملاعب كرة القدم بسهولة وسرعة. اختر ملعبك، حدد الوقت، وادفع عبر تطبيقات الدفع المحلية.",
-    fr: "Malaabi est une application mauritanienne pour réserver des terrains de football facilement et rapidement. Choisissez votre terrain, fixez l'heure et payez via les applications de paiement locales.",
-    en: "Malaabi is a Mauritanian app for booking football fields easily and quickly. Choose your field, set the time, and pay via local payment apps."
-  };if (screen === "login" || screen === "register") {
+  const sel = { width:"100%", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"10px", padding:"12px 16px", color:"#fff", fontSize:"15px", fontFamily:"inherit", marginBottom:"16px", boxSizing:"border-box", outline:"none" };if (screen === "login" || screen === "register") {
     const isReg = screen === "register";
     return (
       <div style={{minHeight:"100vh", background:COLORS.bg, fontFamily:"Tajawal,sans-serif", direction:isRTL?"rtl":"ltr", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", padding:"24px"}}>
@@ -373,8 +374,27 @@ export default function App() {
             <label style={lbl}>{t.password}</label>
             <input style={inp} type="password" placeholder={t.enter4} maxLength={4} value={isReg ? regPass : loginPass} onChange={e => { const val = e.target.value.replace(/\D/g,""); isReg ? setRegPass(val) : setLoginPass(val); }}/>
             <button onClick={isReg ? handleRegister : handleLogin} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"16px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{isReg ? t.createAccount : t.enterApp}</button>
+            <button onClick={() => setShowAbout(true)} style={{width:"100%", padding:"12px", background:"transparent", border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", marginTop:"10px", fontSize:"14px"}}>
+              {lang==="ar" ? "🏟 تعرف علينا" : lang==="fr" ? "🏟 À propos" : "🏟 About us"}
+            </button>
           </div>
         </div>
+
+        {showAbout && (
+          <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setShowAbout(false)}>
+            <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"420px", padding:"32px", textAlign:"center"}}>
+              <div style={{fontSize:"48px", marginBottom:"12px"}}>⚽</div>
+              <div style={{fontSize:"22px", fontWeight:"800", color:COLORS.accent, marginBottom:"16px"}}>malaabi</div>
+              <div style={{color:COLORS.muted, fontSize:"14px", lineHeight:"2", marginBottom:"24px", textAlign:lang==="ar"?"right":"left"}}>
+                {aboutText[lang]}
+              </div>
+              <button onClick={() => setShowAbout(false)} style={{width:"100%", padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>
+                {lang==="ar" ? "اغلاق" : lang==="fr" ? "Fermer" : "Close"}
+              </button>
+            </div>
+          </div>
+        )}
+
         {toast && <div style={{position:"fixed", bottom:"24px", left:"50%", transform:"translateX(-50%)", background:toast.color, color:"#fff", padding:"14px 28px", borderRadius:"16px", fontWeight:"700", zIndex:999}}>{toast.msg}</div>}
       </div>
     );
@@ -467,7 +487,6 @@ export default function App() {
               </div>
             )}
 
-            {/* ✅ تعريف ملاعبي في الأسفل */}
             <div style={{textAlign:"center", padding:"40px 20px", marginTop:"32px", borderTop:`1px solid ${COLORS.border}`}}>
               <div style={{fontSize:"32px", marginBottom:"12px"}}>⚽</div>
               <div style={{fontSize:"20px", fontWeight:"800", color:COLORS.accent, marginBottom:"12px"}}>malaabi</div>
