@@ -486,12 +486,6 @@ export default function App() {
                 })}
               </div>
             )}
-
-            <div style={{textAlign:"center", padding:"40px 20px", marginTop:"32px", borderTop:`1px solid ${COLORS.border}`}}>
-              <div style={{fontSize:"32px", marginBottom:"12px"}}>⚽</div>
-              <div style={{fontSize:"20px", fontWeight:"800", color:COLORS.accent, marginBottom:"12px"}}>malaabi</div>
-              <div style={{color:COLORS.muted, fontSize:"14px", maxWidth:"500px", margin:"0 auto", lineHeight:"1.8"}}>{aboutText[lang]}</div>
-            </div>
           </>
         )}
 
