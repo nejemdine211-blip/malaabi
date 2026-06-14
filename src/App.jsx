@@ -122,7 +122,7 @@ export default function App() {
       </button>
       {showLangMenu && (
         <div style={{position:"absolute", top:"110%", left:0, background:COLORS.card, border:`1px solid ${COLORS.border}`, borderRadius:"10px", overflow:"hidden", zIndex:200, minWidth:"80px"}}>
-          {[["ar","🇲🇷 ع"],["fr","🇫🇷 FR"],["en","🏴 EN"]].map(([l, label]) => (
+          {[["ar","🇲🇷 ع"],["fr","🇫 FR"],["en","🏴 EN"]].map(([l, label]) => (
             <button key={l} onClick={() => { changeLang(l); setShowLangMenu(false); }} style={{display:"block", width:"100%", padding:"8px 16px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"12px", background: lang===l?`${COLORS.accent}22`:COLORS.card, color: lang===l?COLORS.accent:COLORS.muted, textAlign:"right"}}>
               {label}
             </button>
@@ -146,34 +146,42 @@ export default function App() {
     if (u.count !== null) setUsersCount(u.count);
     setLoading(false);
   };
-useEffect(() => {
-  if (!user || user.phone !== ADMIN_PHONE) return;
-  const channel = supabase.channel("bookings-channel")
-    .on("postgres_changes", { event: "INSERT", schema: "public", table: "bookings" }, async (payload) => {
-      if ("Notification" in window && Notification.permission === "granted") {
-        new Notification("🏟 ملاعبي - حجز جديد", {
-          body: `${payload.new.client_name} - ${payload.new.stadium_name}`,
-          icon: "/icon.png"
+
+  // ✅ التعديل المهم هنا
+  useEffect(() => {
+    setTimeout(() => setSplash(false), 2000);
+    const saved = localStorage.getItem("malaabi_user");
+    if (saved) { setUser(JSON.parse(saved)); setScreen("app"); }
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    if (!user || user.phone !== ADMIN_PHONE) return;
+    const channel = supabase.channel("bookings-channel")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "bookings" }, async (payload) => {
+        if ("Notification" in window && Notification.permission === "granted") {
+          new Notification("🏟 ملاعبي - حجز جديد", {
+            body: `${payload.new.client_name} - ${payload.new.stadium_name}`,
+            icon: "/icon.png"
+          });
+        }
+        await fetch("https://onesignal.com/api/v1/notifications", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Basic os_v2_app_jhy7t6nrnjdopofyhrvcrulg2y4nmmwhm5huxxu3rgimbozfsaixleeyfde41q65qv6awvgjn2njfjmejpdwqvy2qmuo473tp5f43sy"
+          },
+          body: JSON.stringify({
+            app_id: "49f1f9f9-b16a-46e7-b8b8-3c6a28d166d6",
+            included_segments: ["All"],
+            headings: { en: "🏟 حجز جديد في ملاعبي" },
+            contents: { en: `${payload.new.client_name} - ${payload.new.stadium_name}` }
+          })
         });
-      }
-      await fetch("https://onesignal.com/api/v1/notifications", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Basic os_v2_app_jhy7t6nrnjdopofyhrvcrulg2y4nmmwhm5huxxu3rgimbozfsaixlee yfde41q65qv6awvgjn2njfjmejpdwqvy2qmuo473tp5f43sy"
-        },
-        body: JSON.stringify({
-          app_id: "49f1f9f9-b16a-46e7-b8b8-3c6a28d166d6",
-          included_segments: ["All"],
-          headings: { en: "🏟 حجز جديد في ملاعبي" },
-          contents: { en: `${payload.new.client_name} - ${payload.new.stadium_name}` }
-        })
-      });
-    })
-    .subscribe();
-  return () => supabase.removeChannel(channel);
-}, [user]);
-  
+      })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [user]);
 
   if (splash) return (
     <div style={{minHeight:"100vh", background:"#111", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Arial,sans-serif"}}>
@@ -182,9 +190,7 @@ useEffect(() => {
         <div style={{color:"#00E676", fontSize:"14px"}}>⚽ احجز ملعبك بسهولة</div>
       </div>
     </div>
-  );
-
-  const showToast = (msg, color=COLORS.accent) => {
+  );const showToast = (msg, color=COLORS.accent) => {
     setToast({msg, color});
     setTimeout(() => setToast(null), 4000);
   };
@@ -376,7 +382,6 @@ useEffect(() => {
   const lbl = { color:COLORS.muted, fontSize:"13px", marginBottom:"6px", display:"block" };
   const sel = { width:"100%", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"10px", padding:"12px 16px", color:"#fff", fontSize:"15px", fontFamily:"inherit", marginBottom:"16px", boxSizing:"border-box", outline:"none" };
 
-  // ✅ الشريط السفلي
   const BottomNav = () => (
     <div style={{position:"fixed", bottom:0, left:0, right:0, background:COLORS.card, borderTop:`1px solid ${COLORS.border}`, display:"flex", zIndex:50, paddingBottom:"8px"}}>
       {[
@@ -400,7 +405,9 @@ useEffect(() => {
         </button>
       ))}
     </div>
-  );if (screen === "login" || screen === "register") {
+  );
+
+  if (screen === "login" || screen === "register") {
     const isReg = screen === "register";
     return (
       <div style={{minHeight:"100vh", background:COLORS.bg, fontFamily:"Tajawal,sans-serif", direction:isRTL?"rtl":"ltr", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", padding:"24px"}}>
@@ -456,13 +463,10 @@ useEffect(() => {
         <div style={{color:COLORS.accent, fontSize:"18px", fontWeight:"700"}}>{t.loading}</div>
       </div>
     </div>
-  );
-
-  return (
+  );return (
     <div style={{minHeight:"100vh", background:COLORS.bg, fontFamily:"Tajawal,sans-serif", direction:isRTL?"rtl":"ltr", color:"#fff", touchAction:"pan-x pan-y", paddingBottom:"70px"}}>
       <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet"/>
 
-      {/* ✅ الشريط العلوي */}
       <div style={{background:COLORS.card, borderBottom:`1px solid ${COLORS.border}`, padding:"12px 16px", display:"flex", justifyContent:"space-between", alignItems:"center", position:"sticky", top:0, zIndex:50, backdropFilter:"blur(10px)"}}>
         <div onClick={handleLogoClick} style={{fontSize:"18px", fontWeight:"800", background:"linear-gradient(135deg,#00E676,#00B0FF)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", cursor:"pointer", userSelect:"none"}}>⚽ {t.appName}</div>
         <div style={{display:"flex", alignItems:"center", gap:"6px"}}>
@@ -475,7 +479,6 @@ useEffect(() => {
       <div style={{maxWidth:"1100px", margin:"0 auto", padding:"16px"}}>
         {tab==="client" && (
           <>
-            {/* ✅ صفحة الملاعب */}
             {bottomTab==="stadiums" && (
               <>
                 <div style={{background:`linear-gradient(135deg, ${COLORS.card}, #0a1628)`, borderRadius:"16px", padding:"20px 16px", marginBottom:"16px", border:`1px solid ${COLORS.border}`}}>
@@ -540,7 +543,6 @@ useEffect(() => {
               </>
             )}
 
-            {/* ✅ صفحة الإشعارات */}
             {bottomTab==="notifs" && (
               <div>
                 <div style={{fontSize:"20px", fontWeight:"800", marginBottom:"20px"}}>🔔 {lang==="ar"?"الإشعارات":lang==="fr"?"Notifications":"Notifications"}</div>
@@ -724,8 +726,8 @@ useEffect(() => {
         )}
       </div>
 
-      {/* ✅ الشريط السفلي */}
-      {tab === "client" && <BottomNav/>}{/* ✅ نافذة اتصل بنا */}
+      {tab === "client" && <BottomNav/>}
+
       {showContact && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setShowContact(false)}>
           <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"400px", padding:"32px", textAlign:"center"}}>
