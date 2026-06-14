@@ -57,6 +57,7 @@ export default function App() {
   const [splash, setSplash] = useState(true);
   const [showContact, setShowContact] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [bottomTab, setBottomTab] = useState("stadiums");
 
   const [screen, setScreen] = useState("login");
   const [user, setUser] = useState(null);
@@ -220,6 +221,7 @@ export default function App() {
     setUser(null);
     setScreen("login");
     setTab("client");
+    setBottomTab("stadiums");
   };
 
   const handleLogoClick = () => {
@@ -349,6 +351,7 @@ export default function App() {
   const confirmedBookings = bookings.filter(b => b.status === "confirmed");
   const myBookings = user ? bookings.filter(b => b.client_phone === user.phone) : [];
   const myConfirmedBookings = myBookings.filter(b => b.status === "confirmed");
+  const unreadNotifs = myBookings.filter(b => b.status !== "pending").length;
 
   let filteredStadiums = filterWilaya === "الكل" ? stadiums : stadiums.filter(s => s.wilaya === filterWilaya);
   if (searchText) filteredStadiums = filteredStadiums.filter(s =>
@@ -367,7 +370,33 @@ export default function App() {
 
   const inp = { width:"100%", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"10px", padding:"12px 16px", color:"#fff", fontSize:"15px", fontFamily:"inherit", marginBottom:"16px", boxSizing:"border-box", outline:"none" };
   const lbl = { color:COLORS.muted, fontSize:"13px", marginBottom:"6px", display:"block" };
-  const sel = { width:"100%", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"10px", padding:"12px 16px", color:"#fff", fontSize:"15px", fontFamily:"inherit", marginBottom:"16px", boxSizing:"border-box", outline:"none" };if (screen === "login" || screen === "register") {
+  const sel = { width:"100%", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"10px", padding:"12px 16px", color:"#fff", fontSize:"15px", fontFamily:"inherit", marginBottom:"16px", boxSizing:"border-box", outline:"none" };
+
+  // ✅ الشريط السفلي
+  const BottomNav = () => (
+    <div style={{position:"fixed", bottom:0, left:0, right:0, background:COLORS.card, borderTop:`1px solid ${COLORS.border}`, display:"flex", zIndex:50, paddingBottom:"8px"}}>
+      {[
+        { id:"stadiums", icon:"🏟", label: lang==="ar"?"الملاعب":lang==="fr"?"Terrains":"Fields" },
+        { id:"profile", icon:"👤", label: lang==="ar"?"حسابي":lang==="fr"?"Profil":"Profile" },
+        { id:"notifs", icon:"🔔", label: lang==="ar"?"الإشعارات":lang==="fr"?"Notifications":"Notifications", badge: unreadNotifs },
+        { id:"contact", icon:"💬", label: lang==="ar"?"اتصل بنا":lang==="fr"?"Contact":"Contact" },
+      ].map(item => (
+        <button key={item.id} onClick={() => {
+          if (item.id === "contact") { setShowContact(true); return; }
+          if (item.id === "profile") { setShowProfile(true); return; }
+          setBottomTab(item.id);
+        }} style={{flex:1, padding:"10px 4px 4px", background:"none", border:"none", cursor:"pointer", fontFamily:"inherit", display:"flex", flexDirection:"column", alignItems:"center", gap:"4px", position:"relative"}}>
+          <div style={{fontSize:"22px", position:"relative"}}>
+            {item.icon}
+            {item.badge > 0 && (
+              <div style={{position:"absolute", top:"-4px", right:"-4px", background:"#FF4444", color:"#fff", borderRadius:"50%", width:"16px", height:"16px", fontSize:"10px", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:"700"}}>{item.badge}</div>
+            )}
+          </div>
+          <div style={{fontSize:"10px", color: bottomTab===item.id?COLORS.accent:COLORS.muted, fontWeight: bottomTab===item.id?"700":"400"}}>{item.label}</div>
+        </button>
+      ))}
+    </div>
+  );if (screen === "login" || screen === "register") {
     const isReg = screen === "register";
     return (
       <div style={{minHeight:"100vh", background:COLORS.bg, fontFamily:"Tajawal,sans-serif", direction:isRTL?"rtl":"ltr", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", padding:"24px"}}>
@@ -403,9 +432,7 @@ export default function App() {
             <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"420px", padding:"32px", textAlign:"center"}}>
               <div style={{fontSize:"48px", marginBottom:"12px"}}>⚽</div>
               <div style={{fontSize:"22px", fontWeight:"800", color:COLORS.accent, marginBottom:"16px"}}>malaabi</div>
-              <div style={{color:COLORS.muted, fontSize:"14px", lineHeight:"2", marginBottom:"24px", textAlign:lang==="ar"?"right":"left"}}>
-                {aboutText[lang]}
-              </div>
+              <div style={{color:COLORS.muted, fontSize:"14px", lineHeight:"2", marginBottom:"24px", textAlign:lang==="ar"?"right":"left"}}>{aboutText[lang]}</div>
               <button onClick={() => setShowAbout(false)} style={{width:"100%", padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>
                 {lang==="ar" ? "اغلاق" : lang==="fr" ? "Fermer" : "Close"}
               </button>
@@ -428,14 +455,14 @@ export default function App() {
   );
 
   return (
-    <div style={{minHeight:"100vh", background:COLORS.bg, fontFamily:"Tajawal,sans-serif", direction:isRTL?"rtl":"ltr", color:"#fff", touchAction:"pan-x pan-y"}}>
+    <div style={{minHeight:"100vh", background:COLORS.bg, fontFamily:"Tajawal,sans-serif", direction:isRTL?"rtl":"ltr", color:"#fff", touchAction:"pan-x pan-y", paddingBottom:"70px"}}>
       <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet"/>
+
+      {/* ✅ الشريط العلوي */}
       <div style={{background:COLORS.card, borderBottom:`1px solid ${COLORS.border}`, padding:"12px 16px", display:"flex", justifyContent:"space-between", alignItems:"center", position:"sticky", top:0, zIndex:50, backdropFilter:"blur(10px)"}}>
         <div onClick={handleLogoClick} style={{fontSize:"18px", fontWeight:"800", background:"linear-gradient(135deg,#00E676,#00B0FF)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", cursor:"pointer", userSelect:"none"}}>⚽ {t.appName}</div>
         <div style={{display:"flex", alignItems:"center", gap:"6px"}}>
           <LangButton/>
-          <button onClick={() => setShowContact(true)} style={{padding:"5px 10px", background:"#25D36622", border:"1px solid #25D36644", borderRadius:"8px", color:"#25D366", fontWeight:"600", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>💬</button>
-          {user && (<div onClick={() => setShowProfile(true)} style={{color:COLORS.accent, fontSize:"12px", cursor:"pointer", fontWeight:"700", background:"#00E67622", padding:"5px 10px", borderRadius:"8px", border:"1px solid #00E67644"}}>👤 {user.name}</div>)}
           <button onClick={handleLogout} style={{padding:"5px 10px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"8px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{t.logout}</button>
           {tab === "admin" && (<button onClick={() => setTab("client")} style={{padding:"5px 10px", background:"#FF444422", border:"none", borderRadius:"8px", color:"#FF4444", fontWeight:"600", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{t.closeAdmin}</button>)}
         </div>
@@ -444,60 +471,101 @@ export default function App() {
       <div style={{maxWidth:"1100px", margin:"0 auto", padding:"16px"}}>
         {tab==="client" && (
           <>
-            <div style={{background:`linear-gradient(135deg, ${COLORS.card}, #0a1628)`, borderRadius:"16px", padding:"20px 16px", marginBottom:"16px", border:`1px solid ${COLORS.border}`}}>
-              <div style={{fontSize:"22px", fontWeight:"800", marginBottom:"4px", background:"linear-gradient(135deg,#00E676,#00B0FF)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>{t.bookYourStadium}</div>
-              <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"12px"}}>{t.chooseStadium}</div>
-              <input style={{...inp, marginBottom:"8px", background:"#ffffff11", border:`1px solid ${COLORS.border}`}} placeholder={t.search} value={searchText} onChange={e => setSearchText(e.target.value)}/>
-              <select style={{...sel, marginBottom:0, background:"#ffffff11"}} value={sortBy} onChange={e => setSortBy(e.target.value)}>
-                <option value="default">{t.sortDefault}</option>
-                <option value="price_asc">{t.sortPriceAsc}</option>
-                <option value="price_desc">{t.sortPriceDesc}</option>
-                <option value="popular">{t.sortPopular}</option>
-              </select>
-            </div>
+            {/* ✅ صفحة الملاعب */}
+            {bottomTab==="stadiums" && (
+              <>
+                <div style={{background:`linear-gradient(135deg, ${COLORS.card}, #0a1628)`, borderRadius:"16px", padding:"20px 16px", marginBottom:"16px", border:`1px solid ${COLORS.border}`}}>
+                  <div style={{fontSize:"22px", fontWeight:"800", marginBottom:"4px", background:"linear-gradient(135deg,#00E676,#00B0FF)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>{t.bookYourStadium}</div>
+                  <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"12px"}}>{t.chooseStadium}</div>
+                  <input style={{...inp, marginBottom:"8px", background:"#ffffff11", border:`1px solid ${COLORS.border}`}} placeholder={t.search} value={searchText} onChange={e => setSearchText(e.target.value)}/>
+                  <select style={{...sel, marginBottom:0, background:"#ffffff11"}} value={sortBy} onChange={e => setSortBy(e.target.value)}>
+                    <option value="default">{t.sortDefault}</option>
+                    <option value="price_asc">{t.sortPriceAsc}</option>
+                    <option value="price_desc">{t.sortPriceDesc}</option>
+                    <option value="popular">{t.sortPopular}</option>
+                  </select>
+                </div>
 
-            <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"16px", flexWrap:"wrap", gap:"8px"}}>
-              <div style={{display:"flex", gap:"8px", flexWrap:"wrap"}}>
-                {[t.all, ...wilayas].map((w, idx) => (
-                  <button key={w} onClick={() => setFilterWilaya(idx === 0 ? "الكل" : w)} style={{padding:"6px 14px", borderRadius:"20px", border:`1px solid ${(idx === 0 ? filterWilaya === "الكل" : filterWilaya === w) ? COLORS.accent : COLORS.border}`, cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"13px", background: (idx === 0 ? filterWilaya === "الكل" : filterWilaya === w)?"linear-gradient(135deg,#00E676,#00B0FF)":COLORS.card, color: (idx === 0 ? filterWilaya === "الكل" : filterWilaya === w)?"#000":COLORS.muted}}>{w}</button>
-                ))}
-              </div>
-              <button onClick={() => setShowMyBookings(true)} style={{padding:"6px 14px", background:"#7C4DFF22", border:"1px solid #7C4DFF44", borderRadius:"20px", color:"#7C4DFF", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px", whiteSpace:"nowrap"}}>📋 {t.myBookings} ({myBookings.length})</button>
-            </div>
+                <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"16px", flexWrap:"wrap", gap:"8px"}}>
+                  <div style={{display:"flex", gap:"8px", flexWrap:"wrap"}}>
+                    {[t.all, ...wilayas].map((w, idx) => (
+                      <button key={w} onClick={() => setFilterWilaya(idx === 0 ? "الكل" : w)} style={{padding:"6px 14px", borderRadius:"20px", border:`1px solid ${(idx === 0 ? filterWilaya === "الكل" : filterWilaya === w) ? COLORS.accent : COLORS.border}`, cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"13px", background: (idx === 0 ? filterWilaya === "الكل" : filterWilaya === w)?"linear-gradient(135deg,#00E676,#00B0FF)":COLORS.card, color: (idx === 0 ? filterWilaya === "الكل" : filterWilaya === w)?"#000":COLORS.muted}}>{w}</button>
+                    ))}
+                  </div>
+                </div>
 
-            {filteredStadiums.length===0 ? (
-              <div style={{textAlign:"center", padding:"80px 20px", color:COLORS.muted}}>
-                <div style={{fontSize:"60px", marginBottom:"16px"}}>🏟</div>
-                <div>{t.noStadiums}</div>
-              </div>
-            ) : (
-              <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))", gap:"16px"}}>
-                {filteredStadiums.map((st) => {
-                  const hours = st.working_hours || ALL_HOURS;
-                  const free = hours.filter(h => !isBooked(st.id, today, h)).length;
-                  const imgUrl = st.image || STADIUM_IMAGES[0];
+                {filteredStadiums.length===0 ? (
+                  <div style={{textAlign:"center", padding:"80px 20px", color:COLORS.muted}}>
+                    <div style={{fontSize:"60px", marginBottom:"16px"}}>🏟</div>
+                    <div>{t.noStadiums}</div>
+                  </div>
+                ) : (
+                  <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))", gap:"16px"}}>
+                    {filteredStadiums.map((st) => {
+                      const hours = st.working_hours || ALL_HOURS;
+                      const free = hours.filter(h => !isBooked(st.id, today, h)).length;
+                      const imgUrl = st.image || STADIUM_IMAGES[0];
+                      return (
+                        <div key={st.id} style={{background:COLORS.card, borderRadius:"20px", border:`1px solid ${COLORS.border}`, overflow:"hidden", boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>
+                          <div style={{position:"relative"}}>
+                            <img src={imgUrl} alt={st.name} style={{width:"100%", height:"140px", objectFit:"cover", display:"block"}}/>
+                            <div style={{position:"absolute", inset:0, background:`linear-gradient(to bottom, transparent 50%, ${COLORS.card} 100%)`}}></div>
+                            <div style={{position:"absolute", bottom:"10px", right:"12px", left:"12px"}}>
+                              <div style={{fontWeight:"800", fontSize:"18px", color:"#fff", textShadow:"0 2px 8px rgba(0,0,0,0.8)"}}>{st.name}</div>
+                              <div style={{color:"#ffffffaa", fontSize:"12px"}}>📍 {st.wilaya} — {st.hood}</div>
+                            </div>
+                          </div>
+                          <div style={{padding:"12px 16px 16px"}}>
+                            <div style={{display:"flex", justifyContent:"space-between", marginBottom:"12px"}}>
+                              <div style={{background:`${st.color}22`, borderRadius:"10px", padding:"8px 12px", textAlign:"center"}}>
+                                <div style={{color:st.color, fontWeight:"800", fontSize:"16px"}}>{st.price}</div>
+                                <div style={{color:COLORS.muted, fontSize:"10px"}}>{t.pricePerHour}</div>
+                              </div>
+                              <div style={{background:"#00E67622", borderRadius:"10px", padding:"8px 12px", textAlign:"center"}}>
+                                <div style={{color:COLORS.accent, fontWeight:"800", fontSize:"16px"}}>{free}</div>
+                                <div style={{color:COLORS.muted, fontSize:"10px"}}>{t.hourAvailable}</div>
+                              </div>
+                            </div>
+                            <button onClick={() => { setSelected(st); setStep(1); setBookDate(today); }} style={{width:"100%", padding:"11px", background:`linear-gradient(135deg, ${st.color}, ${st.color}BB)`, border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"14px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{t.bookNow}</button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* ✅ صفحة الإشعارات */}
+            {bottomTab==="notifs" && (
+              <div>
+                <div style={{fontSize:"20px", fontWeight:"800", marginBottom:"20px"}}>🔔 {lang==="ar"?"الإشعارات":lang==="fr"?"Notifications":"Notifications"}</div>
+                {myBookings.length===0 ? (
+                  <div style={{textAlign:"center", padding:"60px", color:COLORS.muted}}>
+                    <div style={{fontSize:"48px", marginBottom:"12px"}}>🔔</div>
+                    <div>{lang==="ar"?"لا توجد إشعارات":lang==="fr"?"Aucune notification":"No notifications"}</div>
+                  </div>
+                ) : myBookings.slice().reverse().map((b,i) => {
+                  const statusColor = b.status==="confirmed"?COLORS.accent:b.status==="rejected"?"#FF4444":"#FF6D00";
+                  const statusIcon = b.status==="confirmed"?"✅":b.status==="rejected"?"❌":"⏳";
+                  const statusText = b.status==="confirmed"?
+                    (lang==="ar"?"تم قبول حجزك":lang==="fr"?"Réservation confirmée":"Booking confirmed"):
+                    b.status==="rejected"?
+                    (lang==="ar"?"تم رفض حجزك":lang==="fr"?"Réservation refusée":"Booking rejected"):
+                    (lang==="ar"?"حجزك قيد الانتظار":lang==="fr"?"En attente":"Pending");
                   return (
-                    <div key={st.id} style={{background:COLORS.card, borderRadius:"20px", border:`1px solid ${COLORS.border}`, overflow:"hidden", boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>
-                      <div style={{position:"relative"}}>
-                        <img src={imgUrl} alt={st.name} style={{width:"100%", height:"140px", objectFit:"cover", display:"block"}}/>
-                        <div style={{position:"absolute", inset:0, background:`linear-gradient(to bottom, transparent 50%, ${COLORS.card} 100%)`}}></div>
-                        <div style={{position:"absolute", bottom:"10px", right:"12px", left:"12px"}}>
-                          <div style={{fontWeight:"800", fontSize:"18px", color:"#fff", textShadow:"0 2px 8px rgba(0,0,0,0.8)"}}>{st.name}</div>
-                          <div style={{color:"#ffffffaa", fontSize:"12px"}}>📍 {st.wilaya} — {st.hood}</div>
-                        </div>
-                      </div>
-                      <div style={{padding:"12px 16px 16px"}}>
-                        <div style={{display:"flex", justifyContent:"space-between", marginBottom:"12px"}}>
-                          <div style={{background:`${st.color}22`, borderRadius:"10px", padding:"8px 12px", textAlign:"center"}}>
-                            <div style={{color:st.color, fontWeight:"800", fontSize:"16px"}}>{st.price}</div>
-                            <div style={{color:COLORS.muted, fontSize:"10px"}}>{t.pricePerHour}</div>
+                    <div key={i} style={{background:COLORS.card, borderRadius:"14px", padding:"16px", marginBottom:"10px", border:`1px solid ${statusColor}33`, display:"flex", gap:"12px", alignItems:"center"}}>
+                      <div style={{fontSize:"28px"}}>{statusIcon}</div>
+                      <div style={{flex:1}}>
+                        <div style={{fontWeight:"700", color:statusColor, marginBottom:"4px"}}>{statusText}</div>
+                        <div style={{color:"#fff", fontWeight:"600"}}>{b.stadium_name}</div>
+                        <div style={{color:COLORS.muted, fontSize:"13px"}}>📅 {b.date} — {b.hour}:00</div>
+                        {b.status==="confirmed" && b.code && (
+                          <div style={{marginTop:"8px", background:`${COLORS.accent}22`, borderRadius:"8px", padding:"6px 10px", display:"inline-block"}}>
+                            <span style={{color:COLORS.muted, fontSize:"11px"}}>{t.code}: </span>
+                            <span style={{color:COLORS.accent, fontWeight:"800", letterSpacing:"2px"}}>{b.code}</span>
                           </div>
-                          <div style={{background:"#00E67622", borderRadius:"10px", padding:"8px 12px", textAlign:"center"}}>
-                            <div style={{color:COLORS.accent, fontWeight:"800", fontSize:"16px"}}>{free}</div>
-                            <div style={{color:COLORS.muted, fontSize:"10px"}}>{t.hourAvailable}</div>
-                          </div>
-                        </div>
-                        <button onClick={() => { setSelected(st); setStep(1); setBookDate(today); }} style={{width:"100%", padding:"11px", background:`linear-gradient(135deg, ${st.color}, ${st.color}BB)`, border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"14px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{t.bookNow}</button>
+                        )}
                       </div>
                     </div>
                   );
@@ -650,7 +718,10 @@ export default function App() {
             )}
           </>
         )}
-      </div>{/* ✅ نافذة اتصل بنا */}
+      </div>
+
+      {/* ✅ الشريط السفلي */}
+      {tab === "client" && <BottomNav/>}{/* ✅ نافذة اتصل بنا */}
       {showContact && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setShowContact(false)}>
           <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"400px", padding:"32px", textAlign:"center"}}>
@@ -670,36 +741,6 @@ export default function App() {
             <button onClick={() => setShowContact(false)} style={{width:"100%", padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>
               {lang==="ar" ? "اغلاق" : lang==="fr" ? "Fermer" : "Close"}
             </button>
-          </div>
-        </div>
-      )}
-
-      {showMyBookings && (
-        <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setShowMyBookings(false)}>
-          <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"520px", maxHeight:"90vh", overflow:"auto", padding:"24px"}}>
-            <div style={{fontSize:"20px", fontWeight:"800", marginBottom:"20px"}}>📋 {t.myBookingsTitle}</div>
-            {myBookings.length===0 ? (
-              <div style={{textAlign:"center", padding:"40px", color:COLORS.muted}}>{t.noBookings}</div>
-            ) : myBookings.slice().reverse().map((b,i) => {
-              const statusColor = b.status==="confirmed"?COLORS.accent:b.status==="rejected"?"#FF4444":"#FF6D00";
-              const statusText = b.status==="confirmed"?t.accepted:b.status==="rejected"?t.rejected:t.pending;
-              return (
-                <div key={i} style={{background:COLORS.bg, borderRadius:"12px", padding:"14px", marginBottom:"10px", border:`1px solid ${statusColor}33`}}>
-                  <div style={{display:"flex", justifyContent:"space-between", marginBottom:"6px"}}>
-                    <div style={{fontWeight:"700"}}>{b.stadium_name}</div>
-                    <div style={{background:`${statusColor}22`, color:statusColor, padding:"4px 10px", borderRadius:"20px", fontSize:"12px", fontWeight:"700"}}>{statusText}</div>
-                  </div>
-                  <div style={{color:COLORS.muted, fontSize:"13px"}}>📅 {b.date} - {b.hour}:00</div>
-                  {b.status==="confirmed" && b.code && (
-                    <div style={{marginTop:"8px", background:`${COLORS.accent}22`, borderRadius:"8px", padding:"8px 12px"}}>
-                      <div style={{color:COLORS.muted, fontSize:"11px"}}>{t.code}</div>
-                      <div style={{color:COLORS.accent, fontWeight:"800", fontSize:"18px", letterSpacing:"2px"}}>{b.code}</div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-            <button onClick={() => setShowMyBookings(false)} style={{width:"100%", padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", marginTop:"8px"}}>{t.close}</button>
           </div>
         </div>
       )}
@@ -800,7 +841,7 @@ export default function App() {
               <div style={{color:COLORS.muted, fontSize:"12px", marginBottom:"4px"}}>{t.acceptedBookings}</div>
               <div style={{fontWeight:"800", fontSize:"28px", color:COLORS.accent}}>✅ {myConfirmedBookings.length}</div>
             </div>
-            <button onClick={() => { setShowProfile(false); setShowMyBookings(true); }} style={{width:"100%", padding:"11px", background:"#7C4DFF22", border:"1px solid #7C4DFF44", borderRadius:"12px", color:"#7C4DFF", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", marginBottom:"10px"}}>{t.viewAllBookings}</button>
+            <button onClick={() => { setShowProfile(false); setBottomTab("notifs"); }} style={{width:"100%", padding:"11px", background:"#7C4DFF22", border:"1px solid #7C4DFF44", borderRadius:"12px", color:"#7C4DFF", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", marginBottom:"10px"}}>{t.viewAllBookings}</button>
             <button onClick={() => setShowProfile(false)} style={{width:"100%", padding:"11px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>{t.close}</button>
           </div>
         </div>
@@ -879,7 +920,7 @@ export default function App() {
       )}
 
       {toast && (
-        <div style={{position:"fixed", bottom:"24px", left:"50%", transform:"translateX(-50%)", background:toast.color, color:"#fff", padding:"14px 28px", borderRadius:"16px", fontWeight:"700", zIndex:999}}>
+        <div style={{position:"fixed", bottom:"80px", left:"50%", transform:"translateX(-50%)", background:toast.color, color:"#fff", padding:"14px 28px", borderRadius:"16px", fontWeight:"700", zIndex:999}}>
           {toast.msg}
         </div>
       )}
