@@ -246,12 +246,13 @@ export default function App() {
     });
   };
 
-  const handleDelete = async (id) => {
-    await supabase.from("stadiums").delete().eq("id", id);
-    setStadiums(prev => prev.filter(s => s.id !== id));
-    setConfirmDelete(null);
-    showToast(t.stadiumDeleted, "#FF4444");
-  };
+const handleDelete = async (id) => {
+  await supabase.from("bookings").delete().eq("stadium_id", id);
+  await supabase.from("stadiums").delete().eq("id", id);
+  setStadiums(prev => prev.filter(s => s.id !== id));
+  setConfirmDelete(null);
+  showToast(t.stadiumDeleted, "#FF4444");
+};
 
   const handleBook = async () => {
     if (bookHour === null) return;
