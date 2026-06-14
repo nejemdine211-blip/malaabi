@@ -146,30 +146,34 @@ export default function App() {
     if (u.count !== null) setUsersCount(u.count);
     setLoading(false);
   };
-
-  useEffect(() => {
-    setTimeout(() => setSplash(false), 2500);
-    const saved = localStorage.getItem("malaabi_user");
-    if (saved) { setUser(JSON.parse(saved)); setScreen("app"); }
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    if (!user || user.phone !== ADMIN_PHONE) return;
-    if (!("Notification" in window)) return;
-    Notification.requestPermission();
-    const channel = supabase.channel("bookings-channel")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "bookings" }, (payload) => {
-        if (Notification.permission === "granted") {
-          new Notification("🏟 ملاعبي - حجز جديد!", {
-            body: `${payload.new.client_name} — ${payload.new.stadium_name} — ${payload.new.hour}:00`,
-            icon: "/icon.png"
-          });
-        }
-      })
-      .subscribe();
-    return () => supabase.removeChannel(channel);
-  }, [user]);
+useEffect(() => {
+  if (!user || user.phone !== ADMIN_PHONE) return;
+  const channel = supabase.channel("bookings-channel")
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "bookings" }, async (payload) => {
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification("🏟 ملاعبي - حجز جديد", {
+          body: `${payload.new.client_name} - ${payload.new.stadium_name}`,
+          icon: "/icon.png"
+        });
+      }
+      await fetch("https://onesignal.com/api/v1/notifications", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Basic os_v2_app_jhy7t6nrnjdopofyhrvcrulg2y4nmmwhm5huxxu3rgimbozfsaixlee yfde41q65qv6awvgjn2njfjmejpdwqvy2qmuo473tp5f43sy"
+        },
+        body: JSON.stringify({
+          app_id: "49f1f9f9-b16a-46e7-b8b8-3c6a28d166d6",
+          included_segments: ["All"],
+          headings: { en: "🏟 حجز جديد في ملاعبي" },
+          contents: { en: `${payload.new.client_name} - ${payload.new.stadium_name}` }
+        })
+      });
+    })
+    .subscribe();
+  return () => supabase.removeChannel(channel);
+}, [user]);
+  
 
   if (splash) return (
     <div style={{minHeight:"100vh", background:"#111", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Arial,sans-serif"}}>
