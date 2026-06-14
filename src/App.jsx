@@ -17,6 +17,7 @@ const today = new Date().toISOString().split("T")[0];
 const genCode = () => Math.random().toString(36).substring(2,10).toUpperCase();
 const ADMIN_PASS = "malaabi5964";
 const WHATSAPP_NUM = "21654542791";
+const ADMIN_PHONE = "49058641";
 
 const COLORS = {
   bg: "#070B14",
@@ -29,42 +30,19 @@ const COLORS = {
 };
 
 const STADIUM_IMAGES = [
+  "https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?w=400&h=200&fit=crop",
   "https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=400&h=200&fit=crop",
   "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=400&h=200&fit=crop",
   "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400&h=200&fit=crop",
   "https://images.unsplash.com/photo-1551958219-acbc595b9b5c?w=400&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?w=400&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=400&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1459865264687-595d652de67e?w=400&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1553778263-73a83bab9b0c?w=400&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=400&h=200&fit=crop",
   "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=400&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1577223625816-7546f13df25d?w=400&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1560272564-c83b66b1ad12?w=400&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1471295253337-3ceaaedca402?w=400&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1518604666860-9ed391f76460?w=400&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=400&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1484482340112-e1e2682b4856?w=400&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1624526267942-ab0ff8a3e972?w=400&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1606925797300-0b35e9d1794e?w=400&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1543326727-cf6c39e8f84c?w=400&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=400&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1589487391730-58f20eb2c308?w=400&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1552667466-07770ae110d0?w=400&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1547499417-5a4b10b5b2a7?w=400&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1614632537190-23e4e2f33b7a?w=400&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1626248801379-51a0748a5f96?w=400&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1591491719565-9394c4a95ae2?w=400&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1598556272370-bc6e5943bb39?w=400&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=400&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1599232288126-3017cf6cae0b?w=400&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1610201429850-c6f0ac7f9434?w=400&h=200&fit=crop",
+  "https://images.unsplash.com/photo-1459865264687-595d652de67e?w=400&h=200&fit=crop",
+  "https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=400&h=200&fit=crop",
+  "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=400&h=200&fit=crop",
+  "https://images.unsplash.com/photo-1553778263-73a83bab9b0c?w=400&h=200&fit=crop",
 ];
 
-const getRandomImage = (name = "") => {
-  const index = name.length % STADIUM_IMAGES.length;
-  return STADIUM_IMAGES[index];
-};
+const getRandomImage = () => STADIUM_IMAGES[Math.floor(Math.random() * STADIUM_IMAGES.length)];
 
 const aboutText = {
   ar: "ملاعبي هو أول تطبيق موريتاني متخصص في حجز ملاعب كرة القدم. نهدف إلى تسهيل عملية الحجز بين الزبائن وأصحاب الملاعب بطريقة سريعة وآمنة. يمكنك اختيار الملعب المناسب لك، تحديد الوقت، والدفع عبر تطبيقات الدفع المحلية مثل Bankily وMasrvi وSEDAD. نسعى دائماً لتطوير خدماتنا لتقديم أفضل تجربة ممكنة لمستخدمينا في جميع أنحاء موريتانيا.",
@@ -174,6 +152,23 @@ export default function App() {
     if (saved) { setUser(JSON.parse(saved)); setScreen("app"); }
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (!user || user.phone !== ADMIN_PHONE) return;
+    if (!("Notification" in window)) return;
+    Notification.requestPermission();
+    const channel = supabase.channel("bookings-channel")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "bookings" }, (payload) => {
+        if (Notification.permission === "granted") {
+          new Notification("🏟 ملاعبي - حجز جديد!", {
+            body: `${payload.new.client_name} — ${payload.new.stadium_name} — ${payload.new.hour}:00`,
+            icon: "/icon.png"
+          });
+        }
+      })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [user]);
 
   if (splash) return (
     <div style={{minHeight:"100vh", background:"#111", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Arial,sans-serif"}}>
