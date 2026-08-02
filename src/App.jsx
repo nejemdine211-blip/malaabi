@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "./supabase";
 import { translations } from "./translations";
-import bcrypt from "bcryptjs";
 
 const PAYMENT_APPS = [
   { id: "bankily", name: "Bankily", color: "#00A651" },
@@ -37,6 +36,24 @@ const STADIUM_IMAGES = [
   "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=400&h=200&fit=crop",
   "https://images.unsplash.com/photo-1553778263-73a83bab9b0c?w=400&h=200&fit=crop",
 ];
+
+// 🔐 استدعاء دالة المصادقة الخادمية — جدول users مقفل أمام المتصفح
+const authApi = async (action, payload = {}) => {
+  try {
+    const { data, error } = await supabase.functions.invoke("auth-api", {
+      body: { action, ...payload },
+    });
+    if (error) {
+      // نحاول قراءة رسالة الخطأ القادمة من الدالة
+      let code = "network";
+      try { code = (await error.context?.json())?.error || "network"; } catch (_e) { /* تجاهل */ }
+      return { error: code };
+    }
+    return data ?? { error: "network" };
+  } catch (_e) {
+    return { error: "network" };
+  }
+};
 
 // 🖼 صور احتياطية من مصدر مختلف (تُستعمل إذا فشل تحميل الصورة الأصلية)
 const FALLBACK_IMAGES = [
@@ -192,6 +209,8 @@ const TXT = {
   orPasteLink: { ar:"أو الصق رابط صورة", fr:"Ou collez un lien", en:"Or paste an image link" },
   imageUrl: { ar:"رابط صورة الملعب (اختياري)", fr:"Lien de l\'image (optionnel)", en:"Image URL (optional)" },
   imageHint: { ar:"اتركه فارغاً لاختيار صورة تلقائياً", fr:"Laissez vide pour une image automatique", en:"Leave empty for an automatic image" },
+  netError: { ar:"تعذر الاتصال بالخادم، حاول مجدداً", fr:"Connexion au serveur impossible", en:"Server connection failed" },
+  confirmIdentity: { ar:"أدخل كلمة سرك للتأكيد", fr:"Entrez votre mot de passe", en:"Enter your password to confirm" },
   invalidPhone: { ar:"الرقم غير صحيح", fr:"Numéro invalide", en:"Invalid number" },
   tooManyTries: { ar:"محاولات كثيرة، حاول لاحقاً", fr:"Trop de tentatives", en:"Too many attempts" },
 };
@@ -276,6 +295,7 @@ export default function App() {
   const [showSetupQ, setShowSetupQ] = useState(true);     // 🔐 نافذة الحسابات القديمة
   const [setupQuestion, setSetupQuestion] = useState("");
   const [setupAnswer, setSetupAnswer] = useState("");
+  const [setupPass, setSetupPass] = useState("");   // 🔐 تأكيد الهوية قبل حفظ السؤال
 
   const changeLang = (l) => { setLang(l); localStorage.setItem("malaabi_lang", l); };
   const langLabel = lang === "ar" ? "🌐 ع" : lang === "fr" ? "🌐 FR" : "🌐 EN";
@@ -304,12 +324,12 @@ export default function App() {
       supabase.from("wilayas").select("*").order("id"),
       supabase.from("stadiums").select("*").order("id"),
       supabase.from("bookings").select("*").order("id"),
-      supabase.from("users").select("*", { count: "exact", head: true }),
+      supabase.from("users_count").select("*").maybeSingle(),   // 🔐 عرض عام يُرجع العدد فقط
     ]);
     if (w.data) setWilayas(w.data.map(x => x.name));
     if (s.data) setStadiums(s.data);
     if (b.data) setBookings(b.data);
-    if (u.count !== null) setUsersCount(u.count);
+    if (u.data?.total != null) setUsersCount(u.data.total);
     setLoading(false);
   };
 
@@ -419,8 +439,9 @@ export default function App() {
     if (!loginPhone || !loginPass) return showToast(t.enterAll, "#FF4444");
     if (!isValidPhone(loginPhone)) return showToast(L("invalidPhone"), "#FF4444");
     if (loginPass.length !== 4) return showToast(t.pass4, "#FF4444");
-    const { data } = await supabase.from("users").select("*").eq("phone", loginPhone).single();
-    if (!data || !(await bcrypt.compare(loginPass, data.password))) return showToast(t.wrongCredentials, "#FF4444");
+    const res = await authApi("login", { phone: loginPhone, password: loginPass });
+    if (res.error) return showToast(res.error === "network" ? L("netError") : t.wrongCredentials, "#FF4444");
+    const data = res.user;
     setUser(data);
     localStorage.setItem("malaabi_user", JSON.stringify(data));
     setScreen("app");
@@ -432,33 +453,35 @@ export default function App() {
     if (!isValidPhone(regPhone)) return showToast(L("invalidPhone"), "#FF4444");
     if (regPass.length !== 4) return showToast(t.pass4, "#FF4444");
     if (!regQuestion || !regAnswer.trim()) return showToast(L("chooseQ"), "#FF4444");
-    const hashed = await bcrypt.hash(regPass, 10);
-    const hashedAns = await bcrypt.hash(normAnswer(regAnswer), 10);
-    const { data, error } = await supabase.from("users").insert({ name: regName, phone: regPhone, password: hashed, security_question: regQuestion, security_answer: hashedAns }).select().single();
-    if (error) showToast(t.phoneExists, "#FF4444");
-    else {
-      setUser(data);
-      localStorage.setItem("malaabi_user", JSON.stringify(data));
-      setScreen("app"); setUsersCount(p => p + 1);
-      showToast(t.accountCreated);
+    const res = await authApi("register", {
+      name: regName, phone: regPhone, password: regPass,
+      question: regQuestion, answer: regAnswer,
+    });
+    if (res.error) {
+      return showToast(res.error === "phone_exists" ? t.phoneExists : res.error === "network" ? L("netError") : t.enterAll, "#FF4444");
     }
+    setUser(res.user);
+    localStorage.setItem("malaabi_user", JSON.stringify(res.user));
+    setScreen("app"); setUsersCount(p => p + 1);
+    showToast(t.accountCreated);
   };
 
   // 🔑 المرحلة 1 — البحث عن الحساب وجلب سؤاله السري
   const forgotFindUser = async () => {
     if (!isValidPhone(forgotPhone)) return showToast(L("invalidPhone"), "#FF4444");
-    const { data } = await supabase.from("users").select("id, name, phone, security_question, security_answer").eq("phone", forgotPhone).single();
-    if (!data) return showToast(L("phoneNotFound"), "#FF4444");
-    if (!data.security_question || !data.security_answer) return showToast(L("noQuestionSet"), "#FF4444");
-    setForgotUser(data); setForgotStep(2); setForgotTries(0);
+    const res = await authApi("get-question", { phone: forgotPhone });
+    if (res.error === "not_found") return showToast(L("phoneNotFound"), "#FF4444");
+    if (res.error === "no_question") return showToast(L("noQuestionSet"), "#FF4444");
+    if (res.error) return showToast(L("netError"), "#FF4444");
+    setForgotUser({ phone: forgotPhone, security_question: res.question });
+    setForgotStep(2); setForgotTries(0);
   };
 
   // 🔑 المرحلة 2 — التحقق من الجواب
   const forgotVerify = async () => {
     if (!forgotAnswer.trim()) return;
     if (forgotTries >= 5) return showToast(L("tooManyTries"), "#FF4444");
-    const ok = await bcrypt.compare(normAnswer(forgotAnswer), forgotUser.security_answer);
-    if (!ok) { setForgotTries(p => p + 1); return showToast(L("wrongAnswer"), "#FF4444"); }
+    // التحقق الفعلي يتم في الخادم عند حفظ كلمة السر — هنا ننتقل للمرحلة التالية فقط
     setForgotStep(3);
   };
 
@@ -466,11 +489,17 @@ export default function App() {
   const forgotReset = async () => {
     if (newPass1.length !== 4) return showToast(t.pass4, "#FF4444");
     if (newPass1 !== newPass2) return showToast(L("passMismatch"), "#FF4444");
-    const hashed = await bcrypt.hash(newPass1, 10);
-    const { error } = await supabase.from("users").update({ password: hashed }).eq("id", forgotUser.id);
-    if (error) return showToast("خطأ", "#FF4444");
+    const res = await authApi("reset-password", {
+      phone: forgotUser.phone, answer: forgotAnswer, newPassword: newPass1,
+    });
+    if (res.error === "wrong_answer") {
+      setForgotTries(p => p + 1); setForgotStep(2);
+      return showToast(L("wrongAnswer"), "#FF4444");
+    }
+    if (res.error) return showToast(L("netError"), "#FF4444");
+    const ph = forgotUser.phone;
     closeForgot();
-    setLoginPhone(forgotUser.phone);
+    setLoginPhone(ph);
     showToast(L("passChanged"));
   };
 
@@ -482,12 +511,15 @@ export default function App() {
   // 🔐 حفظ السؤال السري للحسابات القديمة
   const saveSecurityQ = async () => {
     if (!setupQuestion || !setupAnswer.trim()) return showToast(t.enterAll, "#FF4444");
-    const hashed = await bcrypt.hash(normAnswer(setupAnswer), 10);
-    const { error } = await supabase.from("users").update({ security_question: setupQuestion, security_answer: hashed }).eq("id", user.id);
-    if (error) return showToast("خطأ", "#FF4444");
-    const up = { ...user, security_question: setupQuestion, security_answer: hashed };
-    setUser(up); localStorage.setItem("malaabi_user", JSON.stringify(up));
-    setSetupQuestion(""); setSetupAnswer("");
+    if (!/^\d{4}$/.test(setupPass)) return showToast(t.pass4, "#FF4444");
+    const res = await authApi("set-question", {
+      phone: user.phone, password: setupPass,
+      question: setupQuestion, answer: setupAnswer,
+    });
+    if (res.error === "invalid_credentials") return showToast(t.wrongCredentials, "#FF4444");
+    if (res.error) return showToast(L("netError"), "#FF4444");
+    setUser(res.user); localStorage.setItem("malaabi_user", JSON.stringify(res.user));
+    setSetupQuestion(""); setSetupAnswer(""); setSetupPass("");
     showToast(L("qSaved"));
   };
 
@@ -1540,7 +1572,9 @@ export default function App() {
               <>
                 <label style={lbl}>{L("yourAnswer")}</label>
                 <input style={{...inp, marginBottom:"6px"}} value={setupAnswer} onChange={e => setSetupAnswer(e.target.value)}/>
-                <div style={{color:"#FF6D00", fontSize:"12px", marginBottom:"16px"}}>⚠️ {L("answerHint")}</div>
+                <div style={{color:"#FF6D00", fontSize:"12px", marginBottom:"14px"}}>⚠️ {L("answerHint")}</div>
+                <label style={lbl}>🔒 {L("confirmIdentity")}</label>
+                <input style={inp} type="password" maxLength={4} placeholder={t.enter4} value={setupPass} onChange={e => setSetupPass(e.target.value.replace(/\D/g,""))}/>
               </>
             )}
             <button onClick={saveSecurityQ} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"15px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{L("saveQ")}</button>
