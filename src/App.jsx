@@ -40,6 +40,20 @@ const STADIUM_IMAGES = [
 
 const getRandomImage = () => STADIUM_IMAGES[Math.floor(Math.random() * STADIUM_IMAGES.length)];
 
+// 📍 روابط الخرائط
+const mapsLink = (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`;
+const directionsLink = (lat, lng) => `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+const hasLocation = (s) => s && s.latitude != null && s.longitude != null;
+
+// 📏 حساب المسافة بالكيلومتر بين نقطتين (صيغة Haversine)
+const distanceKm = (lat1, lng1, lat2, lng2) => {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) ** 2 + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLng/2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+};
+
 const aboutText = {
   ar: "ملاعبي هو أول تطبيق موريتاني متخصص في حجز ملاعب كرة القدم. نهدف إلى تسهيل عملية الحجز بين الزبائن وأصحاب الملاعب بطريقة سريعة وآمنة. يمكنك اختيار الملعب المناسب لك، تحديد الوقت، والدفع عبر تطبيقات الدفع المحلية مثل Bankily وMasrvi وSEDAD.",
   fr: "Malaabi est la première application mauritanienne spécialisée dans la réservation de terrains de football. Notre objectif est de faciliter le processus de réservation entre les clients et les propriétaires de terrains de manière rapide et sécurisée.",
@@ -77,6 +91,20 @@ const TXT = {
   newBooking: { ar:"حجز جديد", fr:"Nouvelle réservation", en:"New booking" },
   bookingAccepted: { ar:"تم قبول حجزك", fr:"Réservation confirmée", en:"Booking confirmed" },
   bookingRejected: { ar:"تم رفض حجزك", fr:"Réservation refusée", en:"Booking rejected" },
+  // 📍 نصوص الموقع الجديدة
+  location: { ar:"موقع الملعب", fr:"Localisation du terrain", en:"Field location" },
+  myLocation: { ar:"📍 موقعي الحالي", fr:"📍 Ma position", en:"📍 My location" },
+  checkLocation: { ar:"🗺 تحقق من الموقع", fr:"🗺 Vérifier", en:"🗺 Check on map" },
+  locating: { ar:"📍 جاري تحديد الموقع...", fr:"📍 Localisation...", en:"📍 Locating..." },
+  locationSet: { ar:"✅ تم تحديد الموقع", fr:"✅ Position définie", en:"✅ Location set" },
+  locationFailed: { ar:"تعذر تحديد الموقع", fr:"Échec de localisation", en:"Location failed" },
+  noGeo: { ar:"المتصفح لا يدعم تحديد الموقع", fr:"Géolocalisation non supportée", en:"Geolocation not supported" },
+  directions: { ar:"🧭 الاتجاهات", fr:"🧭 Itinéraire", en:"🧭 Directions" },
+  showOnMap: { ar:"📍 عرض على الخريطة", fr:"📍 Voir sur la carte", en:"📍 View on map" },
+  noLocation: { ar:"لم يحدد الموقع بعد", fr:"Position non définie", en:"No location yet" },
+  sortNearest: { ar:"الأقرب إليّ", fr:"Le plus proche", en:"Nearest to me" },
+  kmAway: { ar:"كم منك", fr:"km de vous", en:"km away" },
+  enableLocation: { ar:"فعّل موقعك لعرض المسافة", fr:"Activez votre position", en:"Enable location for distance" },
 };
 
 export default function App() {
@@ -121,6 +149,8 @@ export default function App() {
   const [newPrice, setNewPrice] = useState("");
   const [newPayments, setNewPayments] = useState({});
   const [newOwnerPhone, setNewOwnerPhone] = useState("");
+  const [newLat, setNewLat] = useState("");        // 📍 جديد
+  const [newLng, setNewLng] = useState("");        // 📍 جديد
   const [newWorkingHours, setNewWorkingHours] = useState([...ALL_HOURS]);
   const [loginPhone, setLoginPhone] = useState("");
   const [loginPass, setLoginPass] = useState("");
@@ -134,10 +164,13 @@ export default function App() {
   const [editHood, setEditHood] = useState("");
   const [editPrice, setEditPrice] = useState("");
   const [editOwnerPhone, setEditOwnerPhone] = useState("");
+  const [editLat, setEditLat] = useState("");      // 📍 جديد
+  const [editLng, setEditLng] = useState("");      // 📍 جديد
   const [editPayments, setEditPayments] = useState({});
   const [editWorkingHours, setEditWorkingHours] = useState([...ALL_HOURS]);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [rateEdit, setRateEdit] = useState({});
+  const [myPos, setMyPos] = useState(null);        // 📍 موقع الزبون الحالي
 
   const changeLang = (l) => { setLang(l); localStorage.setItem("malaabi_lang", l); };
   const langLabel = lang === "ar" ? "🌐 ع" : lang === "fr" ? "🌐 FR" : "🌐 EN";
@@ -229,6 +262,37 @@ export default function App() {
   );
 
   const showToast = (msg, color=COLORS.accent) => { setToast({msg, color}); setTimeout(() => setToast(null), 4000); };
+
+  // 📍 تحديد الموقع الحالي — للمشرف عند إضافة/تعديل ملعب
+  const getMyLocation = (isEdit = false) => {
+    if (!navigator.geolocation) return showToast(L("noGeo"), "#FF4444");
+    showToast(L("locating"), COLORS.accent2);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const la = pos.coords.latitude.toFixed(7);
+        const lo = pos.coords.longitude.toFixed(7);
+        if (isEdit) { setEditLat(la); setEditLng(lo); }
+        else { setNewLat(la); setNewLng(lo); }
+        showToast(L("locationSet"));
+      },
+      () => showToast(L("locationFailed"), "#FF4444"),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  // 📍 تحديد موقع الزبون — لحساب المسافة والترتيب حسب الأقرب
+  const locateMe = () => {
+    if (!navigator.geolocation) return showToast(L("noGeo"), "#FF4444");
+    showToast(L("locating"), COLORS.accent2);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setMyPos({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        showToast(L("locationSet"));
+      },
+      () => showToast(L("locationFailed"), "#FF4444"),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   const handleLogin = async () => {
     if (!loginPhone || !loginPass) return showToast(t.enterAll, "#FF4444");
@@ -378,13 +442,17 @@ export default function App() {
     setEditStadium(st); setEditName(st.name); setEditWilaya(st.wilaya); setEditHood(st.hood);
     setEditPrice(st.price); setEditOwnerPhone(st.owner_phone || ""); setEditPayments(st.payments || {});
     setEditWorkingHours(st.working_hours || [...ALL_HOURS]);
+    setEditLat(st.latitude != null ? String(st.latitude) : "");   // 📍 جديد
+    setEditLng(st.longitude != null ? String(st.longitude) : ""); // 📍 جديد
   };
 
   const handleEdit = async () => {
     if (!editName || !editWilaya || !editHood || !editPrice) return showToast(t.enterAll, "#FF4444");
     const { data } = await supabase.from("stadiums").update({
       name: editName, wilaya: editWilaya, hood: editHood, price: parseInt(editPrice),
-      owner_phone: editOwnerPhone, payments: editPayments, working_hours: editWorkingHours
+      owner_phone: editOwnerPhone, payments: editPayments, working_hours: editWorkingHours,
+      latitude: editLat ? parseFloat(editLat) : null,     // 📍 جديد
+      longitude: editLng ? parseFloat(editLng) : null,    // 📍 جديد
     }).eq("id", editStadium.id).select().single();
     if (data) setStadiums(p => p.map(s => s.id === editStadium.id ? data : s));
     setEditStadium(null); showToast(t.editSaved);
@@ -397,10 +465,13 @@ export default function App() {
       name: newName, wilaya: newWilayaSelect, hood: newHood, price: parseInt(newPrice),
       color: colors[stadiums.length % colors.length], payments: newPayments, owner_phone: newOwnerPhone,
       working_hours: newWorkingHours, image: getRandomImage(),
+      latitude: newLat ? parseFloat(newLat) : null,       // 📍 جديد
+      longitude: newLng ? parseFloat(newLng) : null,      // 📍 جديد
       owner_code: genOwnerCode(), commission_rate: 12, balance_due: 0, status: "active"
     }).select().single();
     if (data) { setStadiums(p => [...p, data]); showToast("✅ " + L("ownerCodeIs") + ": " + data.owner_code); }
     setNewName(""); setNewWilayaSelect(""); setNewHood(""); setNewPrice(""); setNewPayments({}); setNewOwnerPhone(""); setNewWorkingHours([...ALL_HOURS]);
+    setNewLat(""); setNewLng("");                          // 📍 جديد
   };
 
   const handleAddWilaya = async () => {
@@ -423,6 +494,9 @@ export default function App() {
   const unreadNotifs = myBookings.filter(b => b.status !== "pending").length;
   const totalDues = stadiums.reduce((a,s) => a + (s.balance_due || 0), 0);
 
+  // 📏 المسافة بين الزبون والملعب
+  const stadiumDistance = (s) => (myPos && hasLocation(s)) ? distanceKm(myPos.lat, myPos.lng, s.latitude, s.longitude) : null;
+
   let filteredStadiums = stadiums.filter(s => s.status !== "suspended");
   if (filterWilaya !== "الكل") filteredStadiums = filteredStadiums.filter(s => s.wilaya === filterWilaya);
   if (searchText) filteredStadiums = filteredStadiums.filter(s =>
@@ -432,6 +506,13 @@ export default function App() {
   if (sortBy === "price_asc") filteredStadiums = [...filteredStadiums].sort((a,b) => a.price - b.price);
   if (sortBy === "price_desc") filteredStadiums = [...filteredStadiums].sort((a,b) => b.price - a.price);
   if (sortBy === "popular") filteredStadiums = [...filteredStadiums].sort((a,b) => confirmedBookings.filter(x => x.stadium_id === b.id).length - confirmedBookings.filter(x => x.stadium_id === a.id).length);
+  // 📍 الترتيب حسب الأقرب
+  if (sortBy === "nearest" && myPos) filteredStadiums = [...filteredStadiums].sort((a,b) => {
+    const da = stadiumDistance(a), db = stadiumDistance(b);
+    if (da == null) return 1;
+    if (db == null) return -1;
+    return da - db;
+  });
 
   const pendingBookings = bookings.filter(b => b.status === "pending");
   const ownerBookings = owner ? bookings.filter(b => b.stadium_id === owner.id) : [];
@@ -465,7 +546,8 @@ export default function App() {
         </button>
       ))}
     </div>
-  );// ✅ شاشة الدخول — 3 خيارات
+  );
+  // ✅ شاشة الدخول — 3 خيارات
   if (screen === "login" || screen === "register" || screen === "ownerLogin") {
     const isReg = screen === "register";
     const isOwner = screen === "ownerLogin";
@@ -549,6 +631,19 @@ export default function App() {
             </div>
           </div>
 
+          {/* 📍 موقع الملعب — عرض لصاحب الملعب */}
+          <div style={{background:COLORS.card, borderRadius:"14px", padding:"16px", marginBottom:"16px", border:`1px solid ${COLORS.border}`, display:"flex", justifyContent:"space-between", alignItems:"center", gap:"10px"}}>
+            <div>
+              <div style={{color:COLORS.muted, fontSize:"12px", marginBottom:"4px"}}>📍 {L("location")}</div>
+              <div style={{fontWeight:"700", fontSize:"14px", color: hasLocation(st) ? COLORS.accent : COLORS.muted}}>
+                {hasLocation(st) ? `${st.latitude}, ${st.longitude}` : L("noLocation")}
+              </div>
+            </div>
+            {hasLocation(st) && (
+              <button onClick={() => window.open(mapsLink(st.latitude, st.longitude), "_blank")} style={{padding:"10px 14px", background:"#00B0FF22", color:COLORS.accent2, border:"1px solid #00B0FF44", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px", whiteSpace:"nowrap"}}>{L("showOnMap")}</button>
+            )}
+          </div>
+
           <div style={{display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:"12px", marginBottom:"20px"}}>
             <div style={{background:COLORS.card, borderRadius:"14px", padding:"16px", border:`1px solid ${COLORS.border}`, textAlign:"center"}}>
               <div style={{fontSize:"26px"}}>✅</div>
@@ -614,7 +709,8 @@ export default function App() {
         <div style={{color:COLORS.accent, fontSize:"18px", fontWeight:"700"}}>{t.loading}</div>
       </div>
     </div>
-  );return (
+  );
+  return (
     <div style={{minHeight:"100vh", background:COLORS.bg, fontFamily:"Tajawal,sans-serif", direction:isRTL?"rtl":"ltr", color:"#fff", touchAction:"pan-x pan-y", paddingBottom:"70px"}}>
       <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet"/>
       <div style={{background:COLORS.card, borderBottom:`1px solid ${COLORS.border}`, padding:"12px 16px", display:"flex", justifyContent:"space-between", alignItems:"center", position:"sticky", top:0, zIndex:50}}>
@@ -635,12 +731,17 @@ export default function App() {
                   <div style={{fontSize:"22px", fontWeight:"800", marginBottom:"4px", background:"linear-gradient(135deg,#00E676,#00B0FF)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>{t.bookYourStadium}</div>
                   <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"12px"}}>{t.chooseStadium}</div>
                   <input style={{...inp, marginBottom:"8px", background:"#ffffff11"}} placeholder={t.search} value={searchText} onChange={e => setSearchText(e.target.value)}/>
-                  <select style={{...sel, marginBottom:0, background:"#ffffff11"}} value={sortBy} onChange={e => setSortBy(e.target.value)}>
+                  <select style={{...sel, marginBottom:"8px", background:"#ffffff11"}} value={sortBy} onChange={e => { const v = e.target.value; setSortBy(v); if (v === "nearest" && !myPos) locateMe(); }}>
                     <option value="default">{t.sortDefault}</option>
                     <option value="price_asc">{t.sortPriceAsc}</option>
                     <option value="price_desc">{t.sortPriceDesc}</option>
                     <option value="popular">{t.sortPopular}</option>
+                    <option value="nearest">📍 {L("sortNearest")}</option>
                   </select>
+                  {/* 📍 زر تفعيل الموقع لعرض المسافات */}
+                  <button onClick={locateMe} style={{width:"100%", padding:"10px", background: myPos?"#00E67622":"#ffffff11", color: myPos?COLORS.accent:COLORS.muted, border:`1px solid ${myPos?"#00E67644":COLORS.border}`, borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>
+                    {myPos ? "✅ " + L("locationSet") : L("enableLocation")}
+                  </button>
                 </div>
                 <div style={{display:"flex", gap:"8px", flexWrap:"wrap", marginBottom:"16px"}}>
                   {[t.all, ...wilayas].map((w, i) => {
@@ -657,11 +758,18 @@ export default function App() {
                     {filteredStadiums.map((s) => {
                       const hrs = s.working_hours || ALL_HOURS;
                       const free = hrs.filter(h => !isBooked(s.id, today, h)).length;
+                      const dist = stadiumDistance(s);
                       return (
                         <div key={s.id} style={{background:COLORS.card, borderRadius:"20px", border:`1px solid ${COLORS.border}`, overflow:"hidden", boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>
                           <div style={{position:"relative"}}>
                             <img src={s.image || STADIUM_IMAGES[0]} alt={s.name} style={{width:"100%", height:"140px", objectFit:"cover", display:"block"}}/>
                             <div style={{position:"absolute", inset:0, background:`linear-gradient(to bottom, transparent 50%, ${COLORS.card} 100%)`}}></div>
+                            {/* 📍 شارة المسافة */}
+                            {dist != null && (
+                              <div style={{position:"absolute", top:"10px", insetInlineStart:"10px", background:"rgba(0,0,0,0.65)", color:COLORS.accent, padding:"4px 10px", borderRadius:"20px", fontSize:"11px", fontWeight:"800", backdropFilter:"blur(4px)"}}>
+                                📍 {dist < 1 ? Math.round(dist*1000) + " m" : dist.toFixed(1) + " " + L("kmAway")}
+                              </div>
+                            )}
                             <div style={{position:"absolute", bottom:"10px", right:"12px", left:"12px"}}>
                               <div style={{fontWeight:"800", fontSize:"18px", color:"#fff", textShadow:"0 2px 8px rgba(0,0,0,0.8)"}}>{s.name}</div>
                               <div style={{color:"#ffffffaa", fontSize:"12px"}}>📍 {s.wilaya} — {s.hood}</div>
@@ -678,7 +786,13 @@ export default function App() {
                                 <div style={{color:COLORS.muted, fontSize:"10px"}}>{t.hourAvailable}</div>
                               </div>
                             </div>
-                            <button onClick={() => { setSelected(s); setStep(1); setBookDate(today); }} style={{width:"100%", padding:"11px", background:`linear-gradient(135deg, ${s.color}, ${s.color}BB)`, border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"14px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{t.bookNow}</button>
+                            <div style={{display:"flex", gap:"8px"}}>
+                              <button onClick={() => { setSelected(s); setStep(1); setBookDate(today); }} style={{flex:2, padding:"11px", background:`linear-gradient(135deg, ${s.color}, ${s.color}BB)`, border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"14px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{t.bookNow}</button>
+                              {/* 🧭 زر الاتجاهات */}
+                              {hasLocation(s) && (
+                                <button onClick={() => window.open(directionsLink(s.latitude, s.longitude), "_blank")} style={{flex:1, padding:"11px", background:"#00B0FF22", color:COLORS.accent2, border:"1px solid #00B0FF44", borderRadius:"12px", fontWeight:"700", fontSize:"13px", cursor:"pointer", fontFamily:"inherit"}}>{L("directions")}</button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );
@@ -700,6 +814,7 @@ export default function App() {
                   const sc = b.status==="confirmed"?COLORS.accent:b.status==="rejected"?"#FF4444":"#FF6D00";
                   const si = b.status==="confirmed"?"✅":b.status==="rejected"?"❌":"⏳";
                   const stx = b.status==="confirmed"?L("bookingAccepted"):b.status==="rejected"?L("bookingRejected"):L("waiting");
+                  const bst = stadiums.find(x => x.id === b.stadium_id);
                   return (
                     <div key={i} style={{background:COLORS.card, borderRadius:"14px", padding:"16px", marginBottom:"10px", border:`1px solid ${sc}33`, display:"flex", gap:"12px", alignItems:"center"}}>
                       <div style={{fontSize:"28px"}}>{si}</div>
@@ -712,6 +827,10 @@ export default function App() {
                             <span style={{color:COLORS.muted, fontSize:"11px"}}>{t.code}: </span>
                             <span style={{color:COLORS.accent, fontWeight:"800", letterSpacing:"2px"}}>{b.code}</span>
                           </div>
+                        )}
+                        {/* 🧭 اتجاهات الملعب في الإشعار المقبول */}
+                        {b.status==="confirmed" && hasLocation(bst) && (
+                          <button onClick={() => window.open(directionsLink(bst.latitude, bst.longitude), "_blank")} style={{marginTop:"8px", display:"block", padding:"8px 14px", background:"#00B0FF22", color:COLORS.accent2, border:"1px solid #00B0FF44", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{L("directions")}</button>
                         )}
                       </div>
                     </div>
@@ -820,8 +939,13 @@ export default function App() {
                         <div style={{color:COLORS.muted, fontSize:"13px"}}>📍 {s.wilaya} - {s.hood} - {s.price}</div>
                         <div style={{color:COLORS.accent, fontSize:"13px", marginTop:"4px"}}>✅ {c}</div>
                         <div style={{color:COLORS.accent2, fontSize:"12px"}}>🔑 {s.owner_code || "—"}</div>
+                        {/* 📍 حالة الموقع */}
+                        <div style={{color: hasLocation(s)?COLORS.accent:"#FF6D00", fontSize:"12px", marginTop:"2px"}}>
+                          {hasLocation(s) ? `📍 ${Number(s.latitude).toFixed(4)}, ${Number(s.longitude).toFixed(4)}` : "⚠️ " + L("noLocation")}
+                        </div>
                       </div>
-                      <div style={{display:"flex", gap:"8px"}}>
+                      <div style={{display:"flex", gap:"8px", flexWrap:"wrap", justifyContent:"flex-end"}}>
+                        {hasLocation(s) && <button onClick={() => window.open(mapsLink(s.latitude, s.longitude), "_blank")} style={{padding:"8px 12px", background:"#00E67622", color:COLORS.accent, border:"1px solid #00E67644", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>🗺</button>}
                         <button onClick={() => openEdit(s)} style={{padding:"8px 12px", background:"#00B0FF22", color:COLORS.accent2, border:"1px solid #00B0FF44", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{t.edit}</button>
                         <button onClick={() => setConfirmDelete(s)} style={{padding:"8px 12px", background:"#FF444422", color:"#FF4444", border:"1px solid #FF444444", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{t.delete}</button>
                       </div>
@@ -895,6 +1019,24 @@ export default function App() {
                   <input style={inp} type="number" placeholder="1000" value={newPrice} onChange={e => setNewPrice(e.target.value)}/>
                   <label style={lbl}>{t.ownerPhone}</label>
                   <input style={inp} maxLength={8} value={newOwnerPhone} onChange={e => setNewOwnerPhone(e.target.value.replace(/\D/g,""))}/>
+
+                  {/* 📍 موقع الملعب */}
+                  <div style={{fontWeight:"700", color:"#FF6D00", margin:"12px 0 10px"}}>📍 {L("location")}</div>
+                  <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px"}}>
+                    <div>
+                      <label style={lbl}>Latitude</label>
+                      <input style={inp} type="number" step="any" placeholder="20.9310526" value={newLat} onChange={e => setNewLat(e.target.value)}/>
+                    </div>
+                    <div>
+                      <label style={lbl}>Longitude</label>
+                      <input style={inp} type="number" step="any" placeholder="-17.0347218" value={newLng} onChange={e => setNewLng(e.target.value)}/>
+                    </div>
+                  </div>
+                  <div style={{display:"flex", gap:"8px", marginBottom:"16px"}}>
+                    <button onClick={() => getMyLocation(false)} style={{flex:1, padding:"11px", background:"#00B0FF22", color:COLORS.accent2, border:"1px solid #00B0FF44", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>{L("myLocation")}</button>
+                    {newLat && newLng && <button onClick={() => window.open(mapsLink(newLat, newLng), "_blank")} style={{flex:1, padding:"11px", background:"#00E67622", color:COLORS.accent, border:"1px solid #00E67644", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>{L("checkLocation")}</button>}
+                  </div>
+
                   <div style={{fontWeight:"700", color:COLORS.accent, margin:"12px 0 10px"}}>{t.workingHours}</div>
                   <div style={{display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:"6px", marginBottom:"14px"}}>
                     {ALL_HOURS.map(h => (
@@ -946,6 +1088,24 @@ export default function App() {
             <input style={inp} type="number" value={editPrice} onChange={e => setEditPrice(e.target.value)}/>
             <label style={lbl}>{t.ownerPhone}</label>
             <input style={inp} maxLength={8} value={editOwnerPhone} onChange={e => setEditOwnerPhone(e.target.value.replace(/\D/g,""))}/>
+
+            {/* 📍 تعديل موقع الملعب */}
+            <div style={{fontWeight:"700", color:"#FF6D00", margin:"12px 0 10px"}}>📍 {L("location")}</div>
+            <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px"}}>
+              <div>
+                <label style={lbl}>Latitude</label>
+                <input style={inp} type="number" step="any" placeholder="20.9310526" value={editLat} onChange={e => setEditLat(e.target.value)}/>
+              </div>
+              <div>
+                <label style={lbl}>Longitude</label>
+                <input style={inp} type="number" step="any" placeholder="-17.0347218" value={editLng} onChange={e => setEditLng(e.target.value)}/>
+              </div>
+            </div>
+            <div style={{display:"flex", gap:"8px", marginBottom:"16px"}}>
+              <button onClick={() => getMyLocation(true)} style={{flex:1, padding:"11px", background:"#00B0FF22", color:COLORS.accent2, border:"1px solid #00B0FF44", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>{L("myLocation")}</button>
+              {editLat && editLng && <button onClick={() => window.open(mapsLink(editLat, editLng), "_blank")} style={{flex:1, padding:"11px", background:"#00E67622", color:COLORS.accent, border:"1px solid #00E67644", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>{L("checkLocation")}</button>}
+            </div>
+
             <div style={{fontWeight:"700", color:COLORS.accent, margin:"12px 0 10px"}}>{t.workingHours}</div>
             <div style={{display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:"6px", marginBottom:"14px"}}>
               {ALL_HOURS.map(h => (
@@ -992,7 +1152,13 @@ export default function App() {
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && closeModal()}>
           <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"520px", maxHeight:"90vh", overflow:"auto", padding:"24px"}}>
             <div style={{fontSize:"18px", fontWeight:"800", color:selected.color, marginBottom:"4px"}}>🏟 {selected.name}</div>
-            <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"20px"}}>📍 {selected.wilaya} - {selected.hood} - {selected.price}</div>
+            <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"12px"}}>📍 {selected.wilaya} - {selected.hood} - {selected.price}</div>
+            {/* 🧭 اتجاهات الملعب داخل نافذة الحجز */}
+            {hasLocation(selected) && (
+              <button onClick={() => window.open(directionsLink(selected.latitude, selected.longitude), "_blank")} style={{width:"100%", padding:"11px", background:"#00B0FF22", color:COLORS.accent2, border:"1px solid #00B0FF44", borderRadius:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px", marginBottom:"16px"}}>
+                {L("directions")}{stadiumDistance(selected) != null ? ` — ${stadiumDistance(selected).toFixed(1)} ${L("kmAway")}` : ""}
+              </button>
+            )}
             {step===1 && (
               <>
                 <label style={lbl}>{t.date}</label>
