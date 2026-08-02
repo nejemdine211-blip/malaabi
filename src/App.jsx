@@ -99,12 +99,25 @@ const TXT = {
   locationSet: { ar:"✅ تم تحديد الموقع", fr:"✅ Position définie", en:"✅ Location set" },
   locationFailed: { ar:"تعذر تحديد الموقع", fr:"Échec de localisation", en:"Location failed" },
   noGeo: { ar:"المتصفح لا يدعم تحديد الموقع", fr:"Géolocalisation non supportée", en:"Geolocation not supported" },
-  directions: { ar:"🧭 الاتجاهات", fr:"🧭 Itinéraire", en:"🧭 Directions" },
+  directions: { ar:"📍 الموقع", fr:"📍 Localisation", en:"📍 Location" },
+  nearestBtn: { ar:"🎯 الأقرب لي", fr:"🎯 Le plus proche", en:"🎯 Nearest to me" },
+  showAllBtn: { ar:"عرض الكل", fr:"Tout afficher", en:"Show all" },
+  noNearby: { ar:"لا توجد ملاعب بمواقع محددة قريبة منك", fr:"Aucun terrain géolocalisé", en:"No located fields nearby" },
   showOnMap: { ar:"📍 عرض على الخريطة", fr:"📍 Voir sur la carte", en:"📍 View on map" },
   noLocation: { ar:"لم يحدد الموقع بعد", fr:"Position non définie", en:"No location yet" },
   sortNearest: { ar:"الأقرب إليّ", fr:"Le plus proche", en:"Nearest to me" },
   kmAway: { ar:"كم منك", fr:"km de vous", en:"km away" },
   enableLocation: { ar:"فعّل موقعك لعرض المسافة", fr:"Activez votre position", en:"Enable location for distance" },
+  // 🔑 شاشة الدخول الجديدة
+  forgotPass: { ar:"نسيت كلمة السر؟", fr:"Mot de passe oublié ?", en:"Forgot password?" },
+  createNewAccount: { ar:"إنشاء حساب جديد", fr:"Créer un nouveau compte", en:"Create new account" },
+  haveAccount: { ar:"لديك حساب؟ تسجيل الدخول", fr:"Déjà un compte ? Se connecter", en:"Have an account? Log in" },
+  ownerEntry: { ar:"🏟 دخول أصحاب الملاعب", fr:"🏟 Espace propriétaires", en:"🏟 Field owners" },
+  backToLogin: { ar:"← رجوع لتسجيل الدخول", fr:"← Retour à la connexion", en:"← Back to log in" },
+  forgotTitle: { ar:"استعادة كلمة السر", fr:"Récupérer le mot de passe", en:"Recover password" },
+  forgotDesc: { ar:"أدخل رقم هاتفك وسنرسل لك كلمة سر جديدة عبر واتساب خلال وقت قصير.", fr:"Entrez votre numéro et nous vous enverrons un nouveau mot de passe par WhatsApp.", en:"Enter your phone number and we'll send you a new password via WhatsApp." },
+  sendRequest: { ar:"📱 إرسال الطلب عبر واتساب", fr:"📱 Envoyer via WhatsApp", en:"📱 Send via WhatsApp" },
+  phoneNotFound: { ar:"لا يوجد حساب بهذا الرقم", fr:"Aucun compte avec ce numéro", en:"No account with this number" },
 };
 
 export default function App() {
@@ -171,6 +184,8 @@ export default function App() {
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [rateEdit, setRateEdit] = useState({});
   const [myPos, setMyPos] = useState(null);        // 📍 موقع الزبون الحالي
+  const [showForgot, setShowForgot] = useState(false);   // 🔑 نافذة نسيت كلمة السر
+  const [forgotPhone, setForgotPhone] = useState("");     // 🔑 رقم الاستعادة
 
   const changeLang = (l) => { setLang(l); localStorage.setItem("malaabi_lang", l); };
   const langLabel = lang === "ar" ? "🌐 ع" : lang === "fr" ? "🌐 FR" : "🌐 EN";
@@ -294,6 +309,22 @@ export default function App() {
     );
   };
 
+  // 🎯 الأقرب لي — يحدد الموقع ثم يرتب الملاعب حسب المسافة
+  const findNearest = () => {
+    if (myPos) { setSortBy("nearest"); return; }
+    if (!navigator.geolocation) return showToast(L("noGeo"), "#FF4444");
+    showToast(L("locating"), COLORS.accent2);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setMyPos({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setSortBy("nearest");
+        showToast(L("locationSet"));
+      },
+      () => showToast(L("locationFailed"), "#FF4444"),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   const handleLogin = async () => {
     if (!loginPhone || !loginPass) return showToast(t.enterAll, "#FF4444");
     if (loginPhone.length !== 8) return showToast(t.phone8, "#FF4444");
@@ -319,6 +350,18 @@ export default function App() {
       setScreen("app"); setUsersCount(p => p + 1);
       showToast(t.accountCreated);
     }
+  };
+
+  // 🔑 طلب استعادة كلمة السر عبر واتساب
+  const handleForgot = async () => {
+    if (forgotPhone.length !== 8) return showToast(t.phone8, "#FF4444");
+    const { data } = await supabase.from("users").select("name, phone").eq("phone", forgotPhone).single();
+    if (!data) return showToast(L("phoneNotFound"), "#FF4444");
+    const msg = lang === "ar"
+      ? `مرحبا، نسيت كلمة السر الخاصة بحسابي في تطبيق ملاعبي.\nالاسم: ${data.name}\nرقم الهاتف: ${data.phone}`
+      : `Bonjour, mot de passe oublié — Malaabi.\nNom: ${data.name}\nTéléphone: ${data.phone}`;
+    window.open(`https://wa.me/${WHATSAPP_NUM}?text=${encodeURIComponent(msg)}`, "_blank");
+    setShowForgot(false); setForgotPhone("");
   };
 
   const handleOwnerLogin = async () => {
@@ -562,12 +605,6 @@ export default function App() {
             <div style={{color:COLORS.muted, marginTop:"8px", fontSize:"15px"}}>{t.appSlogan}</div>
           </div>
           <div style={{background:COLORS.card, borderRadius:"24px", padding:"28px", border:`1px solid ${COLORS.border}`, boxShadow:"0 25px 50px rgba(0,0,0,0.5)"}}>
-            <div style={{display:"flex", marginBottom:"24px", background:COLORS.bg, borderRadius:"12px", padding:"4px", gap:"3px"}}>
-              <button onClick={() => setScreen("login")} style={{flex:1, padding:"10px 3px", borderRadius:"8px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"12px", background:screen==="login"?"linear-gradient(135deg,#00E676,#00B0FF)":"transparent", color:screen==="login"?"#000":COLORS.muted}}>{t.login}</button>
-              <button onClick={() => setScreen("register")} style={{flex:1, padding:"10px 3px", borderRadius:"8px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"12px", background:isReg?"linear-gradient(135deg,#00E676,#00B0FF)":"transparent", color:isReg?"#000":COLORS.muted}}>{t.register}</button>
-              <button onClick={() => setScreen("ownerLogin")} style={{flex:1, padding:"10px 3px", borderRadius:"8px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"12px", background:isOwner?"linear-gradient(135deg,#FF6D00,#FF4081)":"transparent", color:isOwner?"#fff":COLORS.muted}}>🏟 {L("ownerLogin")}</button>
-            </div>
-
             {isOwner ? (
               <>
                 <div style={{textAlign:"center", marginBottom:"18px"}}>
@@ -577,20 +614,65 @@ export default function App() {
                 <label style={lbl}>{L("ownerCode")}</label>
                 <input style={{...inp, letterSpacing:"4px", textAlign:"center", fontWeight:"800", fontSize:"18px"}} placeholder="M••••••" value={ownerCodeInput} onChange={e => setOwnerCodeInput(e.target.value.toUpperCase())}/>
                 <button onClick={handleOwnerLogin} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#FF6D00,#FF4081)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"16px", cursor:"pointer", fontFamily:"inherit", color:"#fff"}}>{t.enterApp}</button>
+                <button onClick={() => setScreen("login")} style={{width:"100%", padding:"12px", background:"transparent", border:"none", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", marginTop:"10px", fontSize:"13px"}}>{L("backToLogin")}</button>
+              </>
+            ) : isReg ? (
+              <>
+                <div style={{fontSize:"19px", fontWeight:"800", marginBottom:"18px", textAlign:"center"}}>{L("createNewAccount")}</div>
+                <label style={lbl}>{t.fullName}</label>
+                <input style={inp} placeholder={t.enterName} value={regName} onChange={e => setRegName(e.target.value)}/>
+                <label style={lbl}>{t.phone}</label>
+                <input style={inp} placeholder={t.enter8} maxLength={8} value={regPhone} onChange={e => setRegPhone(e.target.value.replace(/\D/g,""))}/>
+                <label style={lbl}>{t.password}</label>
+                <input style={inp} type="password" placeholder={t.enter4} maxLength={4} value={regPass} onChange={e => setRegPass(e.target.value.replace(/\D/g,""))}/>
+                <button onClick={handleRegister} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"16px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{t.createAccount}</button>
+                <button onClick={() => setScreen("login")} style={{width:"100%", padding:"12px", background:"transparent", border:"none", color:COLORS.accent2, fontWeight:"700", cursor:"pointer", fontFamily:"inherit", marginTop:"12px", fontSize:"14px"}}>{L("haveAccount")}</button>
               </>
             ) : (
               <>
-                {isReg && (<><label style={lbl}>{t.fullName}</label><input style={inp} placeholder={t.enterName} value={regName} onChange={e => setRegName(e.target.value)}/></>)}
                 <label style={lbl}>{t.phone}</label>
-                <input style={inp} placeholder={t.enter8} maxLength={8} value={isReg ? regPhone : loginPhone} onChange={e => { const v = e.target.value.replace(/\D/g,""); isReg ? setRegPhone(v) : setLoginPhone(v); }}/>
+                <input style={inp} placeholder={t.enter8} maxLength={8} value={loginPhone} onChange={e => setLoginPhone(e.target.value.replace(/\D/g,""))}/>
                 <label style={lbl}>{t.password}</label>
-                <input style={inp} type="password" placeholder={t.enter4} maxLength={4} value={isReg ? regPass : loginPass} onChange={e => { const v = e.target.value.replace(/\D/g,""); isReg ? setRegPass(v) : setLoginPass(v); }}/>
-                <button onClick={isReg ? handleRegister : handleLogin} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"16px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{isReg ? t.createAccount : t.enterApp}</button>
+                <input style={{...inp, marginBottom:"10px"}} type="password" placeholder={t.enter4} maxLength={4} value={loginPass} onChange={e => setLoginPass(e.target.value.replace(/\D/g,""))} onKeyDown={e => e.key === "Enter" && handleLogin()}/>
+                <button onClick={handleLogin} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"16px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{t.enterApp}</button>
+
+                {/* 🔑 نسيت كلمة السر */}
+                <button onClick={() => { setShowForgot(true); setForgotPhone(loginPhone); }} style={{display:"block", width:"100%", padding:"12px", background:"transparent", border:"none", color:COLORS.accent2, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>{L("forgotPass")}</button>
+
+                {/* ➖ فاصل */}
+                <div style={{display:"flex", alignItems:"center", gap:"12px", margin:"6px 0 18px"}}>
+                  <div style={{flex:1, height:"1px", background:COLORS.border}}></div>
+                  <div style={{color:COLORS.muted, fontSize:"12px"}}>{lang==="ar" ? "أو" : lang==="fr" ? "ou" : "or"}</div>
+                  <div style={{flex:1, height:"1px", background:COLORS.border}}></div>
+                </div>
+
+                {/* ➕ إنشاء حساب جديد */}
+                <button onClick={() => setScreen("register")} style={{width:"100%", padding:"14px", background:"transparent", border:`2px solid ${COLORS.accent}`, borderRadius:"12px", color:COLORS.accent, fontWeight:"800", fontSize:"15px", cursor:"pointer", fontFamily:"inherit"}}>{L("createNewAccount")}</button>
+
+                {/* 🏟 دخول أصحاب الملاعب */}
+                <button onClick={() => setScreen("ownerLogin")} style={{width:"100%", padding:"12px", background:"#FF6D0015", border:"1px solid #FF6D0044", borderRadius:"12px", color:"#FF6D00", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", marginTop:"12px", fontSize:"13px"}}>{L("ownerEntry")}</button>
               </>
             )}
-            <button onClick={() => setShowAbout(true)} style={{width:"100%", padding:"12px", background:"transparent", border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", marginTop:"10px", fontSize:"14px"}}>{lang==="ar" ? "🏟 تعرف علينا" : lang==="fr" ? "🏟 À propos" : "🏟 About us"}</button>
+            <button onClick={() => setShowAbout(true)} style={{width:"100%", padding:"12px", background:"transparent", border:"none", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", marginTop:"8px", fontSize:"13px"}}>{lang==="ar" ? "🏟 تعرف علينا" : lang==="fr" ? "🏟 À propos" : "🏟 About us"}</button>
           </div>
         </div>
+
+        {/* 🔑 نافذة استعادة كلمة السر */}
+        {showForgot && (
+          <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setShowForgot(false)}>
+            <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"400px", padding:"28px"}}>
+              <div style={{textAlign:"center", marginBottom:"18px"}}>
+                <div style={{fontSize:"42px", marginBottom:"8px"}}>🔑</div>
+                <div style={{fontSize:"18px", fontWeight:"800", color:COLORS.accent}}>{L("forgotTitle")}</div>
+              </div>
+              <div style={{color:COLORS.muted, fontSize:"13px", lineHeight:"1.9", marginBottom:"18px", textAlign:lang==="ar"?"right":"left"}}>{L("forgotDesc")}</div>
+              <label style={lbl}>{t.phone}</label>
+              <input style={inp} placeholder={t.enter8} maxLength={8} value={forgotPhone} onChange={e => setForgotPhone(e.target.value.replace(/\D/g,""))}/>
+              <button onClick={handleForgot} style={{width:"100%", padding:"14px", background:"#25D366", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"15px", cursor:"pointer", fontFamily:"inherit", color:"#fff"}}>{L("sendRequest")}</button>
+              <button onClick={() => setShowForgot(false)} style={{width:"100%", padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", marginTop:"10px"}}>{lang==="ar" ? "اغلاق" : lang==="fr" ? "Fermer" : "Close"}</button>
+            </div>
+          </div>
+        )}
 
         {showAbout && (
           <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setShowAbout(false)}>
@@ -731,17 +813,24 @@ export default function App() {
                   <div style={{fontSize:"22px", fontWeight:"800", marginBottom:"4px", background:"linear-gradient(135deg,#00E676,#00B0FF)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>{t.bookYourStadium}</div>
                   <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"12px"}}>{t.chooseStadium}</div>
                   <input style={{...inp, marginBottom:"8px", background:"#ffffff11"}} placeholder={t.search} value={searchText} onChange={e => setSearchText(e.target.value)}/>
-                  <select style={{...sel, marginBottom:"8px", background:"#ffffff11"}} value={sortBy} onChange={e => { const v = e.target.value; setSortBy(v); if (v === "nearest" && !myPos) locateMe(); }}>
+                  <select style={{...sel, marginBottom:"8px", background:"#ffffff11"}} value={sortBy} onChange={e => { const v = e.target.value; if (v === "nearest") return findNearest(); setSortBy(v); }}>
                     <option value="default">{t.sortDefault}</option>
                     <option value="price_asc">{t.sortPriceAsc}</option>
                     <option value="price_desc">{t.sortPriceDesc}</option>
                     <option value="popular">{t.sortPopular}</option>
                     <option value="nearest">📍 {L("sortNearest")}</option>
                   </select>
-                  {/* 📍 زر تفعيل الموقع لعرض المسافات */}
-                  <button onClick={locateMe} style={{width:"100%", padding:"10px", background: myPos?"#00E67622":"#ffffff11", color: myPos?COLORS.accent:COLORS.muted, border:`1px solid ${myPos?"#00E67644":COLORS.border}`, borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>
-                    {myPos ? "✅ " + L("locationSet") : L("enableLocation")}
-                  </button>
+                  {/* 🎯 زر الأقرب لي */}
+                  <div style={{display:"flex", gap:"8px"}}>
+                    <button onClick={findNearest} style={{flex:2, padding:"12px", background: sortBy==="nearest"?"linear-gradient(135deg,#00E676,#00B0FF)":"#ffffff11", color: sortBy==="nearest"?"#000":COLORS.accent, border:`1px solid ${sortBy==="nearest"?"transparent":COLORS.border}`, borderRadius:"10px", fontWeight:"800", cursor:"pointer", fontFamily:"inherit", fontSize:"14px"}}>
+                      {L("nearestBtn")}
+                    </button>
+                    {sortBy==="nearest" && (
+                      <button onClick={() => setSortBy("default")} style={{flex:1, padding:"12px", background:"#ffffff11", color:COLORS.muted, border:`1px solid ${COLORS.border}`, borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>
+                        {L("showAllBtn")}
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div style={{display:"flex", gap:"8px", flexWrap:"wrap", marginBottom:"16px"}}>
                   {[t.all, ...wilayas].map((w, i) => {
