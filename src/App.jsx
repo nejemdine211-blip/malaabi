@@ -40,6 +40,27 @@ const STADIUM_IMAGES = [
 
 const getRandomImage = () => STADIUM_IMAGES[Math.floor(Math.random() * STADIUM_IMAGES.length)];
 
+// 🔐 الأسئلة السرية لاستعادة كلمة السر
+const SECURITY_QUESTIONS = [
+  { id:"q1", ar:"ما اسم الحي الذي نشأت فيه؟", fr:"Dans quel quartier avez-vous grandi ?", en:"Which neighborhood did you grow up in?" },
+  { id:"q2", ar:"ما اسم أول ملعب لعبت فيه؟", fr:"Nom du premier terrain où vous avez joué ?", en:"Name of the first field you played on?" },
+  { id:"q3", ar:"ما اسم فريقك المفضل؟", fr:"Quelle est votre équipe préférée ?", en:"What is your favorite team?" },
+  { id:"q4", ar:"ما اسم أستاذك المفضل؟", fr:"Nom de votre professeur préféré ?", en:"Your favorite teacher's name?" },
+  { id:"q5", ar:"ما اسم صديق طفولتك؟", fr:"Nom de votre ami d'enfance ?", en:"Your childhood friend's name?" },
+];
+const qText = (id, lang) => SECURITY_QUESTIONS.find(q => q.id === id)?.[lang] || "";
+// توحيد صيغة الجواب قبل التشفير والمقارنة
+const normAnswer = (a) => a.trim().toLowerCase().replace(/\s+/g, " ");
+
+// 📞 أرقام الهاتف الموريتانية: 8 أرقام تبدأ بـ 2 أو 3 أو 4
+const PHONE_PREFIXES = ["2","3","4"];
+const cleanPhone = (v) => {
+  let d = v.replace(/\D/g, "");
+  while (d && !PHONE_PREFIXES.includes(d[0])) d = d.slice(1);
+  return d.slice(0, 8);
+};
+const isValidPhone = (p) => /^[234]\d{7}$/.test(p);
+
 // 📍 روابط الخرائط
 const mapsLink = (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`;
 const directionsLink = (lat, lng) => `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
@@ -115,9 +136,28 @@ const TXT = {
   ownerEntry: { ar:"🏟 دخول أصحاب الملاعب", fr:"🏟 Espace propriétaires", en:"🏟 Field owners" },
   backToLogin: { ar:"← رجوع لتسجيل الدخول", fr:"← Retour à la connexion", en:"← Back to log in" },
   forgotTitle: { ar:"استعادة كلمة السر", fr:"Récupérer le mot de passe", en:"Recover password" },
-  forgotDesc: { ar:"أدخل رقم هاتفك وسنرسل لك كلمة سر جديدة عبر واتساب خلال وقت قصير.", fr:"Entrez votre numéro et nous vous enverrons un nouveau mot de passe par WhatsApp.", en:"Enter your phone number and we'll send you a new password via WhatsApp." },
-  sendRequest: { ar:"📱 إرسال الطلب عبر واتساب", fr:"📱 Envoyer via WhatsApp", en:"📱 Send via WhatsApp" },
+  forgotStep1: { ar:"أدخل رقم هاتفك المسجل", fr:"Entrez votre numéro enregistré", en:"Enter your registered phone" },
+  next2: { ar:"التالي", fr:"Suivant", en:"Next" },
   phoneNotFound: { ar:"لا يوجد حساب بهذا الرقم", fr:"Aucun compte avec ce numéro", en:"No account with this number" },
+  noQuestionSet: { ar:"هذا الحساب لم يحدد سؤالاً سرياً. تواصل معنا عبر واتساب.", fr:"Aucune question secrète définie. Contactez-nous.", en:"No security question set. Contact us." },
+  yourAnswer: { ar:"جوابك", fr:"Votre réponse", en:"Your answer" },
+  wrongAnswer: { ar:"الجواب غير صحيح", fr:"Réponse incorrecte", en:"Wrong answer" },
+  verify: { ar:"تحقق", fr:"Vérifier", en:"Verify" },
+  newPass: { ar:"كلمة السر الجديدة (4 أرقام)", fr:"Nouveau mot de passe (4 chiffres)", en:"New password (4 digits)" },
+  confirmPass: { ar:"تأكيد كلمة السر", fr:"Confirmer le mot de passe", en:"Confirm password" },
+  passMismatch: { ar:"كلمتا السر غير متطابقتين", fr:"Les mots de passe ne correspondent pas", en:"Passwords don't match" },
+  savePass: { ar:"حفظ كلمة السر", fr:"Enregistrer", en:"Save password" },
+  passChanged: { ar:"✅ تم تغيير كلمة السر، يمكنك الدخول الآن", fr:"✅ Mot de passe modifié", en:"✅ Password changed" },
+  securityQ: { ar:"السؤال السري", fr:"Question secrète", en:"Security question" },
+  chooseQ: { ar:"اختر سؤالاً", fr:"Choisissez une question", en:"Choose a question" },
+  answerHint: { ar:"احفظ جوابك جيداً — ستحتاجه إذا نسيت كلمة السر", fr:"Retenez bien votre réponse", en:"Remember your answer well" },
+  setupQTitle: { ar:"احمِ حسابك", fr:"Protégez votre compte", en:"Protect your account" },
+  setupQDesc: { ar:"حدد سؤالاً سرياً حتى تتمكن من استعادة حسابك بنفسك إذا نسيت كلمة السر.", fr:"Définissez une question secrète pour récupérer votre compte.", en:"Set a security question so you can recover your account yourself." },
+  saveQ: { ar:"حفظ السؤال", fr:"Enregistrer", en:"Save question" },
+  later: { ar:"لاحقاً", fr:"Plus tard", en:"Later" },
+  qSaved: { ar:"✅ تم حفظ السؤال السري", fr:"✅ Question enregistrée", en:"✅ Question saved" },
+  invalidPhone: { ar:"الرقم غير صحيح", fr:"Numéro invalide", en:"Invalid number" },
+  tooManyTries: { ar:"محاولات كثيرة، حاول لاحقاً", fr:"Trop de tentatives", en:"Too many attempts" },
 };
 
 export default function App() {
@@ -186,6 +226,17 @@ export default function App() {
   const [myPos, setMyPos] = useState(null);        // 📍 موقع الزبون الحالي
   const [showForgot, setShowForgot] = useState(false);   // 🔑 نافذة نسيت كلمة السر
   const [forgotPhone, setForgotPhone] = useState("");     // 🔑 رقم الاستعادة
+  const [forgotStep, setForgotStep] = useState(1);        // 🔑 مرحلة الاستعادة
+  const [forgotUser, setForgotUser] = useState(null);     // 🔑 الحساب المستهدف
+  const [forgotAnswer, setForgotAnswer] = useState("");   // 🔑 جواب السؤال السري
+  const [forgotTries, setForgotTries] = useState(0);      // 🔑 عدد المحاولات
+  const [newPass1, setNewPass1] = useState("");
+  const [newPass2, setNewPass2] = useState("");
+  const [regQuestion, setRegQuestion] = useState("");     // 🔐 سؤال التسجيل
+  const [regAnswer, setRegAnswer] = useState("");         // 🔐 جواب التسجيل
+  const [showSetupQ, setShowSetupQ] = useState(true);     // 🔐 نافذة الحسابات القديمة
+  const [setupQuestion, setSetupQuestion] = useState("");
+  const [setupAnswer, setSetupAnswer] = useState("");
 
   const changeLang = (l) => { setLang(l); localStorage.setItem("malaabi_lang", l); };
   const langLabel = lang === "ar" ? "🌐 ع" : lang === "fr" ? "🌐 FR" : "🌐 EN";
@@ -327,7 +378,7 @@ export default function App() {
 
   const handleLogin = async () => {
     if (!loginPhone || !loginPass) return showToast(t.enterAll, "#FF4444");
-    if (loginPhone.length !== 8) return showToast(t.phone8, "#FF4444");
+    if (!isValidPhone(loginPhone)) return showToast(L("invalidPhone"), "#FF4444");
     if (loginPass.length !== 4) return showToast(t.pass4, "#FF4444");
     const { data } = await supabase.from("users").select("*").eq("phone", loginPhone).single();
     if (!data || !(await bcrypt.compare(loginPass, data.password))) return showToast(t.wrongCredentials, "#FF4444");
@@ -339,10 +390,12 @@ export default function App() {
 
   const handleRegister = async () => {
     if (!regName || !regPhone || !regPass) return showToast(t.enterAll, "#FF4444");
-    if (regPhone.length !== 8) return showToast(t.phone8, "#FF4444");
+    if (!isValidPhone(regPhone)) return showToast(L("invalidPhone"), "#FF4444");
     if (regPass.length !== 4) return showToast(t.pass4, "#FF4444");
+    if (!regQuestion || !regAnswer.trim()) return showToast(L("chooseQ"), "#FF4444");
     const hashed = await bcrypt.hash(regPass, 10);
-    const { data, error } = await supabase.from("users").insert({ name: regName, phone: regPhone, password: hashed }).select().single();
+    const hashedAns = await bcrypt.hash(normAnswer(regAnswer), 10);
+    const { data, error } = await supabase.from("users").insert({ name: regName, phone: regPhone, password: hashed, security_question: regQuestion, security_answer: hashedAns }).select().single();
     if (error) showToast(t.phoneExists, "#FF4444");
     else {
       setUser(data);
@@ -352,16 +405,51 @@ export default function App() {
     }
   };
 
-  // 🔑 طلب استعادة كلمة السر عبر واتساب
-  const handleForgot = async () => {
-    if (forgotPhone.length !== 8) return showToast(t.phone8, "#FF4444");
-    const { data } = await supabase.from("users").select("name, phone").eq("phone", forgotPhone).single();
+  // 🔑 المرحلة 1 — البحث عن الحساب وجلب سؤاله السري
+  const forgotFindUser = async () => {
+    if (!isValidPhone(forgotPhone)) return showToast(L("invalidPhone"), "#FF4444");
+    const { data } = await supabase.from("users").select("id, name, phone, security_question, security_answer").eq("phone", forgotPhone).single();
     if (!data) return showToast(L("phoneNotFound"), "#FF4444");
-    const msg = lang === "ar"
-      ? `مرحبا، نسيت كلمة السر الخاصة بحسابي في تطبيق ملاعبي.\nالاسم: ${data.name}\nرقم الهاتف: ${data.phone}`
-      : `Bonjour, mot de passe oublié — Malaabi.\nNom: ${data.name}\nTéléphone: ${data.phone}`;
-    window.open(`https://wa.me/${WHATSAPP_NUM}?text=${encodeURIComponent(msg)}`, "_blank");
-    setShowForgot(false); setForgotPhone("");
+    if (!data.security_question || !data.security_answer) return showToast(L("noQuestionSet"), "#FF4444");
+    setForgotUser(data); setForgotStep(2); setForgotTries(0);
+  };
+
+  // 🔑 المرحلة 2 — التحقق من الجواب
+  const forgotVerify = async () => {
+    if (!forgotAnswer.trim()) return;
+    if (forgotTries >= 5) return showToast(L("tooManyTries"), "#FF4444");
+    const ok = await bcrypt.compare(normAnswer(forgotAnswer), forgotUser.security_answer);
+    if (!ok) { setForgotTries(p => p + 1); return showToast(L("wrongAnswer"), "#FF4444"); }
+    setForgotStep(3);
+  };
+
+  // 🔑 المرحلة 3 — حفظ كلمة سر جديدة
+  const forgotReset = async () => {
+    if (newPass1.length !== 4) return showToast(t.pass4, "#FF4444");
+    if (newPass1 !== newPass2) return showToast(L("passMismatch"), "#FF4444");
+    const hashed = await bcrypt.hash(newPass1, 10);
+    const { error } = await supabase.from("users").update({ password: hashed }).eq("id", forgotUser.id);
+    if (error) return showToast("خطأ", "#FF4444");
+    closeForgot();
+    setLoginPhone(forgotUser.phone);
+    showToast(L("passChanged"));
+  };
+
+  const closeForgot = () => {
+    setShowForgot(false); setForgotStep(1); setForgotUser(null);
+    setForgotAnswer(""); setNewPass1(""); setNewPass2(""); setForgotTries(0);
+  };
+
+  // 🔐 حفظ السؤال السري للحسابات القديمة
+  const saveSecurityQ = async () => {
+    if (!setupQuestion || !setupAnswer.trim()) return showToast(t.enterAll, "#FF4444");
+    const hashed = await bcrypt.hash(normAnswer(setupAnswer), 10);
+    const { error } = await supabase.from("users").update({ security_question: setupQuestion, security_answer: hashed }).eq("id", user.id);
+    if (error) return showToast("خطأ", "#FF4444");
+    const up = { ...user, security_question: setupQuestion, security_answer: hashed };
+    setUser(up); localStorage.setItem("malaabi_user", JSON.stringify(up));
+    setSetupQuestion(""); setSetupAnswer("");
+    showToast(L("qSaved"));
   };
 
   const handleOwnerLogin = async () => {
@@ -622,16 +710,28 @@ export default function App() {
                 <label style={lbl}>{t.fullName}</label>
                 <input style={inp} placeholder={t.enterName} value={regName} onChange={e => setRegName(e.target.value)}/>
                 <label style={lbl}>{t.phone}</label>
-                <input style={inp} placeholder={t.enter8} maxLength={8} value={regPhone} onChange={e => setRegPhone(e.target.value.replace(/\D/g,""))}/>
+                <input style={inp} placeholder={t.enter8} maxLength={8} value={regPhone} onChange={e => setRegPhone(cleanPhone(e.target.value))}/>
                 <label style={lbl}>{t.password}</label>
                 <input style={inp} type="password" placeholder={t.enter4} maxLength={4} value={regPass} onChange={e => setRegPass(e.target.value.replace(/\D/g,""))}/>
+                <label style={lbl}>🔐 {L("securityQ")}</label>
+                <select style={sel} value={regQuestion} onChange={e => setRegQuestion(e.target.value)}>
+                  <option value="">{L("chooseQ")}</option>
+                  {SECURITY_QUESTIONS.map(q => <option key={q.id} value={q.id}>{q[lang]}</option>)}
+                </select>
+                {regQuestion && (
+                  <>
+                    <label style={lbl}>{L("yourAnswer")}</label>
+                    <input style={{...inp, marginBottom:"6px"}} value={regAnswer} onChange={e => setRegAnswer(e.target.value)}/>
+                    <div style={{color:"#FF6D00", fontSize:"12px", marginBottom:"16px"}}>⚠️ {L("answerHint")}</div>
+                  </>
+                )}
                 <button onClick={handleRegister} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"16px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{t.createAccount}</button>
                 <button onClick={() => setScreen("login")} style={{width:"100%", padding:"12px", background:"transparent", border:"none", color:COLORS.accent2, fontWeight:"700", cursor:"pointer", fontFamily:"inherit", marginTop:"12px", fontSize:"14px"}}>{L("haveAccount")}</button>
               </>
             ) : (
               <>
                 <label style={lbl}>{t.phone}</label>
-                <input style={inp} placeholder={t.enter8} maxLength={8} value={loginPhone} onChange={e => setLoginPhone(e.target.value.replace(/\D/g,""))}/>
+                <input style={inp} placeholder={t.enter8} maxLength={8} value={loginPhone} onChange={e => setLoginPhone(cleanPhone(e.target.value))}/>
                 <label style={lbl}>{t.password}</label>
                 <input style={{...inp, marginBottom:"10px"}} type="password" placeholder={t.enter4} maxLength={4} value={loginPass} onChange={e => setLoginPass(e.target.value.replace(/\D/g,""))} onKeyDown={e => e.key === "Enter" && handleLogin()}/>
                 <button onClick={handleLogin} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"16px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{t.enterApp}</button>
@@ -657,19 +757,50 @@ export default function App() {
           </div>
         </div>
 
-        {/* 🔑 نافذة استعادة كلمة السر */}
+        {/* 🔑 نافذة استعادة كلمة السر — 3 مراحل */}
         {showForgot && (
-          <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setShowForgot(false)}>
+          <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && closeForgot()}>
             <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"400px", padding:"28px"}}>
               <div style={{textAlign:"center", marginBottom:"18px"}}>
-                <div style={{fontSize:"42px", marginBottom:"8px"}}>🔑</div>
+                <div style={{fontSize:"42px", marginBottom:"8px"}}>{forgotStep===1?"🔑":forgotStep===2?"🔐":"✅"}</div>
                 <div style={{fontSize:"18px", fontWeight:"800", color:COLORS.accent}}>{L("forgotTitle")}</div>
+                <div style={{display:"flex", gap:"6px", justifyContent:"center", marginTop:"12px"}}>
+                  {[1,2,3].map(n => <div key={n} style={{width:"28px", height:"4px", borderRadius:"4px", background: forgotStep>=n?COLORS.accent:COLORS.border}}></div>)}
+                </div>
               </div>
-              <div style={{color:COLORS.muted, fontSize:"13px", lineHeight:"1.9", marginBottom:"18px", textAlign:lang==="ar"?"right":"left"}}>{L("forgotDesc")}</div>
-              <label style={lbl}>{t.phone}</label>
-              <input style={inp} placeholder={t.enter8} maxLength={8} value={forgotPhone} onChange={e => setForgotPhone(e.target.value.replace(/\D/g,""))}/>
-              <button onClick={handleForgot} style={{width:"100%", padding:"14px", background:"#25D366", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"15px", cursor:"pointer", fontFamily:"inherit", color:"#fff"}}>{L("sendRequest")}</button>
-              <button onClick={() => setShowForgot(false)} style={{width:"100%", padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", marginTop:"10px"}}>{lang==="ar" ? "اغلاق" : lang==="fr" ? "Fermer" : "Close"}</button>
+
+              {forgotStep===1 && (
+                <>
+                  <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"16px", textAlign:lang==="ar"?"right":"left"}}>{L("forgotStep1")}</div>
+                  <label style={lbl}>{t.phone}</label>
+                  <input style={inp} placeholder={t.enter8} maxLength={8} value={forgotPhone} onChange={e => setForgotPhone(cleanPhone(e.target.value))}/>
+                  <button onClick={forgotFindUser} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"15px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{L("next2")}</button>
+                </>
+              )}
+
+              {forgotStep===2 && forgotUser && (
+                <>
+                  <div style={{background:COLORS.bg, borderRadius:"12px", padding:"14px", marginBottom:"16px"}}>
+                    <div style={{color:COLORS.muted, fontSize:"11px", marginBottom:"6px"}}>🔐 {L("securityQ")}</div>
+                    <div style={{fontWeight:"700", fontSize:"14px", lineHeight:"1.6"}}>{qText(forgotUser.security_question, lang)}</div>
+                  </div>
+                  <label style={lbl}>{L("yourAnswer")}</label>
+                  <input style={inp} value={forgotAnswer} onChange={e => setForgotAnswer(e.target.value)} onKeyDown={e => e.key === "Enter" && forgotVerify()}/>
+                  <button onClick={forgotVerify} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"15px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{L("verify")}</button>
+                </>
+              )}
+
+              {forgotStep===3 && (
+                <>
+                  <label style={lbl}>{L("newPass")}</label>
+                  <input style={inp} type="password" maxLength={4} placeholder={t.enter4} value={newPass1} onChange={e => setNewPass1(e.target.value.replace(/\D/g,""))}/>
+                  <label style={lbl}>{L("confirmPass")}</label>
+                  <input style={inp} type="password" maxLength={4} placeholder={t.enter4} value={newPass2} onChange={e => setNewPass2(e.target.value.replace(/\D/g,""))}/>
+                  <button onClick={forgotReset} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"15px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{L("savePass")}</button>
+                </>
+              )}
+
+              <button onClick={closeForgot} style={{width:"100%", padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", marginTop:"10px"}}>{lang==="ar" ? "اغلاق" : lang==="fr" ? "Fermer" : "Close"}</button>
             </div>
           </div>
         )}
@@ -1107,7 +1238,7 @@ export default function App() {
                   <label style={lbl}>{t.price}</label>
                   <input style={inp} type="number" placeholder="1000" value={newPrice} onChange={e => setNewPrice(e.target.value)}/>
                   <label style={lbl}>{t.ownerPhone}</label>
-                  <input style={inp} maxLength={8} value={newOwnerPhone} onChange={e => setNewOwnerPhone(e.target.value.replace(/\D/g,""))}/>
+                  <input style={inp} maxLength={8} value={newOwnerPhone} onChange={e => setNewOwnerPhone(cleanPhone(e.target.value))}/>
 
                   {/* 📍 موقع الملعب */}
                   <div style={{fontWeight:"700", color:"#FF6D00", margin:"12px 0 10px"}}>📍 {L("location")}</div>
@@ -1176,7 +1307,7 @@ export default function App() {
             <label style={lbl}>{t.price}</label>
             <input style={inp} type="number" value={editPrice} onChange={e => setEditPrice(e.target.value)}/>
             <label style={lbl}>{t.ownerPhone}</label>
-            <input style={inp} maxLength={8} value={editOwnerPhone} onChange={e => setEditOwnerPhone(e.target.value.replace(/\D/g,""))}/>
+            <input style={inp} maxLength={8} value={editOwnerPhone} onChange={e => setEditOwnerPhone(cleanPhone(e.target.value))}/>
 
             {/* 📍 تعديل موقع الملعب */}
             <div style={{fontWeight:"700", color:"#FF6D00", margin:"12px 0 10px"}}>📍 {L("location")}</div>
@@ -1306,6 +1437,33 @@ export default function App() {
               <button onClick={() => setConfirmDelete(null)} style={{flex:1, padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>{t.cancel}</button>
               <button onClick={() => handleDelete(confirmDelete.id)} style={{flex:1, padding:"12px", background:"#FF4444", border:"none", borderRadius:"12px", color:"#fff", fontWeight:"700", cursor:"pointer", fontFamily:"inherit"}}>{t.delete}</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🔐 تذكير الحسابات القديمة بتحديد سؤال سري */}
+      {user && !user.security_question && showSetupQ && tab==="client" && (
+        <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.88)", zIndex:150, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}}>
+          <div style={{background:COLORS.card, borderRadius:"24px", border:"1px solid #FF6D0044", width:"100%", maxWidth:"400px", padding:"28px"}}>
+            <div style={{textAlign:"center", marginBottom:"16px"}}>
+              <div style={{fontSize:"42px", marginBottom:"8px"}}>🔐</div>
+              <div style={{fontSize:"18px", fontWeight:"800", color:"#FF6D00"}}>{L("setupQTitle")}</div>
+            </div>
+            <div style={{color:COLORS.muted, fontSize:"13px", lineHeight:"1.9", marginBottom:"18px", textAlign:lang==="ar"?"right":"left"}}>{L("setupQDesc")}</div>
+            <label style={lbl}>{L("securityQ")}</label>
+            <select style={sel} value={setupQuestion} onChange={e => setSetupQuestion(e.target.value)}>
+              <option value="">{L("chooseQ")}</option>
+              {SECURITY_QUESTIONS.map(q => <option key={q.id} value={q.id}>{q[lang]}</option>)}
+            </select>
+            {setupQuestion && (
+              <>
+                <label style={lbl}>{L("yourAnswer")}</label>
+                <input style={{...inp, marginBottom:"6px"}} value={setupAnswer} onChange={e => setSetupAnswer(e.target.value)}/>
+                <div style={{color:"#FF6D00", fontSize:"12px", marginBottom:"16px"}}>⚠️ {L("answerHint")}</div>
+              </>
+            )}
+            <button onClick={saveSecurityQ} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"15px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{L("saveQ")}</button>
+            <button onClick={() => setShowSetupQ(false)} style={{width:"100%", padding:"12px", background:"transparent", border:"none", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", marginTop:"8px", fontSize:"13px"}}>{L("later")}</button>
           </div>
         </div>
       )}
