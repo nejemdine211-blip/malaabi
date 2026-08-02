@@ -38,7 +38,35 @@ const STADIUM_IMAGES = [
   "https://images.unsplash.com/photo-1553778263-73a83bab9b0c?w=400&h=200&fit=crop",
 ];
 
-const getRandomImage = () => STADIUM_IMAGES[Math.floor(Math.random() * STADIUM_IMAGES.length)];
+// 🖼 صور احتياطية من مصدر مختلف (تُستعمل إذا فشل تحميل الصورة الأصلية)
+const FALLBACK_IMAGES = [
+  "https://images.pexels.com/photos/274506/pexels-photo-274506.jpeg?auto=compress&cs=tinysrgb&w=400",
+  "https://images.pexels.com/photos/47730/the-ball-stadion-football-the-pitch-47730.jpeg?auto=compress&cs=tinysrgb&w=400",
+  "https://images.pexels.com/photos/54567/football-stadium-arena-crowd-54567.jpeg?auto=compress&cs=tinysrgb&w=400",
+  "https://images.pexels.com/photos/399187/pexels-photo-399187.jpeg?auto=compress&cs=tinysrgb&w=400",
+];
+
+// 🎲 اختيار صورة أقل استعمالاً حتى لا تتكرر الصور بين الملاعب
+const pickImage = (existing = []) => {
+  const counts = STADIUM_IMAGES.map(u => existing.filter(s => s.image === u).length);
+  const min = Math.min(...counts);
+  const pool = STADIUM_IMAGES.filter((u, i) => counts[i] === min);
+  return pool[Math.floor(Math.random() * pool.length)];
+};
+
+// 🖼 صورة الملعب: المخزّنة، وإلا واحدة ثابتة حسب رقمه
+const stadiumImage = (s) => s.image || STADIUM_IMAGES[(s.id || 0) % STADIUM_IMAGES.length];
+
+// 🛟 إذا فشل تحميل الصورة، نجرب البدائل ثم نخفيها ليظهر التدرج اللوني
+const onImgError = (e, seed = 0) => {
+  const tried = parseInt(e.target.dataset.try || "0", 10);
+  if (tried < FALLBACK_IMAGES.length) {
+    e.target.dataset.try = String(tried + 1);
+    e.target.src = FALLBACK_IMAGES[(seed + tried) % FALLBACK_IMAGES.length];
+  } else {
+    e.target.style.display = "none";
+  }
+};
 
 // 🔐 الأسئلة السرية لاستعادة كلمة السر
 const SECURITY_QUESTIONS = [
@@ -156,6 +184,14 @@ const TXT = {
   saveQ: { ar:"حفظ السؤال", fr:"Enregistrer", en:"Save question" },
   later: { ar:"لاحقاً", fr:"Plus tard", en:"Later" },
   qSaved: { ar:"✅ تم حفظ السؤال السري", fr:"✅ Question enregistrée", en:"✅ Question saved" },
+  uploadImage: { ar:"📷 اختر صورة من ملفاتك", fr:"📷 Choisir une image", en:"📷 Choose an image" },
+  imageUploaded: { ar:"✅ تم رفع الصورة", fr:"✅ Image envoyée", en:"✅ Image uploaded" },
+  removeImage: { ar:"🗑 حذف الصورة", fr:"🗑 Supprimer l\'image", en:"🗑 Remove image" },
+  imageTooBig: { ar:"الصورة كبيرة جداً (الحد 5 ميغا)", fr:"Image trop volumineuse (max 5 Mo)", en:"Image too large (max 5MB)" },
+  uploadFailed: { ar:"فشل رفع الصورة", fr:"Échec de l\'envoi", en:"Upload failed" },
+  orPasteLink: { ar:"أو الصق رابط صورة", fr:"Ou collez un lien", en:"Or paste an image link" },
+  imageUrl: { ar:"رابط صورة الملعب (اختياري)", fr:"Lien de l\'image (optionnel)", en:"Image URL (optional)" },
+  imageHint: { ar:"اتركه فارغاً لاختيار صورة تلقائياً", fr:"Laissez vide pour une image automatique", en:"Leave empty for an automatic image" },
   invalidPhone: { ar:"الرقم غير صحيح", fr:"Numéro invalide", en:"Invalid number" },
   tooManyTries: { ar:"محاولات كثيرة، حاول لاحقاً", fr:"Trop de tentatives", en:"Too many attempts" },
 };
@@ -202,6 +238,8 @@ export default function App() {
   const [newPrice, setNewPrice] = useState("");
   const [newPayments, setNewPayments] = useState({});
   const [newOwnerPhone, setNewOwnerPhone] = useState("");
+  const [newImage, setNewImage] = useState("");    // 🖼 رابط صورة مخصص (اختياري)
+  const [uploadingImg, setUploadingImg] = useState(false);  // 🖼 حالة رفع الصورة
   const [newLat, setNewLat] = useState("");        // 📍 جديد
   const [newLng, setNewLng] = useState("");        // 📍 جديد
   const [newWorkingHours, setNewWorkingHours] = useState([...ALL_HOURS]);
@@ -217,6 +255,7 @@ export default function App() {
   const [editHood, setEditHood] = useState("");
   const [editPrice, setEditPrice] = useState("");
   const [editOwnerPhone, setEditOwnerPhone] = useState("");
+  const [editImage, setEditImage] = useState("");  // 🖼 رابط صورة مخصص (اختياري)
   const [editLat, setEditLat] = useState("");      // 📍 جديد
   const [editLng, setEditLng] = useState("");      // 📍 جديد
   const [editPayments, setEditPayments] = useState({});
@@ -500,6 +539,21 @@ export default function App() {
     showToast("✅");
   };
 
+  // 🖼 رفع صورة الملعب من ملفات المشرف إلى Supabase Storage
+  const handleUploadStadiumImage = async (file, isEdit = false) => {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) return showToast(L("imageTooBig"), "#FF4444");
+    setUploadingImg(true);
+    const ext = file.name.split(".").pop().toLowerCase();
+    const fn = `stadium_${Date.now()}_${Math.random().toString(36).substring(2,8)}.${ext}`;
+    const { error } = await supabase.storage.from("stadiums").upload(fn, file, { cacheControl: "3600", upsert: false });
+    if (error) { setUploadingImg(false); return showToast(L("uploadFailed"), "#FF4444"); }
+    const { data } = supabase.storage.from("stadiums").getPublicUrl(fn);
+    if (isEdit) setEditImage(data.publicUrl); else setNewImage(data.publicUrl);
+    setUploadingImg(false);
+    showToast(L("imageUploaded"));
+  };
+
   const handleBook = async () => {
     if (bookHour === null || !selectedPayApp || !transactionNum) return;
     if (!proofUrl) return showToast(L("proofRequired"), "#FF4444");
@@ -573,6 +627,7 @@ export default function App() {
     setEditStadium(st); setEditName(st.name); setEditWilaya(st.wilaya); setEditHood(st.hood);
     setEditPrice(st.price); setEditOwnerPhone(st.owner_phone || ""); setEditPayments(st.payments || {});
     setEditWorkingHours(st.working_hours || [...ALL_HOURS]);
+    setEditImage(st.image || "");                                 // 🖼 جديد
     setEditLat(st.latitude != null ? String(st.latitude) : "");   // 📍 جديد
     setEditLng(st.longitude != null ? String(st.longitude) : ""); // 📍 جديد
   };
@@ -582,6 +637,7 @@ export default function App() {
     const { data } = await supabase.from("stadiums").update({
       name: editName, wilaya: editWilaya, hood: editHood, price: parseInt(editPrice),
       owner_phone: editOwnerPhone, payments: editPayments, working_hours: editWorkingHours,
+      image: editImage.trim() || pickImage(stadiums.filter(s => s.id !== editStadium.id)),   // 🖼 جديد
       latitude: editLat ? parseFloat(editLat) : null,     // 📍 جديد
       longitude: editLng ? parseFloat(editLng) : null,    // 📍 جديد
     }).eq("id", editStadium.id).select().single();
@@ -595,14 +651,14 @@ export default function App() {
     const { data } = await supabase.from("stadiums").insert({
       name: newName, wilaya: newWilayaSelect, hood: newHood, price: parseInt(newPrice),
       color: colors[stadiums.length % colors.length], payments: newPayments, owner_phone: newOwnerPhone,
-      working_hours: newWorkingHours, image: getRandomImage(),
+      working_hours: newWorkingHours, image: newImage.trim() || pickImage(stadiums),
       latitude: newLat ? parseFloat(newLat) : null,       // 📍 جديد
       longitude: newLng ? parseFloat(newLng) : null,      // 📍 جديد
       owner_code: genOwnerCode(), commission_rate: 12, balance_due: 0, status: "active"
     }).select().single();
     if (data) { setStadiums(p => [...p, data]); showToast("✅ " + L("ownerCodeIs") + ": " + data.owner_code); }
     setNewName(""); setNewWilayaSelect(""); setNewHood(""); setNewPrice(""); setNewPayments({}); setNewOwnerPhone(""); setNewWorkingHours([...ALL_HOURS]);
-    setNewLat(""); setNewLng("");                          // 📍 جديد
+    setNewLat(""); setNewLng(""); setNewImage("");          // 📍 جديد
   };
 
   const handleAddWilaya = async () => {
@@ -982,7 +1038,8 @@ export default function App() {
                       return (
                         <div key={s.id} style={{background:COLORS.card, borderRadius:"20px", border:`1px solid ${COLORS.border}`, overflow:"hidden", boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>
                           <div style={{position:"relative"}}>
-                            <img src={s.image || STADIUM_IMAGES[0]} alt={s.name} style={{width:"100%", height:"140px", objectFit:"cover", display:"block"}}/>
+                            <div style={{position:"absolute", inset:0, background:`linear-gradient(135deg, ${s.color}44, ${COLORS.card})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"44px"}}>⚽</div>
+                            <img src={stadiumImage(s)} alt={s.name} onError={e => onImgError(e, s.id || 0)} style={{width:"100%", height:"140px", objectFit:"cover", display:"block", position:"relative"}}/>
                             <div style={{position:"absolute", inset:0, background:`linear-gradient(to bottom, transparent 50%, ${COLORS.card} 100%)`}}></div>
                             {/* 📍 شارة المسافة */}
                             {dist != null && (
@@ -1240,6 +1297,20 @@ export default function App() {
                   <label style={lbl}>{t.ownerPhone}</label>
                   <input style={inp} maxLength={8} value={newOwnerPhone} onChange={e => setNewOwnerPhone(cleanPhone(e.target.value))}/>
 
+                  <label style={lbl}>🖼 {L("imageUrl")}</label>
+                  <label style={{display:"block", width:"100%", padding:"14px", background: newImage?"#00E67622":COLORS.bg, border:`2px dashed ${newImage?COLORS.accent:COLORS.border}`, borderRadius:"12px", color: newImage?COLORS.accent:COLORS.muted, fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px", textAlign:"center", marginBottom:"10px", boxSizing:"border-box"}}>
+                    {uploadingImg ? L("uploading") : newImage ? L("imageUploaded") : L("uploadImage")}
+                    <input type="file" accept="image/*" style={{display:"none"}} onChange={e => handleUploadStadiumImage(e.target.files[0], false)}/>
+                  </label>
+                  <input style={{...inp, marginBottom:"6px"}} placeholder={L("orPasteLink")} value={newImage} onChange={e => setNewImage(e.target.value)}/>
+                  <div style={{color:COLORS.muted, fontSize:"12px", marginBottom:"12px"}}>{L("imageHint")}</div>
+                  {newImage.trim() && (
+                    <>
+                      <img src={newImage} alt="" onError={e => e.target.style.display="none"} style={{width:"100%", height:"120px", objectFit:"cover", borderRadius:"12px", marginBottom:"8px"}}/>
+                      <button onClick={() => setNewImage("")} style={{width:"100%", padding:"9px", background:"#FF444422", color:"#FF4444", border:"1px solid #FF444444", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px", marginBottom:"16px"}}>{L("removeImage")}</button>
+                    </>
+                  )}
+
                   {/* 📍 موقع الملعب */}
                   <div style={{fontWeight:"700", color:"#FF6D00", margin:"12px 0 10px"}}>📍 {L("location")}</div>
                   <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px"}}>
@@ -1308,6 +1379,16 @@ export default function App() {
             <input style={inp} type="number" value={editPrice} onChange={e => setEditPrice(e.target.value)}/>
             <label style={lbl}>{t.ownerPhone}</label>
             <input style={inp} maxLength={8} value={editOwnerPhone} onChange={e => setEditOwnerPhone(cleanPhone(e.target.value))}/>
+
+            <label style={lbl}>🖼 {L("imageUrl")}</label>
+            <label style={{display:"block", width:"100%", padding:"14px", background: editImage?"#00E67622":COLORS.bg, border:`2px dashed ${editImage?COLORS.accent:COLORS.border}`, borderRadius:"12px", color: editImage?COLORS.accent:COLORS.muted, fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px", textAlign:"center", marginBottom:"10px", boxSizing:"border-box"}}>
+              {uploadingImg ? L("uploading") : editImage ? L("imageUploaded") : L("uploadImage")}
+              <input type="file" accept="image/*" style={{display:"none"}} onChange={e => handleUploadStadiumImage(e.target.files[0], true)}/>
+            </label>
+            <input style={{...inp, marginBottom:"6px"}} placeholder={L("orPasteLink")} value={editImage} onChange={e => setEditImage(e.target.value)}/>
+            <div style={{color:COLORS.muted, fontSize:"12px", marginBottom:"10px"}}>{L("imageHint")}</div>
+            <img src={editImage.trim() || stadiumImage(editStadium)} alt="" onError={e => onImgError(e, editStadium.id || 0)} style={{width:"100%", height:"120px", objectFit:"cover", borderRadius:"12px", marginBottom:"8px"}}/>
+            {editImage.trim() && <button onClick={() => setEditImage("")} style={{width:"100%", padding:"9px", background:"#FF444422", color:"#FF4444", border:"1px solid #FF444444", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px", marginBottom:"16px"}}>{L("removeImage")}</button>}
 
             {/* 📍 تعديل موقع الملعب */}
             <div style={{fontWeight:"700", color:"#FF6D00", margin:"12px 0 10px"}}>📍 {L("location")}</div>
