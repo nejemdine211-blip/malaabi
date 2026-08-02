@@ -335,10 +335,19 @@ export default function App() {
 
   useEffect(() => {
     setTimeout(() => setSplash(false), 2500);
-    const saved = localStorage.getItem("malaabi_user");
-    const savedOwner = localStorage.getItem("malaabi_owner");
-    if (saved) { setUser(JSON.parse(saved)); setScreen("app"); }
-    else if (savedOwner) { setOwner(JSON.parse(savedOwner)); setScreen("owner"); }
+    // 🛟 قراءة آمنة — لو كانت القيمة تالفة نمسحها بدل أن ينهار التطبيق
+    const readSaved = (k) => {
+      try {
+        const v = localStorage.getItem(k);
+        if (!v || v === "undefined" || v === "null") return null;
+        const parsed = JSON.parse(v);
+        return parsed && parsed.phone ? parsed : null;
+      } catch (_e) { localStorage.removeItem(k); return null; }
+    };
+    const saved = readSaved("malaabi_user");
+    const savedOwner = readSaved("malaabi_owner");
+    if (saved) { setUser(saved); setScreen("app"); }
+    else if (savedOwner) { setOwner(savedOwner); setScreen("owner"); }
     loadData();
     if ("Notification" in window) Notification.requestPermission();
   }, []);
@@ -440,7 +449,7 @@ export default function App() {
     if (!isValidPhone(loginPhone)) return showToast(L("invalidPhone"), "#FF4444");
     if (loginPass.length !== 4) return showToast(t.pass4, "#FF4444");
     const res = await authApi("login", { phone: loginPhone, password: loginPass });
-    if (res.error) return showToast(res.error === "network" ? L("netError") : t.wrongCredentials, "#FF4444");
+    if (res.error || !res.user) return showToast(res.error === "network" ? L("netError") : t.wrongCredentials, "#FF4444");
     const data = res.user;
     setUser(data);
     localStorage.setItem("malaabi_user", JSON.stringify(data));
@@ -457,7 +466,7 @@ export default function App() {
       name: regName, phone: regPhone, password: regPass,
       question: regQuestion, answer: regAnswer,
     });
-    if (res.error) {
+    if (res.error || !res.user) {
       return showToast(res.error === "phone_exists" ? t.phoneExists : res.error === "network" ? L("netError") : t.enterAll, "#FF4444");
     }
     setUser(res.user);
