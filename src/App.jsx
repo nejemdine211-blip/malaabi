@@ -230,6 +230,17 @@ const TXT = {
   wrongPass: { ar:"كلمة السر خاطئة", fr:"Mot de passe incorrect", en:"Wrong password" },
   commanderWelcome: { ar:"مرحباً بك أيها القائد 👑", fr:"Bienvenue Commandant 👑", en:"Welcome Commander 👑" },
   checking: { ar:"جاري التحقق...", fr:"Vérification...", en:"Checking..." },
+  rateTitle: { ar:"كيف كانت تجربتك؟", fr:"Comment était votre expérience ?", en:"How was your experience?" },
+  rateSend: { ar:"إرسال التقييم", fr:"Envoyer l\'avis", en:"Send rating" },
+  rateComment: { ar:"تعليق (اختياري)", fr:"Commentaire (optionnel)", en:"Comment (optional)" },
+  rateThanks: { ar:"⭐ شكراً على تقييمك", fr:"⭐ Merci pour votre avis", en:"⭐ Thanks for your rating" },
+  yourRating: { ar:"تقييمك", fr:"Votre note", en:"Your rating" },
+  rateTooEarly: { ar:"لم ينته موعد الحجز بعد", fr:"La réservation n\'est pas terminée", en:"Booking not finished yet" },
+  alreadyRated: { ar:"قيّمت هذا الحجز مسبقاً", fr:"Déjà évalué", en:"Already rated" },
+  pickStars: { ar:"اختر عدد النجوم", fr:"Choisissez les étoiles", en:"Pick stars" },
+  ratings: { ar:"التقييمات", fr:"Avis", en:"Ratings" },
+  noRatings: { ar:"لا توجد تقييمات بعد", fr:"Aucun avis", en:"No ratings yet" },
+  sortRating: { ar:"الأعلى تقييماً", fr:"Mieux notés", en:"Top rated" },
   delWilaya: { ar:"حذف الولاية", fr:"Supprimer la wilaya", en:"Delete wilaya" },
   wilayaEmpty: { ar:"حذف الولاية نهائياً؟", fr:"Supprimer définitivement ?", en:"Delete permanently?" },
   wilayaHasStadiums: { ar:"ملاعب — سيُحذفون هم وحجوزاتهم نهائياً! متأكد؟", fr:"terrains seront supprimés avec leurs réservations ! Confirmer ?", en:"fields will be deleted with their bookings! Sure?" },
@@ -331,6 +342,13 @@ export default function App() {
   const [adminPass, setAdminPass] = useState("");               // 👑 محفوظة في الذاكرة فقط
   const [adminChecking, setAdminChecking] = useState(false);
   const [showOwnerCode, setShowOwnerCode] = useState(false);   // 🔑 إظهار كود المالك
+  const [ratingsMap, setRatingsMap] = useState({});      // ⭐ معدلات الملاعب العامة
+  const [myRatings, setMyRatings] = useState([]);        // ⭐ ما قيّمه الزبون
+  const [rateBooking, setRateBooking] = useState(null);  // ⭐ الحجز الجاري تقييمه
+  const [rateStars, setRateStars] = useState(0);
+  const [rateText, setRateText] = useState("");
+  const [ownerRatings, setOwnerRatings] = useState([]);  // ⭐ تقييمات ملعب المالك
+  const [adminRatings, setAdminRatings] = useState([]);  // ⭐ كل التقييمات للمشرف
   const [sessionPass, setSessionPass] = useState(() => sessionStorage.getItem("mb_sp") || "");   // 🔒 تُمحى بإغلاق التبويب
   const [myBookingsList, setMyBookingsList] = useState([]);   // 🔒 حجوزات الزبون الكاملة
 
@@ -357,16 +375,18 @@ export default function App() {
 
   const loadData = async () => {
     setLoading(true);
-    const [w, s, b, u] = await Promise.all([
+    const [w, s, b, r, u] = await Promise.all([
       supabase.from("wilayas").select("*").order("id"),
       supabase.from("stadiums_public").select("*").order("id"),
       supabase.from("bookings_slots").select("*"),   // 🔒 الساعات فقط — بلا أسماء ولا أرقام
+      supabase.from("stadium_ratings").select("*"),  // ⭐ المعدلات (ثلاثة تقييمات فأكثر)
       supabase.from("users_count").select("*").maybeSingle(),   // 🔐 عرض عام يُرجع العدد فقط
     ]);
     if (w.data) setWilayas(w.data.map(x => x.name));
     if (s.data) setStadiums(s.data);
     if (b.data) setBookings(b.data);
     if (u.data?.total != null) setUsersCount(u.data.total);
+    if (r.data) setRatingsMap(Object.fromEntries(r.data.map(x => [x.stadium_id, x])));
     setLoading(false);
   };
 
@@ -390,6 +410,8 @@ export default function App() {
       if (sp) {
         stadiumApi("client-bookings", { payload: { phone: saved.phone, password: sp } })
           .then(r => { if (r.bookings) setMyBookingsList(r.bookings); });
+        stadiumApi("my-ratings", { payload: { phone: saved.phone, password: sp } })
+          .then(r => { if (r.ratings) setMyRatings(r.ratings); });
       }
     } else if (savedOwner?.owner_code) {
       setOwner(savedOwner); setScreen("owner");
@@ -507,7 +529,7 @@ export default function App() {
     localStorage.setItem("malaabi_user", JSON.stringify(data));
     setScreen("app");
     setSessionPass(loginPass); sessionStorage.setItem("mb_sp", loginPass);
-    loadMyBookings(data.phone, loginPass);
+    loadMyBookings(data.phone, loginPass); loadMyRatings(data.phone, loginPass);
     showToast(t.welcome + " " + data.name);
   };
 
@@ -637,7 +659,7 @@ export default function App() {
     localStorage.removeItem("malaabi_user");
     localStorage.removeItem("malaabi_owner");
     setUser(null); setOwner(null);
-    setSessionPass(""); sessionStorage.removeItem("mb_sp"); setMyBookingsList([]); setAdminPass("");
+    setSessionPass(""); sessionStorage.removeItem("mb_sp"); setMyBookingsList([]); setAdminPass(""); setMyRatings([]); setOwnerRatings([]);
     setScreen("login"); setTab("client"); setBottomTab("stadiums");
   };
 
@@ -673,6 +695,7 @@ export default function App() {
     if (res.stadiums) setStadiums(res.stadiums);
     if (res.bookings) setBookings(res.bookings);
     if (res.usersCount != null) setUsersCount(res.usersCount);
+    if (res.ratings) setAdminRatings(res.ratings);
   };
 
   // 👑 الخروج من اللوحة — تُمحى كلمة السر من الذاكرة
@@ -867,6 +890,64 @@ export default function App() {
     showToast("🗑 " + L("wilayaDeleted") + (res.deletedStadiums ? ` (${res.deletedStadiums})` : ""), "#FF4444");
   };
 
+  // ⭐ هل انتهى موعد الحجز؟ (وقته + ساعة اللعب)
+  const bookingEnded = (b) => {
+    if (!b?.date || b.hour == null) return false;
+    const end = new Date(`${b.date}T${String(b.hour).padStart(2, "0")}:00:00`);
+    end.setHours(end.getHours() + 1);
+    return Date.now() >= end.getTime();
+  };
+
+  // ⭐ هل يستحق هذا الحجز تقييماً الآن؟
+  const canRate = (b) =>
+    b.status === "confirmed" && bookingEnded(b) && !myRatings.some(r => r.booking_id === b.id);
+
+  const myRatingOf = (id) => myRatings.find(r => r.booking_id === id);
+
+  // ⭐ جلب تقييمات الزبون
+  const loadMyRatings = async (phone, pass) => {
+    const ph = phone || user?.phone, pw = pass || sessionPass;
+    if (!ph || !pw) return;
+    const res = await stadiumApi("my-ratings", { payload: { phone: ph, password: pw } });
+    if (res.ratings) setMyRatings(res.ratings);
+  };
+
+  // ⭐ إرسال تقييم
+  const submitRating = async () => {
+    if (!rateStars) return showToast(L("pickStars"), "#FF4444");
+    const res = await stadiumApi("rate-booking", {
+      payload: {
+        phone: user?.phone, password: sessionPass,
+        bookingId: rateBooking.id, stars: rateStars, comment: rateText,
+      },
+    });
+    if (res.error === "too_early") return showToast(L("rateTooEarly"), "#FF4444");
+    if (res.error === "already_rated") return showToast(L("alreadyRated"), "#FF6D00");
+    if (res.error) return showToast(L("netError"), "#FF4444");
+
+    setMyRatings(p => [...p, { booking_id: rateBooking.id, stars: rateStars, comment: rateText }]);
+    setRateBooking(null); setRateStars(0); setRateText("");
+    loadData();   // تحديث المعدلات المعروضة
+    showToast(L("rateThanks"));
+  };
+
+  // ⭐ تقييمات ملعب المالك
+  const loadOwnerRatings = async () => {
+    const res = await stadiumApi("stadium-ratings", {
+      ownerCode: owner?.owner_code, payload: { stadiumId: owner?.id },
+    });
+    if (res.ratings) setOwnerRatings(res.ratings);
+  };
+
+  // 🗑 حذف تقييم — المشرف فقط
+  const deleteRating = async (id) => {
+    if (!confirm(t.deleteConfirm + "؟")) return;
+    const res = await stadiumApi("admin-delete-rating", { adminPass, payload: { ratingId: id } });
+    if (res.error) return showToast(L("netError"), "#FF4444");
+    setAdminRatings(p => p.filter(r => r.id !== id));
+    showToast("🗑", "#FF4444");
+  };
+
   const toggleHour = (h, isEdit) => {
     if (isEdit) setEditWorkingHours(p => p.includes(h) ? p.filter(x => x !== h) : [...p, h].sort((a,b) => a-b));
     else setNewWorkingHours(p => p.includes(h) ? p.filter(x => x !== h) : [...p, h].sort((a,b) => a-b));
@@ -892,6 +973,8 @@ export default function App() {
     s.wilaya.toLowerCase().includes(searchText.toLowerCase()));
   if (sortBy === "price_asc") filteredStadiums = [...filteredStadiums].sort((a,b) => a.price - b.price);
   if (sortBy === "price_desc") filteredStadiums = [...filteredStadiums].sort((a,b) => b.price - a.price);
+  if (sortBy === "rating") filteredStadiums = [...filteredStadiums].sort((a,b) =>
+    (ratingsMap[b.id]?.avg_stars ?? 0) - (ratingsMap[a.id]?.avg_stars ?? 0));
   if (sortBy === "popular") filteredStadiums = [...filteredStadiums].sort((a,b) => confirmedBookings.filter(x => x.stadium_id === b.id).length - confirmedBookings.filter(x => x.stadium_id === a.id).length);
   // 📍 الترتيب حسب الأقرب
   if (sortBy === "nearest" && myPos) filteredStadiums = [...filteredStadiums].sort((a,b) => {
@@ -1160,6 +1243,33 @@ export default function App() {
             );
           })}
 
+          {/* ⭐ تقييمات الملعب */}
+          <div style={{fontSize:"18px", fontWeight:"800", margin:"24px 0 14px", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+            <span>⭐ {L("ratings")}</span>
+            <button onClick={loadOwnerRatings} style={{padding:"6px 12px", background:"#FFD70018", color:"#FFD700", border:"1px solid #FFD70033", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>🔄</button>
+          </div>
+          {ownerRatings.length === 0 ? (
+            <div style={{textAlign:"center", padding:"24px", color:COLORS.muted, background:COLORS.card, borderRadius:"14px", border:`1px solid ${COLORS.border}`, fontSize:"13px"}}>{L("noRatings")}</div>
+          ) : (
+            <>
+              <div style={{background:"linear-gradient(135deg,#FFD70015,#FF950015)", borderRadius:"16px", padding:"18px", marginBottom:"12px", textAlign:"center", border:"1px solid #FFD70033"}}>
+                <div style={{fontSize:"34px", fontWeight:"900", color:"#FFD700"}}>
+                  {(ownerRatings.reduce((a,r) => a + r.stars, 0) / ownerRatings.length).toFixed(1)}
+                </div>
+                <div style={{color:COLORS.muted, fontSize:"12px"}}>{ownerRatings.length} {L("ratings")}</div>
+              </div>
+              {ownerRatings.map(r => (
+                <div key={r.id} style={{background:COLORS.card, borderRadius:"12px", padding:"14px", marginBottom:"8px", border:`1px solid ${COLORS.border}`}}>
+                  <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                    <div style={{fontWeight:"700", fontSize:"14px"}}>{r.client_name}</div>
+                    <div style={{fontSize:"13px"}}>{"⭐".repeat(r.stars)}</div>
+                  </div>
+                  {r.comment && <div style={{color:COLORS.muted, fontSize:"13px", marginTop:"6px", lineHeight:"1.7"}}>{r.comment}</div>}
+                </div>
+              ))}
+            </>
+          )}
+
           <div style={{fontSize:"18px", fontWeight:"800", margin:"24px 0 14px"}}>📜 {t.myBookingsTitle}</div>
           {ownerBookings.filter(b => b.status !== "pending").slice().reverse().map((b,i) => {
             const sc = b.status==="confirmed"?COLORS.accent:"#FF4444";
@@ -1220,6 +1330,7 @@ export default function App() {
                     <option value="price_asc">{t.sortPriceAsc}</option>
                     <option value="price_desc">{t.sortPriceDesc}</option>
                     <option value="popular">{t.sortPopular}</option>
+                    <option value="rating">⭐ {L("sortRating")}</option>
                     <option value="nearest">📍 {L("sortNearest")}</option>
                   </select>
                   {/* 🎯 زر الأقرب لي */}
@@ -1260,6 +1371,11 @@ export default function App() {
                             {dist != null && (
                               <div style={{position:"absolute", top:"10px", insetInlineStart:"10px", background:"rgba(0,0,0,0.65)", color:COLORS.accent, padding:"4px 10px", borderRadius:"20px", fontSize:"11px", fontWeight:"800", backdropFilter:"blur(4px)"}}>
                                 📍 {dist < 1 ? Math.round(dist*1000) + " m" : dist.toFixed(1) + " " + L("kmAway")}
+                              </div>
+                            )}
+                            {ratingsMap[s.id] && (
+                              <div style={{position:"absolute", top:"10px", insetInlineEnd:"10px", background:"rgba(0,0,0,0.65)", color:"#FFD700", padding:"4px 10px", borderRadius:"20px", fontSize:"11px", fontWeight:"800", backdropFilter:"blur(4px)"}}>
+                                ⭐ {ratingsMap[s.id].avg_stars} <span style={{color:"#ffffff99", fontWeight:"600"}}>({ratingsMap[s.id].total})</span>
                               </div>
                             )}
                             <div style={{position:"absolute", bottom:"10px", right:"12px", left:"12px"}}>
@@ -1320,6 +1436,23 @@ export default function App() {
                             <span style={{color:COLORS.accent, fontWeight:"800", letterSpacing:"2px"}}>{b.code}</span>
                           </div>
                         )}
+                        {/* ⭐ تقييم الحجز بعد انتهاء موعده */}
+                        {canRate(b) && (
+                          <div style={{marginTop:"10px", background:"#FFD70012", border:"1px solid #FFD70033", borderRadius:"12px", padding:"12px"}}>
+                            <div style={{fontSize:"12px", color:"#FFD700", fontWeight:"700", marginBottom:"8px"}}>{L("rateTitle")}</div>
+                            <div style={{display:"flex", gap:"6px", justifyContent:"center"}}>
+                              {[1,2,3,4,5].map(n => (
+                                <button key={n} onClick={() => { setRateBooking(b); setRateStars(n); setRateText(""); }} style={{background:"none", border:"none", cursor:"pointer", fontSize:"26px", padding:0, lineHeight:1, filter: "grayscale(1) opacity(0.45)"}}>⭐</button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {myRatingOf(b.id) && (
+                          <div style={{marginTop:"8px", fontSize:"12px", color:"#FFD700"}}>
+                            {L("yourRating")}: {"⭐".repeat(myRatingOf(b.id).stars)}
+                          </div>
+                        )}
+
                         {/* 🧭 اتجاهات الملعب في الإشعار المقبول */}
                         {b.status==="confirmed" && hasLocation(bst) && (
                           <button onClick={() => window.open(directionsLink(bst.latitude, bst.longitude), "_blank")} style={{marginTop:"8px", display:"block", padding:"8px 14px", background:"#00B0FF22", color:COLORS.accent2, border:"1px solid #00B0FF44", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{L("directions")}</button>
@@ -1337,7 +1470,7 @@ export default function App() {
           <>
             <div style={{fontSize:"24px", fontWeight:"800", marginBottom:"16px"}}>لوحة التحكم</div>
             <div style={{display:"flex", gap:"5px", marginBottom:"16px", background:COLORS.card, borderRadius:"12px", padding:"4px"}}>
-              {[["bookings",L("allBookings"),"#FF6D00"],["dues",L("dues"),"#FF4081"],["stadiums",t.stadiums,"#7C4DFF"],["stats",t.stats,COLORS.accent],["add",t.addStadium,COLORS.accent2]].map(([k,lab,c]) => (
+              {[["bookings",L("allBookings"),"#FF6D00"],["dues",L("dues"),"#FF4081"],["ratings","⭐","#FFD700"],["stadiums",t.stadiums,"#7C4DFF"],["stats",t.stats,COLORS.accent],["add",t.addStadium,COLORS.accent2]].map(([k,lab,c]) => (
                 <button key={k} onClick={() => setAdminTab(k)} style={{flex:1, padding:"8px 2px", borderRadius:"8px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"11px", background: adminTab===k?c:"transparent", color: adminTab===k?"#fff":COLORS.muted}}>{lab}</button>
               ))}
             </div>
@@ -1423,6 +1556,32 @@ export default function App() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {adminTab==="ratings" && (
+              <div>
+                {adminRatings.length === 0 ? (
+                  <div style={{textAlign:"center", padding:"60px", color:COLORS.muted}}>
+                    <div style={{fontSize:"48px", marginBottom:"12px"}}>⭐</div>
+                    <div>{L("noRatings")}</div>
+                  </div>
+                ) : adminRatings.map(r => {
+                  const st = stadiums.find(x => x.id === r.stadium_id);
+                  return (
+                    <div key={r.id} style={{background:COLORS.card, borderRadius:"14px", padding:"16px", marginBottom:"10px", border:"1px solid #FFD70022"}}>
+                      <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"6px"}}>
+                        <div>
+                          <div style={{fontWeight:"700", fontSize:"14px"}}>{r.client_name}</div>
+                          <div style={{color:COLORS.muted, fontSize:"12px"}}>🏟 {st?.name || r.stadium_id}</div>
+                        </div>
+                        <div style={{fontSize:"13px"}}>{"⭐".repeat(r.stars)}</div>
+                      </div>
+                      {r.comment && <div style={{color:COLORS.muted, fontSize:"13px", lineHeight:"1.7", marginBottom:"8px"}}>{r.comment}</div>}
+                      <button onClick={() => deleteRating(r.id)} style={{padding:"7px 14px", background:"#FF444422", color:"#FF4444", border:"1px solid #FF444444", borderRadius:"9px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"11px"}}>🗑 {t.delete}</button>
+                    </div>
+                  );
+                })}
               </div>
             )}
 
@@ -1744,6 +1903,33 @@ export default function App() {
               <button onClick={() => setConfirmDelete(null)} style={{flex:1, padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>{t.cancel}</button>
               <button onClick={() => handleDelete(confirmDelete.id)} style={{flex:1, padding:"12px", background:"#FF4444", border:"none", borderRadius:"12px", color:"#fff", fontWeight:"700", cursor:"pointer", fontFamily:"inherit"}}>{t.delete}</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ⭐ نافذة التقييم */}
+      {rateBooking && (
+        <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.88)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setRateBooking(null)}>
+          <div style={{background:COLORS.card, borderRadius:"24px", border:"1px solid #FFD70033", width:"100%", maxWidth:"400px", padding:"28px", textAlign:"center"}}>
+            <div style={{fontSize:"15px", fontWeight:"800", marginBottom:"4px"}}>{rateBooking.stadium_name}</div>
+            <div style={{color:COLORS.muted, fontSize:"12px", marginBottom:"18px"}}>📅 {rateBooking.date} — {rateBooking.hour}:00</div>
+
+            <div style={{display:"flex", gap:"8px", justifyContent:"center", marginBottom:"18px"}}>
+              {[1,2,3,4,5].map(n => (
+                <button key={n} onClick={() => setRateStars(n)} style={{background:"none", border:"none", cursor:"pointer", fontSize:"36px", padding:0, lineHeight:1, filter: n <= rateStars ? "none" : "grayscale(1) opacity(0.35)", transition:"filter .15s"}}>⭐</button>
+              ))}
+            </div>
+
+            <textarea
+              value={rateText}
+              onChange={e => setRateText(e.target.value.slice(0, 300))}
+              placeholder={L("rateComment")}
+              rows={3}
+              style={{width:"100%", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", padding:"12px", color:"#fff", fontSize:"14px", fontFamily:"inherit", resize:"none", marginBottom:"16px", boxSizing:"border-box", outline:"none", textAlign:lang==="ar"?"right":"left"}}
+            />
+
+            <button onClick={submitRating} disabled={!rateStars} style={{width:"100%", padding:"14px", background: rateStars ? "linear-gradient(135deg,#FFD700,#FF9500)" : COLORS.bg, border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"15px", cursor: rateStars ? "pointer" : "not-allowed", fontFamily:"inherit", color: rateStars ? "#000" : COLORS.muted}}>{L("rateSend")}</button>
+            <button onClick={() => setRateBooking(null)} style={{width:"100%", padding:"11px", background:"transparent", border:"none", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", marginTop:"6px", fontSize:"13px"}}>{t.cancel}</button>
           </div>
         </div>
       )}

@@ -193,6 +193,84 @@ Deno.serve(async (req) => {
       return reply({ ok: true, owner_code: fresh });
     }
 
+    // ============ إرسال تقييم ============
+    if (action === "rate-booking") {
+      const phone = String(payload?.phone ?? "");
+      const pass = String(payload?.password ?? "");
+      const stars = parseInt(payload?.stars);
+      const comment = String(payload?.comment ?? "").trim().slice(0, 300);
+      const bid = payload?.bookingId;
+
+      if (!(stars >= 1 && stars <= 5)) return reply({ error: "invalid_stars" }, 400);
+
+      // نتحقق من هوية الزبون
+      const { data: u } = await db.from("users")
+        .select("name, password").eq("phone", phone).maybeSingle();
+      if (!u) return reply({ error: "unauthorized" }, 401);
+      const okPass = await bcrypt.compare(pass, String(u.password));
+      if (!okPass) return reply({ error: "unauthorized" }, 401);
+
+      // الحجز يجب أن يكون له، ومؤكداً، ومنتهي الوقت
+      const { data: bk } = await db.from("bookings")
+        .select("id, stadium_id, client_phone, status, date, hour")
+        .eq("id", bid).maybeSingle();
+      if (!bk) return reply({ error: "not_found" }, 404);
+      if (bk.client_phone !== phone) return reply({ error: "unauthorized" }, 403);
+      if (bk.status !== "confirmed") return reply({ error: "not_confirmed" }, 403);
+
+      // انتهاء الموعد: تاريخ الحجز وساعته + ساعة اللعب
+      const end = new Date(`${bk.date}T${String(bk.hour).padStart(2, "0")}:00:00`);
+      end.setHours(end.getHours() + 1);
+      if (Date.now() < end.getTime()) return reply({ error: "too_early" }, 403);
+
+      const { error } = await db.from("ratings").insert({
+        booking_id: bk.id, stadium_id: bk.stadium_id,
+        client_phone: phone, client_name: u.name,
+        stars, comment: comment || null,
+      });
+      if (error) return reply({ error: "already_rated" }, 409);
+
+      return reply({ ok: true, stars, comment });
+    }
+
+    // ============ تقييمات الزبون — لمعرفة ما قيّمه ============
+    if (action === "my-ratings") {
+      const phone = String(payload?.phone ?? "");
+      const pass = String(payload?.password ?? "");
+      const { data: u } = await db.from("users")
+        .select("password").eq("phone", phone).maybeSingle();
+      if (!u) return reply({ error: "unauthorized" }, 401);
+      const okPass = await bcrypt.compare(pass, String(u.password));
+      if (!okPass) return reply({ error: "unauthorized" }, 401);
+
+      const { data } = await db.from("ratings")
+        .select("booking_id, stars, comment").eq("client_phone", phone);
+      return reply({ ratings: data ?? [] });
+    }
+
+    // ============ تقييمات ملعب — لصاحبه أو للمشرف ============
+    if (action === "stadium-ratings") {
+      const sid = payload?.stadiumId ?? stadiumId;
+      let allowed = isAdmin();
+      if (!allowed) {
+        const st = await verifyOwner(null);
+        allowed = !!st && st.id === sid;
+      }
+      if (!allowed) return reply({ error: "unauthorized" }, 403);
+
+      const { data } = await db.from("ratings")
+        .select("*").eq("stadium_id", sid).order("created_at", { ascending: false });
+      return reply({ ratings: data ?? [] });
+    }
+
+    // ============ حذف تقييم — المشرف فقط ============
+    if (action === "admin-delete-rating") {
+      if (!isAdmin()) return reply({ error: "wrong_pass" }, 401);
+      const { error } = await db.from("ratings").delete().eq("id", payload?.ratingId);
+      if (error) return reply({ error: "delete_failed" }, 500);
+      return reply({ ok: true });
+    }
+
     // ============ التحقق من كلمة سر المشرف ============
     if (action === "admin-check") {
       if (!isAdmin()) return reply({ error: "wrong_pass" }, 401);
@@ -207,10 +285,13 @@ Deno.serve(async (req) => {
         db.from("bookings").select("*").order("id"),
         db.from("users").select("*", { count: "exact", head: true }),
       ]);
+      const { data: rt } = await db.from("ratings")
+        .select("*").order("created_at", { ascending: false });
       return reply({
         stadiums: st.data ?? [],
         bookings: bk.data ?? [],
         usersCount: uc.count ?? 0,
+        ratings: rt ?? [],
       });
     }
 
