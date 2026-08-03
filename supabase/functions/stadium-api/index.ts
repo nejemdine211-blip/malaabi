@@ -271,6 +271,109 @@ Deno.serve(async (req) => {
       return reply({ ok: true });
     }
 
+    // ============ 🚫 الساعات المغلقة لملعب ============
+    if (action === "owner-blocked") {
+      const st = await verifyOwner(null);
+      if (!st) return reply({ error: "unauthorized" }, 401);
+      const { data } = await db.from("blocked_slots")
+        .select("*").eq("stadium_id", st.id).order("date").order("hour");
+      return reply({ blocked: data ?? [] });
+    }
+
+    // ============ 🚫 إغلاق ساعات ليوم محدد ============
+    if (action === "owner-block-hours") {
+      const st = await verifyOwner(null);
+      if (!st) return reply({ error: "unauthorized" }, 401);
+      const date = String(payload?.date ?? "");
+      const hours: number[] = Array.isArray(payload?.hours) ? payload.hours : [];
+      if (!date || hours.length === 0) return reply({ error: "missing_data" }, 400);
+
+      // لا نغلق ساعة محجوزة فعلاً
+      const { data: taken } = await db.from("bookings")
+        .select("hour").eq("stadium_id", st.id).eq("date", date).neq("status", "rejected");
+      const takenHours = new Set((taken ?? []).map((x: Record<string, unknown>) => x.hour));
+      const clean = hours.filter(h => !takenHours.has(h));
+      if (clean.length === 0) return reply({ error: "all_taken" }, 409);
+
+      const rows = clean.map(h => ({ stadium_id: st.id, date, hour: h }));
+      const { error } = await db.from("blocked_slots").upsert(rows, {
+        onConflict: "stadium_id,date,hour", ignoreDuplicates: true,
+      });
+      if (error) return reply({ error: "insert_failed" }, 500);
+
+      const { data } = await db.from("blocked_slots")
+        .select("*").eq("stadium_id", st.id).order("date").order("hour");
+      return reply({ ok: true, added: clean.length, blocked: data ?? [] });
+    }
+
+    // ============ 🚫 إلغاء إغلاق ============
+    if (action === "owner-unblock") {
+      const st = await verifyOwner(null);
+      if (!st) return reply({ error: "unauthorized" }, 401);
+      const ids: number[] = Array.isArray(payload?.ids) ? payload.ids : [payload?.id];
+      const { error } = await db.from("blocked_slots")
+        .delete().eq("stadium_id", st.id).in("id", ids);
+      if (error) return reply({ error: "delete_failed" }, 500);
+
+      const { data } = await db.from("blocked_slots")
+        .select("*").eq("stadium_id", st.id).order("date").order("hour");
+      return reply({ ok: true, blocked: data ?? [] });
+    }
+
+    // ============ 🔁 فحص التعارض قبل الحجز المتكرر ============
+    if (action === "check-slots") {
+      const sid = payload?.stadiumId;
+      const dates: string[] = Array.isArray(payload?.dates) ? payload.dates : [];
+      const hour = parseInt(payload?.hour);
+      if (!sid || dates.length === 0) return reply({ error: "missing_data" }, 400);
+
+      const { data: bk } = await db.from("bookings")
+        .select("date").eq("stadium_id", sid).eq("hour", hour)
+        .in("date", dates).neq("status", "rejected");
+      const { data: bl } = await db.from("blocked_slots")
+        .select("date").eq("stadium_id", sid).eq("hour", hour).in("date", dates);
+
+      const busy = new Set([
+        ...(bk ?? []).map((x: Record<string, unknown>) => x.date),
+        ...(bl ?? []).map((x: Record<string, unknown>) => x.date),
+      ]);
+      return reply({ busy: [...busy] });
+    }
+
+    // ============ 🔁 قبول أو رفض مجموعة حجوزات ============
+    if (action === "handle-group") {
+      const st = await verifyOwner(null);
+      if (!st) return reply({ error: "unauthorized" }, 401);
+      const gid = String(payload?.groupId ?? "");
+      const accept = payload?.accept === true;
+      if (!gid) return reply({ error: "missing_data" }, 400);
+
+      const { data: rows } = await db.from("bookings")
+        .select("*").eq("group_id", gid).eq("stadium_id", st.id).eq("status", "pending");
+      if (!rows || rows.length === 0) return reply({ error: "not_found" }, 404);
+
+      if (!accept) {
+        await db.from("bookings")
+          .update({ status: "rejected", handled_by: "owner" }).eq("group_id", gid);
+        return reply({ ok: true, rejected: rows.length });
+      }
+
+      // القبول: عمولة على كل موعد
+      const rate = st.commission_rate ?? 12;
+      const per = Math.round((st.price || 0) * rate / 100);
+      const code = genCode();   // رمز واحد للمجموعة كلها
+
+      await db.from("bookings")
+        .update({ status: "confirmed", code, handled_by: "owner", commission: per })
+        .eq("group_id", gid);
+
+      const total = per * rows.length;
+      const newBalance = (st.balance_due || 0) + total;
+      await db.from("stadiums").update({ balance_due: newBalance }).eq("id", st.id);
+
+      return reply({ ok: true, code, commission: per, count: rows.length, balance_due: newBalance });
+    }
+
     // ============ التحقق من كلمة سر المشرف ============
     if (action === "admin-check") {
       if (!isAdmin()) return reply({ error: "wrong_pass" }, 401);

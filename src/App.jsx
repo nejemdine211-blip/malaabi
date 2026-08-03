@@ -230,6 +230,26 @@ const TXT = {
   wrongPass: { ar:"كلمة السر خاطئة", fr:"Mot de passe incorrect", en:"Wrong password" },
   commanderWelcome: { ar:"مرحباً بك أيها القائد 👑", fr:"Bienvenue Commandant 👑", en:"Welcome Commander 👑" },
   checking: { ar:"جاري التحقق...", fr:"Vérification...", en:"Checking..." },
+  blockHours: { ar:"🚫 إغلاق مواعيد", fr:"🚫 Fermer des créneaux", en:"🚫 Block slots" },
+  pickDate: { ar:"اختر التاريخ", fr:"Choisissez la date", en:"Pick a date" },
+  pickHours: { ar:"اختر الساعات المراد إغلاقها", fr:"Choisissez les heures", en:"Pick hours to block" },
+  saveBlock: { ar:"إغلاق المواعيد المحددة", fr:"Fermer les créneaux", en:"Block selected" },
+  blockedList: { ar:"المواعيد المغلقة", fr:"Créneaux fermés", en:"Blocked slots" },
+  noBlocked: { ar:"لا توجد مواعيد مغلقة", fr:"Aucun créneau fermé", en:"No blocked slots" },
+  blockDone: { ar:"🚫 تم إغلاق المواعيد", fr:"🚫 Créneaux fermés", en:"🚫 Slots blocked" },
+  unblockDone: { ar:"✅ تم فتح الموعد", fr:"✅ Créneau rouvert", en:"✅ Slot reopened" },
+  allTaken: { ar:"كل الساعات المحددة محجوزة", fr:"Toutes ces heures sont réservées", en:"All selected hours are booked" },
+  bookedHour: { ar:"محجوز", fr:"Réservé", en:"Booked" },
+  repeat: { ar:"🔁 كرّر أسبوعياً", fr:"🔁 Répéter chaque semaine", en:"🔁 Repeat weekly" },
+  weeks: { ar:"أسابيع", fr:"semaines", en:"weeks" },
+  totalAmount: { ar:"المبلغ الإجمالي", fr:"Montant total", en:"Total amount" },
+  sessions: { ar:"مواعيد", fr:"créneaux", en:"sessions" },
+  slotBusy: { ar:"محجوز", fr:"occupé", en:"busy" },
+  noSlotsLeft: { ar:"كل المواعيد محجوزة — اختر وقتاً آخر", fr:"Tous occupés — choisissez un autre horaire", en:"All busy — pick another time" },
+  groupBooking: { ar:"حجز متكرر", fr:"Réservation récurrente", en:"Recurring booking" },
+  acceptAll: { ar:"قبول الكل", fr:"Tout accepter", en:"Accept all" },
+  rejectAll: { ar:"رفض الكل", fr:"Tout refuser", en:"Reject all" },
+  checking2: { ar:"جاري الفحص...", fr:"Vérification...", en:"Checking..." },
   rateTitle: { ar:"كيف كانت تجربتك؟", fr:"Comment était votre expérience ?", en:"How was your experience?" },
   rateSend: { ar:"إرسال التقييم", fr:"Envoyer l\'avis", en:"Send rating" },
   rateComment: { ar:"تعليق (اختياري)", fr:"Commentaire (optionnel)", en:"Comment (optional)" },
@@ -349,6 +369,12 @@ export default function App() {
   const [rateText, setRateText] = useState("");
   const [ownerRatings, setOwnerRatings] = useState([]);  // ⭐ تقييمات ملعب المالك
   const [adminRatings, setAdminRatings] = useState([]);  // ⭐ كل التقييمات للمشرف
+  const [blockedList, setBlockedList] = useState([]);    // 🚫 المواعيد المغلقة
+  const [blockDate, setBlockDate] = useState(today);     // 🚫 تاريخ الإغلاق
+  const [blockHoursSel, setBlockHoursSel] = useState([]);// 🚫 الساعات المختارة
+  const [repeatWeeks, setRepeatWeeks] = useState(1);     // 🔁 عدد الأسابيع
+  const [busyDates, setBusyDates] = useState([]);        // 🔁 التواريخ المتعارضة
+  const [checkingSlots, setCheckingSlots] = useState(false);
   const [sessionPass, setSessionPass] = useState(() => sessionStorage.getItem("mb_sp") || "");   // 🔒 تُمحى بإغلاق التبويب
   const [myBookingsList, setMyBookingsList] = useState([]);   // 🔒 حجوزات الزبون الكاملة
 
@@ -415,6 +441,8 @@ export default function App() {
       }
     } else if (savedOwner?.owner_code) {
       setOwner(savedOwner); setScreen("owner");
+      stadiumApi("owner-blocked", { ownerCode: savedOwner.owner_code })
+        .then(r => { if (r.blocked) setBlockedList(r.blocked); });
       stadiumApi("owner-bookings", { ownerCode: savedOwner.owner_code }).then(r => {
         if (r.bookings) setMyBookingsList(r.bookings);
         if (r.stadium) {
@@ -621,7 +649,7 @@ export default function App() {
     setOwner(ow);
     localStorage.setItem("malaabi_owner", JSON.stringify(ow));
     setScreen("owner"); setOwnerCodeInput("");
-    loadOwnerBookings(code);
+    loadOwnerBookings(code); loadBlocked(code);
     showToast(t.welcome + " " + ow.name);
   };
 
@@ -742,27 +770,41 @@ export default function App() {
   const handleBook = async () => {
     if (bookHour === null || !selectedPayApp || !transactionNum) return;
     if (!proofUrl) return showToast(L("proofRequired"), "#FF4444");
-    // 🔒 نفحص حجوزات الزبون نفسه — القائمة العامة لم تعد تحوي أرقام الهواتف
-    const dup = myBookingsList.some(b => b.stadium_id === selected.id && b.date === bookDate && b.hour === bookHour && b.status !== "rejected");
+
+    // 🔁 التواريخ المتاحة فعلاً بعد استبعاد المتعارض
+    const allDates = weekDates(bookDate, repeatWeeks);
+    const okDates = allDates.filter(d => !busyDates.includes(d));
+    if (okDates.length === 0) return showToast(L("noSlotsLeft"), "#FF4444");
+
+    const dup = myBookingsList.some(b => b.stadium_id === selected.id && okDates.includes(b.date) && b.hour === bookHour && b.status !== "rejected");
     if (dup) return showToast(t.duplicateBooking, "#FF4444");
-    const { data } = await supabase.from("bookings").insert({
+
+    // معرّف واحد يجمع مواعيد الحجز المتكرر
+    const gid = okDates.length > 1
+      ? "G" + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase()
+      : null;
+
+    const rows = okDates.map(d => ({
       stadium_id: selected.id, stadium_name: selected.name,
       client_name: user.name, client_phone: user.phone,
-      date: bookDate, hour: bookHour, pay_app: selectedPayApp,
+      date: d, hour: bookHour, pay_app: selectedPayApp,
       transaction_num: transactionNum, status: "pending", proof_url: proofUrl,
-    }).select().single();
+      group_id: gid,
+    }));
+
+    const { data } = await supabase.from("bookings").insert(rows).select();
     if (data) {
-      // نضيف الساعة للقائمة العامة حتى تظهر محجوزة فوراً
-      setBookings(p => [...p, { stadium_id: selected.id, date: bookDate, hour: bookHour, status: "pending" }]);
-      setMyBookingsList(p => [...p, data]);
+      setBookings(p => [...p, ...okDates.map(d => ({ stadium_id: selected.id, date: d, hour: bookHour, status: "pending" }))]);
+      setMyBookingsList(p => [...p, ...data]);
     }
     closeModal();
-    showToast(t.bookingSuccess);
+    showToast(t.bookingSuccess + (okDates.length > 1 ? ` (${okDates.length})` : ""));
   };
 
   const closeModal = () => {
     setSelected(null); setStep(1); setBookHour(null);
     setSelectedPayApp(null); setTransactionNum(""); setProofUrl("");
+    setRepeatWeeks(1); setBusyDates([]);
   };
 
   // ✅ صاحب الملعب فقط
@@ -948,6 +990,82 @@ export default function App() {
     showToast("🗑", "#FF4444");
   };
 
+  // 🔁 توليد تواريخ الأسابيع المتتالية
+  const weekDates = (start, n) => {
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const d = new Date(start + "T00:00:00");
+      d.setDate(d.getDate() + i * 7);
+      out.push(d.toISOString().split("T")[0]);
+    }
+    return out;
+  };
+
+  // 🔁 فحص التعارض في الأسابيع المختارة
+  const checkRepeatSlots = async (weeks) => {
+    if (!selected || bookHour === null) return;
+    const dates = weekDates(bookDate, weeks);
+    if (weeks === 1) { setBusyDates([]); return; }
+    setCheckingSlots(true);
+    const res = await stadiumApi("check-slots", {
+      payload: { stadiumId: selected.id, dates, hour: bookHour },
+    });
+    setCheckingSlots(false);
+    setBusyDates(res.busy ?? []);
+  };
+
+  // 🚫 جلب المواعيد المغلقة
+  const loadBlocked = async (code) => {
+    const res = await stadiumApi("owner-blocked", { ownerCode: code || owner?.owner_code });
+    if (res.blocked) setBlockedList(res.blocked);
+  };
+
+  // 🚫 إغلاق الساعات المختارة
+  const saveBlockedHours = async () => {
+    if (blockHoursSel.length === 0) return;
+    const res = await stadiumApi("owner-block-hours", {
+      ownerCode: owner?.owner_code,
+      payload: { date: blockDate, hours: blockHoursSel },
+    });
+    if (res.error === "all_taken") return showToast(L("allTaken"), "#FF4444");
+    if (res.error) return showToast(L("netError"), "#FF4444");
+    setBlockedList(res.blocked ?? []);
+    setBlockHoursSel([]);
+    loadData();
+    showToast(L("blockDone"), "#FF6D00");
+  };
+
+  // 🚫 إلغاء إغلاق موعد
+  const unblockSlot = async (id) => {
+    const res = await stadiumApi("owner-unblock", {
+      ownerCode: owner?.owner_code, payload: { ids: [id] },
+    });
+    if (res.error) return showToast(L("netError"), "#FF4444");
+    setBlockedList(res.blocked ?? []);
+    loadData();
+    showToast(L("unblockDone"));
+  };
+
+  // 🔁 قبول أو رفض مجموعة حجوزات
+  const handleGroup = async (groupId, accept) => {
+    const res = await stadiumApi("handle-group", {
+      ownerCode: owner?.owner_code, payload: { groupId, accept },
+    });
+    if (res.error) return showToast(L("netError"), "#FF4444");
+    if (accept) {
+      setMyBookingsList(p => p.map(b => b.group_id === groupId
+        ? { ...b, status: "confirmed", code: res.code, handled_by: "owner", commission: res.commission }
+        : b));
+      const up = { ...owner, balance_due: res.balance_due };
+      setOwner(up); localStorage.setItem("malaabi_owner", JSON.stringify(up));
+      showToast("✅ " + t.confirmed + " — " + res.code);
+    } else {
+      setMyBookingsList(p => p.map(b => b.group_id === groupId
+        ? { ...b, status: "rejected", handled_by: "owner" } : b));
+      showToast(t.rejectDone, "#FF4444");
+    }
+  };
+
   const toggleHour = (h, isEdit) => {
     if (isEdit) setEditWorkingHours(p => p.includes(h) ? p.filter(x => x !== h) : [...p, h].sort((a,b) => a-b));
     else setNewWorkingHours(p => p.includes(h) ? p.filter(x => x !== h) : [...p, h].sort((a,b) => a-b));
@@ -991,6 +1109,10 @@ export default function App() {
   const payApp = selectedPayApp ? PAYMENT_APPS.find(p => p.id === selectedPayApp) : null;
   const stadiumPayNum = selected && payApp ? (selected.payments?.[selectedPayApp] || "") : "";
   const stadiumHours = selected ? (selected.working_hours || ALL_HOURS) : ALL_HOURS;
+  // 🔁 التواريخ المقترحة والمبلغ الإجمالي
+  const repeatDates = selected && bookDate ? weekDates(bookDate, repeatWeeks) : [];
+  const availableDates = repeatDates.filter(d => !busyDates.includes(d));
+  const totalPrice = (selected?.price || 0) * availableDates.length;
 
   const inp = { width:"100%", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"10px", padding:"12px 16px", color:"#fff", fontSize:"15px", fontFamily:"inherit", marginBottom:"16px", boxSizing:"border-box", outline:"none" };
   const lbl = { color:COLORS.muted, fontSize:"13px", marginBottom:"6px", display:"block" };
@@ -1218,26 +1340,86 @@ export default function App() {
             </div>
           </div>
 
+          {/* 🚫 إغلاق مواعيد مؤقتاً */}
+          <div style={{background:COLORS.card, borderRadius:"16px", border:"1px solid #FF6D0033", padding:"18px", marginBottom:"20px"}}>
+            <div style={{fontSize:"15px", fontWeight:"800", color:"#FF6D00", marginBottom:"14px"}}>{L("blockHours")}</div>
+
+            <label style={lbl}>{L("pickDate")}</label>
+            <input type="date" style={inp} value={blockDate} min={today} onChange={e => { setBlockDate(e.target.value); setBlockHoursSel([]); }}/>
+
+            <label style={lbl}>{L("pickHours")}</label>
+            <div style={{display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:"6px", marginBottom:"14px"}}>
+              {(st.working_hours || ALL_HOURS).map(h => {
+                const isBlocked = blockedList.some(b => b.date === blockDate && b.hour === h);
+                const isTaken = myBookingsList.some(b => b.date === blockDate && b.hour === h && b.status !== "rejected");
+                const sel = blockHoursSel.includes(h);
+                return (
+                  <button key={h} disabled={isTaken || isBlocked}
+                    onClick={() => setBlockHoursSel(p => p.includes(h) ? p.filter(x => x !== h) : [...p, h])}
+                    style={{padding:"7px 3px", borderRadius:"9px", border: sel?"2px solid #FF4444":`2px solid ${COLORS.border}`, background: isTaken?COLORS.bg : isBlocked?"#FF444422" : sel?"#FF444433":COLORS.bg, color: isTaken?"#374151" : isBlocked?"#FF6B6B" : sel?"#FF4444":COLORS.muted, cursor:(isTaken||isBlocked)?"not-allowed":"pointer", fontSize:"11px", fontWeight:"700", fontFamily:"inherit"}}>
+                    {h}:00
+                    {isTaken && <span style={{display:"block", fontSize:"8px"}}>{L("bookedHour")}</span>}
+                    {isBlocked && <span style={{display:"block", fontSize:"8px"}}>🚫</span>}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button onClick={saveBlockedHours} disabled={blockHoursSel.length===0} style={{width:"100%", padding:"12px", background: blockHoursSel.length?"linear-gradient(135deg,#FF6D00,#FF4081)":COLORS.bg, border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"14px", cursor: blockHoursSel.length?"pointer":"not-allowed", fontFamily:"inherit", color: blockHoursSel.length?"#fff":COLORS.muted}}>
+              {L("saveBlock")} {blockHoursSel.length>0 && `(${blockHoursSel.length})`}
+            </button>
+
+            <div style={{fontSize:"13px", fontWeight:"700", color:COLORS.muted, margin:"18px 0 10px"}}>{L("blockedList")}</div>
+            {blockedList.length === 0 ? (
+              <div style={{color:COLORS.muted, fontSize:"12px", textAlign:"center", padding:"14px"}}>{L("noBlocked")}</div>
+            ) : (
+              <div style={{display:"flex", flexWrap:"wrap", gap:"6px"}}>
+                {blockedList.map(b => (
+                  <div key={b.id} style={{background:"#FF444418", color:"#FF6B6B", padding:"5px 6px 5px 11px", borderRadius:"18px", fontSize:"11px", fontWeight:"700", display:"flex", alignItems:"center", gap:"6px"}}>
+                    {b.date} • {b.hour}:00
+                    <button onClick={() => unblockSlot(b.id)} style={{width:"18px", height:"18px", borderRadius:"50%", background:"#FF444433", color:"#FF6B6B", border:"none", cursor:"pointer", fontFamily:"inherit", fontSize:"10px", lineHeight:"1", display:"flex", alignItems:"center", justifyContent:"center", padding:0}}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div style={{fontSize:"18px", fontWeight:"800", marginBottom:"14px"}}>📋 {t.requests}</div>
           {ownerPending.length === 0 ? (
             <div style={{textAlign:"center", padding:"50px", color:COLORS.muted, background:COLORS.card, borderRadius:"16px", border:`1px solid ${COLORS.border}`}}>{t.noPending}</div>
-          ) : ownerPending.map((b,i) => {
+          ) : Object.values(ownerPending.reduce((acc, b) => {
+            // 🔁 نجمع مواعيد الحجز المتكرر في بطاقة واحدة
+            const k = b.group_id || `s${b.id}`;
+            if (!acc[k]) acc[k] = { ...b, _group: [] };
+            acc[k]._group.push(b);
+            return acc;
+          }, {})).map((b,i) => {
             const pa = PAYMENT_APPS.find(p => p.id===b.pay_app);
+            const isGroup = b._group.length > 1;
             return (
               <div key={i} style={{background:COLORS.card, borderRadius:"14px", padding:"16px", marginBottom:"12px", border:`1px solid ${COLORS.border}`}}>
                 <div style={{display:"flex", justifyContent:"space-between", marginBottom:"10px"}}>
                   <div>
                     <div style={{fontWeight:"700", fontSize:"15px"}}>{b.client_name}</div>
                     <div style={{color:COLORS.muted, fontSize:"13px"}}>📞 {b.client_phone}</div>
-                    <div style={{color:COLORS.muted, fontSize:"13px"}}>📅 {b.date} — {b.hour}:00</div>
+                    {isGroup ? (
+                      <>
+                        <div style={{color:"#7C4DFF", fontSize:"12px", fontWeight:"800", marginTop:"3px"}}>🔁 {L("groupBooking")} — {b._group.length} {L("sessions")}</div>
+                        {b._group.map(g => (
+                          <div key={g.id} style={{color:COLORS.muted, fontSize:"12px"}}>📅 {g.date} — {g.hour}:00</div>
+                        ))}
+                      </>
+                    ) : (
+                      <div style={{color:COLORS.muted, fontSize:"13px"}}>📅 {b.date} — {b.hour}:00</div>
+                    )}
                   </div>
                   <div style={{background:`${pa?.color}22`, color:pa?.color, padding:"4px 10px", borderRadius:"20px", fontSize:"12px", fontWeight:"700", height:"fit-content"}}>{pa?.name}</div>
                 </div>
                 <div style={{background:COLORS.bg, borderRadius:"10px", padding:"10px 14px", marginBottom:"10px", fontSize:"13px"}}>{t.serialNum}: <span style={{color:COLORS.accent, fontWeight:"700"}}>{b.transaction_num}</span></div>
                 {b.proof_url && <button onClick={() => openProof(b.id)} style={{display:"block", width:"100%", textAlign:"center", padding:"10px", background:"#00B0FF22", color:COLORS.accent2, border:"1px solid #00B0FF44", borderRadius:"10px", fontWeight:"700", fontSize:"13px", cursor:"pointer", fontFamily:"inherit", marginBottom:"10px"}}>{L("viewProof")}</button>}
                 <div style={{display:"flex", gap:"10px"}}>
-                  <button onClick={() => confirmBooking(b.id)} style={{flex:1, padding:"11px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{t.confirm}</button>
-                  <button onClick={() => rejectBooking(b.id)} style={{flex:1, padding:"11px", background:"#FF444422", color:"#FF4444", border:"1px solid #FF444444", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit"}}>{t.reject}</button>
+                  <button onClick={() => isGroup ? handleGroup(b.group_id, true) : confirmBooking(b.id)} style={{flex:1, padding:"11px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{isGroup ? L("acceptAll") : t.confirm}</button>
+                  <button onClick={() => isGroup ? handleGroup(b.group_id, false) : rejectBooking(b.id)} style={{flex:1, padding:"11px", background:"#FF444422", color:"#FF4444", border:"1px solid #FF444444", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit"}}>{isGroup ? L("rejectAll") : t.reject}</button>
                 </div>
               </div>
             );
@@ -1857,9 +2039,46 @@ export default function App() {
                     return <button key={h} disabled={tk} onClick={() => !tk && setBookHour(h)} style={{padding:"8px 4px", borderRadius:"10px", border: s2?`2px solid ${selected.color}`:"2px solid transparent", background: tk?COLORS.bg:s2?`${selected.color}22`:COLORS.bg, color: tk?"#374151":s2?selected.color:COLORS.muted, cursor:tk?"not-allowed":"pointer", fontSize:"11px", fontWeight:"600", fontFamily:"inherit"}}>{h}:00{tk && <span style={{display:"block", fontSize:"9px", color:"#4b5563"}}>{t.booked}</span>}</button>;
                   })}
                 </div>
+                {/* 🔁 الحجز المتكرر */}
+                {bookHour !== null && (
+                  <div style={{background:"#7C4DFF12", border:"1px solid #7C4DFF33", borderRadius:"14px", padding:"14px", marginBottom:"16px"}}>
+                    <div style={{fontSize:"13px", fontWeight:"700", color:"#7C4DFF", marginBottom:"10px"}}>{L("repeat")}</div>
+                    <div style={{display:"flex", gap:"6px", marginBottom: repeatWeeks>1 ? "12px" : 0}}>
+                      {[1,2,3,4].map(n => (
+                        <button key={n} onClick={() => { setRepeatWeeks(n); checkRepeatSlots(n); }} style={{flex:1, padding:"9px 4px", borderRadius:"10px", border: repeatWeeks===n?"2px solid #7C4DFF":`2px solid ${COLORS.border}`, background: repeatWeeks===n?"#7C4DFF22":COLORS.bg, color: repeatWeeks===n?"#7C4DFF":COLORS.muted, cursor:"pointer", fontFamily:"inherit", fontWeight:"800", fontSize:"13px"}}>
+                          {n===1 ? "1" : `${n}`}
+                        </button>
+                      ))}
+                    </div>
+                    {repeatWeeks > 1 && (
+                      checkingSlots ? (
+                        <div style={{textAlign:"center", color:COLORS.muted, fontSize:"12px", padding:"8px"}}>{L("checking2")}</div>
+                      ) : (
+                        <>
+                          {repeatDates.map(d => {
+                            const busy = busyDates.includes(d);
+                            return (
+                              <div key={d} style={{display:"flex", justifyContent:"space-between", alignItems:"center", padding:"7px 10px", background: busy?"#FF444415":"#00E67612", borderRadius:"9px", marginBottom:"5px", fontSize:"12px"}}>
+                                <span style={{color: busy?"#FF6B6B":COLORS.accent, textDecoration: busy?"line-through":"none", fontWeight:"600"}}>
+                                  {busy ? "❌" : "✅"} {d} — {bookHour}:00
+                                </span>
+                                {busy && <span style={{color:"#FF6B6B", fontSize:"11px"}}>{L("slotBusy")}</span>}
+                              </div>
+                            );
+                          })}
+                          <div style={{marginTop:"10px", padding:"11px", background:COLORS.bg, borderRadius:"11px", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                            <span style={{color:COLORS.muted, fontSize:"12px"}}>{L("totalAmount")} <span style={{fontSize:"11px"}}>({availableDates.length} {L("sessions")})</span></span>
+                            <span style={{color:COLORS.accent, fontWeight:"900", fontSize:"18px"}}>{totalPrice}</span>
+                          </div>
+                        </>
+                      )
+                    )}
+                  </div>
+                )}
+
                 <div style={{display:"flex", gap:"12px"}}>
                   <button onClick={closeModal} style={{flex:1, padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>{t.cancel}</button>
-                  <button disabled={bookHour===null} onClick={() => setStep(2)} style={{flex:2, padding:"12px", background:bookHour===null?COLORS.bg:`linear-gradient(135deg,${selected.color},${selected.color}BB)`, border:"none", borderRadius:"12px", color:bookHour===null?COLORS.muted:"#000", fontWeight:"700", cursor:bookHour===null?"not-allowed":"pointer", fontFamily:"inherit"}}>{t.next}</button>
+                  <button disabled={bookHour===null || (repeatWeeks>1 && availableDates.length===0)} onClick={() => setStep(2)} style={{flex:2, padding:"12px", background:bookHour===null?COLORS.bg:`linear-gradient(135deg,${selected.color},${selected.color}BB)`, border:"none", borderRadius:"12px", color:bookHour===null?COLORS.muted:"#000", fontWeight:"700", cursor:bookHour===null?"not-allowed":"pointer", fontFamily:"inherit"}}>{t.next}</button>
                 </div>
               </>
             )}
@@ -1871,7 +2090,7 @@ export default function App() {
                 </div>
                 {selectedPayApp && stadiumPayNum && (
                   <div style={{background:COLORS.bg, borderRadius:"12px", padding:"14px", marginBottom:"16px"}}>
-                    <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"8px"}}>{t.sendAmount} <strong style={{color:"#fff"}}>{selected.price}</strong></div>
+                    <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"8px"}}>{t.sendAmount} <strong style={{color:"#fff", fontSize:"16px"}}>{totalPrice || selected.price}</strong>{availableDates.length>1 && <span style={{color:"#7C4DFF", fontSize:"11px"}}> ({availableDates.length} {L("sessions")})</span>}</div>
                     <div style={{fontSize:"20px", fontWeight:"800", color:payApp?.color, letterSpacing:"2px"}}>{stadiumPayNum}</div>
                     <div style={{color:COLORS.muted, fontSize:"12px", marginTop:"4px"}}>{t.via} {payApp?.name}</div>
                   </div>
