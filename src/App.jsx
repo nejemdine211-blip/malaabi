@@ -15,9 +15,7 @@ const ALL_HOURS = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
 const today = new Date().toISOString().split("T")[0];
 const genCode = () => Math.random().toString(36).substring(2,10).toUpperCase();
 const genOwnerCode = () => "M" + Math.random().toString(36).substring(2,8).toUpperCase();
-const ADMIN_PASS = "malaabi5964";
 const WHATSAPP_NUM = "21654542791";
-const ADMIN_PHONE = "49058641";
 
 const COLORS = {
   bg: "#070B14", card: "#0D1424", border: "#1A2540",
@@ -45,6 +43,23 @@ const authApi = async (action, payload = {}) => {
     });
     if (error) {
       // نحاول قراءة رسالة الخطأ القادمة من الدالة
+      let code = "network";
+      try { code = (await error.context?.json())?.error || "network"; } catch (_e) { /* تجاهل */ }
+      return { error: code };
+    }
+    return data ?? { error: "network" };
+  } catch (_e) {
+    return { error: "network" };
+  }
+};
+
+// 🏟 استدعاء دالة الملاعب الخادمية — أكواد المالكين والمستحقات لا تمر بالمتصفح
+const stadiumApi = async (action, payload = {}) => {
+  try {
+    const { data, error } = await supabase.functions.invoke("stadium-api", {
+      body: { action, ...payload },
+    });
+    if (error) {
       let code = "network";
       try { code = (await error.context?.json())?.error || "network"; } catch (_e) { /* تجاهل */ }
       return { error: code };
@@ -209,6 +224,21 @@ const TXT = {
   orPasteLink: { ar:"أو الصق رابط صورة", fr:"Ou collez un lien", en:"Or paste an image link" },
   imageUrl: { ar:"رابط صورة الملعب (اختياري)", fr:"Lien de l\'image (optionnel)", en:"Image URL (optional)" },
   imageHint: { ar:"اتركه فارغاً لاختيار صورة تلقائياً", fr:"Laissez vide pour une image automatique", en:"Leave empty for an automatic image" },
+  adminTitle: { ar:"لوحة التحكم", fr:"Panneau d\'administration", en:"Admin panel" },
+  adminPassLabel: { ar:"كلمة السر", fr:"Mot de passe", en:"Password" },
+  adminEnter: { ar:"دخول", fr:"Entrer", en:"Enter" },
+  wrongPass: { ar:"كلمة السر خاطئة", fr:"Mot de passe incorrect", en:"Wrong password" },
+  commanderWelcome: { ar:"مرحباً بك أيها القائد 👑", fr:"Bienvenue Commandant 👑", en:"Welcome Commander 👑" },
+  checking: { ar:"جاري التحقق...", fr:"Vérification...", en:"Checking..." },
+  delWilaya: { ar:"حذف الولاية", fr:"Supprimer la wilaya", en:"Delete wilaya" },
+  wilayaEmpty: { ar:"حذف الولاية نهائياً؟", fr:"Supprimer définitivement ?", en:"Delete permanently?" },
+  wilayaHasStadiums: { ar:"ملاعب — سيُحذفون هم وحجوزاتهم نهائياً! متأكد؟", fr:"terrains seront supprimés avec leurs réservations ! Confirmer ?", en:"fields will be deleted with their bookings! Sure?" },
+  wilayaDeleted: { ar:"تم حذف الولاية", fr:"Wilaya supprimée", en:"Wilaya deleted" },
+  myCode: { ar:"كودي", fr:"Mon code", en:"My code" },
+  bookingCode: { ar:"كود الحجز", fr:"Code réservation", en:"Booking code" },
+  changeCode: { ar:"🔄 تغيير الكود", fr:"🔑 Changer le code", en:"🔑 Change code" },
+  newCodeIs: { ar:"كودك الجديد", fr:"Votre nouveau code", en:"Your new code" },
+  confirmChangeCode: { ar:"سيتوقف كودك الحالي عن العمل. متأكد؟", fr:"Votre code actuel cessera de fonctionner. Confirmer ?", en:"Your current code will stop working. Sure?" },
   netError: { ar:"تعذر الاتصال بالخادم، حاول مجدداً", fr:"Connexion au serveur impossible", en:"Server connection failed" },
   confirmIdentity: { ar:"أدخل كلمة سرك للتأكيد", fr:"Entrez votre mot de passe", en:"Enter your password to confirm" },
   invalidPhone: { ar:"الرقم غير صحيح", fr:"Numéro invalide", en:"Invalid number" },
@@ -296,6 +326,13 @@ export default function App() {
   const [setupQuestion, setSetupQuestion] = useState("");
   const [setupAnswer, setSetupAnswer] = useState("");
   const [setupPass, setSetupPass] = useState("");   // 🔐 تأكيد الهوية قبل حفظ السؤال
+  const [showAdminLogin, setShowAdminLogin] = useState(false);  // 👑 نافذة دخول اللوحة
+  const [adminPassInput, setAdminPassInput] = useState("");     // 👑 كلمة السر المدخلة
+  const [adminPass, setAdminPass] = useState("");               // 👑 محفوظة في الذاكرة فقط
+  const [adminChecking, setAdminChecking] = useState(false);
+  const [showOwnerCode, setShowOwnerCode] = useState(false);   // 🔑 إظهار كود المالك
+  const [sessionPass, setSessionPass] = useState(() => sessionStorage.getItem("mb_sp") || "");   // 🔒 تُمحى بإغلاق التبويب
+  const [myBookingsList, setMyBookingsList] = useState([]);   // 🔒 حجوزات الزبون الكاملة
 
   const changeLang = (l) => { setLang(l); localStorage.setItem("malaabi_lang", l); };
   const langLabel = lang === "ar" ? "🌐 ع" : lang === "fr" ? "🌐 FR" : "🌐 EN";
@@ -322,8 +359,8 @@ export default function App() {
     setLoading(true);
     const [w, s, b, u] = await Promise.all([
       supabase.from("wilayas").select("*").order("id"),
-      supabase.from("stadiums").select("*").order("id"),
-      supabase.from("bookings").select("*").order("id"),
+      supabase.from("stadiums_public").select("*").order("id"),
+      supabase.from("bookings_slots").select("*"),   // 🔒 الساعات فقط — بلا أسماء ولا أرقام
       supabase.from("users_count").select("*").maybeSingle(),   // 🔐 عرض عام يُرجع العدد فقط
     ]);
     if (w.data) setWilayas(w.data.map(x => x.name));
@@ -346,29 +383,36 @@ export default function App() {
     };
     const saved = readSaved("malaabi_user");
     const savedOwner = readSaved("malaabi_owner");
-    if (saved) { setUser(saved); setScreen("app"); }
-    else if (savedOwner) { setOwner(savedOwner); setScreen("owner"); }
+    if (saved) {
+      setUser(saved); setScreen("app");
+      // 🔒 نعيد جلب حجوزاته إن كانت كلمة السر ما زالت في جلسة التبويب
+      const sp = sessionStorage.getItem("mb_sp");
+      if (sp) {
+        stadiumApi("client-bookings", { payload: { phone: saved.phone, password: sp } })
+          .then(r => { if (r.bookings) setMyBookingsList(r.bookings); });
+      }
+    } else if (savedOwner?.owner_code) {
+      setOwner(savedOwner); setScreen("owner");
+      stadiumApi("owner-bookings", { ownerCode: savedOwner.owner_code }).then(r => {
+        if (r.bookings) setMyBookingsList(r.bookings);
+        if (r.stadium) {
+          const up = { ...r.stadium, owner_code: savedOwner.owner_code };
+          setOwner(up); localStorage.setItem("malaabi_owner", JSON.stringify(up));
+        }
+      });
+    } else if (savedOwner) {
+      setOwner(savedOwner); setScreen("owner");
+    }
     loadData();
     if ("Notification" in window) Notification.requestPermission();
   }, []);
-
-  // 🔔 إشعارات المشرف — حجز جديد
-  useEffect(() => {
-    if (!user || user.phone !== ADMIN_PHONE) return;
-    const ch = supabase.channel("admin-new")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "bookings" }, (p) => {
-        setBookings(prev => prev.some(b => b.id === p.new.id) ? prev : [...prev, p.new]);
-        notify("🏟 " + L("newBooking"), `${p.new.client_name} — ${p.new.stadium_name} — ${p.new.hour}:00`);
-      }).subscribe();
-    return () => supabase.removeChannel(ch);
-  }, [user, lang]);
 
   // 🔔 إشعارات صاحب الملعب — حجز جديد لملعبه
   useEffect(() => {
     if (!owner) return;
     const ch = supabase.channel("owner-new-" + owner.id)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "bookings", filter: `stadium_id=eq.${owner.id}` }, (p) => {
-        setBookings(prev => prev.some(b => b.id === p.new.id) ? prev : [...prev, p.new]);
+        setMyBookingsList(prev => prev.some(b => b.id === p.new.id) ? prev : [...prev, p.new]);
         notify("🔔 " + L("newBooking"), `${p.new.client_name} — ${p.new.date} — ${p.new.hour}:00`);
       }).subscribe();
     return () => supabase.removeChannel(ch);
@@ -379,7 +423,7 @@ export default function App() {
     if (!user) return;
     const ch = supabase.channel("client-upd-" + user.phone)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "bookings", filter: `client_phone=eq.${user.phone}` }, (p) => {
-        setBookings(prev => prev.map(b => b.id === p.new.id ? p.new : b));
+        setMyBookingsList(prev => prev.map(b => b.id === p.new.id ? p.new : b));
         if (p.new.status === "confirmed") notify("✅ " + L("bookingAccepted"), `${p.new.stadium_name} — ${p.new.hour}:00`);
         if (p.new.status === "rejected") notify("❌ " + L("bookingRejected"), `${p.new.stadium_name} — ${p.new.hour}:00`);
       }).subscribe();
@@ -444,6 +488,14 @@ export default function App() {
     );
   };
 
+  // 🔒 جلب حجوزات الزبون من الخادم بعد التحقق من هويته
+  const loadMyBookings = async (phone, pass) => {
+    const ph = phone || user?.phone, pw = pass || sessionPass;
+    if (!ph || !pw) return;
+    const res = await stadiumApi("client-bookings", { payload: { phone: ph, password: pw } });
+    if (res.bookings) setMyBookingsList(res.bookings);
+  };
+
   const handleLogin = async () => {
     if (!loginPhone || !loginPass) return showToast(t.enterAll, "#FF4444");
     if (!isValidPhone(loginPhone)) return showToast(L("invalidPhone"), "#FF4444");
@@ -454,6 +506,8 @@ export default function App() {
     setUser(data);
     localStorage.setItem("malaabi_user", JSON.stringify(data));
     setScreen("app");
+    setSessionPass(loginPass); sessionStorage.setItem("mb_sp", loginPass);
+    loadMyBookings(data.phone, loginPass);
     showToast(t.welcome + " " + data.name);
   };
 
@@ -472,6 +526,7 @@ export default function App() {
     setUser(res.user);
     localStorage.setItem("malaabi_user", JSON.stringify(res.user));
     setScreen("app"); setUsersCount(p => p + 1);
+    setSessionPass(regPass); sessionStorage.setItem("mb_sp", regPass);
     showToast(t.accountCreated);
   };
 
@@ -534,36 +589,102 @@ export default function App() {
 
   const handleOwnerLogin = async () => {
     if (!ownerCodeInput) return showToast(L("enterCode"), "#FF4444");
-    const { data } = await supabase.from("stadiums").select("*").eq("owner_code", ownerCodeInput.trim().toUpperCase()).single();
-    if (!data) return showToast(L("wrongCode"), "#FF4444");
-    if (data.status === "suspended") return showToast(L("suspended"), "#FF4444");
-    setOwner(data);
-    localStorage.setItem("malaabi_owner", JSON.stringify(data));
+    const code = ownerCodeInput.trim().toUpperCase();
+    const res = await stadiumApi("owner-login", { ownerCode: code });
+    if (res.error === "wrong_code") return showToast(L("wrongCode"), "#FF4444");
+    if (res.error === "suspended") return showToast(L("suspended"), "#FF4444");
+    if (res.error || !res.stadium) return showToast(L("netError"), "#FF4444");
+    // نحفظ الكود مع بيانات الملعب — يُستعمل للتحقق في كل عملية لاحقة
+    const ow = { ...res.stadium, owner_code: code };
+    setOwner(ow);
+    localStorage.setItem("malaabi_owner", JSON.stringify(ow));
     setScreen("owner"); setOwnerCodeInput("");
-    showToast(t.welcome + " " + data.name);
+    loadOwnerBookings(code);
+    showToast(t.welcome + " " + ow.name);
+  };
+
+  // 🔒 جلب حجوزات صاحب الملعب من الخادم
+  const loadOwnerBookings = async (code) => {
+    const res = await stadiumApi("owner-bookings", { ownerCode: code || owner?.owner_code });
+    if (res.bookings) setMyBookingsList(res.bookings);
+    if (res.stadium) {
+      const up = { ...res.stadium, owner_code: code || owner?.owner_code };
+      setOwner(up); localStorage.setItem("malaabi_owner", JSON.stringify(up));
+    }
+  };
+
+  // 🔒 فتح لقطة الدفع برابط مؤقت صالح خمس دقائق
+  const openProof = async (bookingId) => {
+    const res = await stadiumApi("proof-url", {
+      ownerCode: owner?.owner_code, adminPass, payload: { bookingId },
+    });
+    if (res.error || !res.url) return showToast(L("netError"), "#FF4444");
+    window.open(res.url, "_blank");
+  };
+
+  // 🔑 تغيير كود صاحب الملعب
+  const changeOwnerCode = async () => {
+    const res = await stadiumApi("owner-change-code", { ownerCode: owner?.owner_code });
+    if (res.error || !res.owner_code) return showToast(L("netError"), "#FF4444");
+    const up = { ...owner, owner_code: res.owner_code };
+    setOwner(up); localStorage.setItem("malaabi_owner", JSON.stringify(up));
+    loadOwnerBookings(res.owner_code);
+    setShowOwnerCode(true);   // 🔑 نُظهر الكود الجديد ليحفظه
+    showToast("🔑 " + L("newCodeIs") + ": " + res.owner_code);
   };
 
   const handleLogout = () => {
     localStorage.removeItem("malaabi_user");
     localStorage.removeItem("malaabi_owner");
     setUser(null); setOwner(null);
+    setSessionPass(""); sessionStorage.removeItem("mb_sp"); setMyBookingsList([]); setAdminPass("");
     setScreen("login"); setTab("client"); setBottomTab("stadiums");
   };
 
+  // 👑 عشرون ضغطة على الكرة تفتح نافذة دخول لوحة التحكم
   const handleLogoClick = () => {
     setLogoClicks(p => {
       const n = p + 1;
-      if (n >= 5) {
-        const pass = prompt("كلمة السر:");
-        if (pass === ADMIN_PASS) { setTab("admin"); showToast(t.adminWelcome); }
-        return 0;
-      }
+      if (n >= 20) { setShowAdminLogin(true); setAdminPassInput(""); return 0; }
       return n;
     });
   };
 
+  // 👑 التحقق من كلمة السر على الخادم — لا شيء منها في الكود
+  const handleAdminLogin = async () => {
+    if (!adminPassInput.trim()) return;
+    setAdminChecking(true);
+    const res = await stadiumApi("admin-check", { adminPass: adminPassInput });
+    setAdminChecking(false);
+    if (res.error === "wrong_pass") return showToast(L("wrongPass"), "#FF4444");
+    if (res.error) return showToast(L("netError"), "#FF4444");
+    setAdminPass(adminPassInput);      // تبقى في الذاكرة فقط، لا تُحفظ في القرص
+    setAdminPassInput("");
+    setShowAdminLogin(false);
+    setTab("admin");
+    await loadAdminData(adminPassInput);
+    showToast(L("commanderWelcome"));
+  };
+
+  // 👑 جلب البيانات الكاملة للوحة التحكم
+  const loadAdminData = async (pass) => {
+    const res = await stadiumApi("admin-data", { adminPass: pass || adminPass });
+    if (res.error) return showToast(L("netError"), "#FF4444");
+    if (res.stadiums) setStadiums(res.stadiums);
+    if (res.bookings) setBookings(res.bookings);
+    if (res.usersCount != null) setUsersCount(res.usersCount);
+  };
+
+  // 👑 الخروج من اللوحة — تُمحى كلمة السر من الذاكرة
+  const exitAdmin = () => {
+    setAdminPass(""); setTab("client");
+    setSearchText(""); setFilterWilaya("الكل"); setSortBy("default");   // 🧹 تنظيف الفلاتر
+    loadData();
+  };
+
   const handleDelete = async (id) => {
-    await supabase.from("stadiums").delete().eq("id", id);
+    const res = await stadiumApi("admin-delete-stadium", { adminPass, stadiumId: id });
+    if (res.error) { setConfirmDelete(null); return showToast(L("netError"), "#FF4444"); }
     setStadiums(p => p.filter(s => s.id !== id));
     setConfirmDelete(null);
     showToast(t.stadiumDeleted, "#FF4444");
@@ -598,7 +719,8 @@ export default function App() {
   const handleBook = async () => {
     if (bookHour === null || !selectedPayApp || !transactionNum) return;
     if (!proofUrl) return showToast(L("proofRequired"), "#FF4444");
-    const dup = bookings.some(b => b.stadium_id === selected.id && b.date === bookDate && b.hour === bookHour && b.client_phone === user.phone && b.status !== "rejected");
+    // 🔒 نفحص حجوزات الزبون نفسه — القائمة العامة لم تعد تحوي أرقام الهواتف
+    const dup = myBookingsList.some(b => b.stadium_id === selected.id && b.date === bookDate && b.hour === bookHour && b.status !== "rejected");
     if (dup) return showToast(t.duplicateBooking, "#FF4444");
     const { data } = await supabase.from("bookings").insert({
       stadium_id: selected.id, stadium_name: selected.name,
@@ -606,7 +728,11 @@ export default function App() {
       date: bookDate, hour: bookHour, pay_app: selectedPayApp,
       transaction_num: transactionNum, status: "pending", proof_url: proofUrl,
     }).select().single();
-    if (data) setBookings(p => [...p, data]);
+    if (data) {
+      // نضيف الساعة للقائمة العامة حتى تظهر محجوزة فوراً
+      setBookings(p => [...p, { stadium_id: selected.id, date: bookDate, hour: bookHour, status: "pending" }]);
+      setMyBookingsList(p => [...p, data]);
+    }
     closeModal();
     showToast(t.bookingSuccess);
   };
@@ -618,33 +744,34 @@ export default function App() {
 
   // ✅ صاحب الملعب فقط
   const confirmBooking = async (id) => {
-    const code = genCode();
-    const bk = bookings.find(b => b.id === id);
-    const st = stadiums.find(s => s.id === bk?.stadium_id) || owner;
-    const rate = st?.commission_rate ?? 12;
-    const comm = Math.round((st?.price || 0) * rate / 100);
-    await supabase.from("bookings").update({ status: "confirmed", code, handled_by: "owner", commission: comm }).eq("id", id);
-    if (st) {
-      const nb = (st.balance_due || 0) + comm;
-      await supabase.from("stadiums").update({ balance_due: nb }).eq("id", st.id);
-      setStadiums(p => p.map(s => s.id === st.id ? { ...s, balance_due: nb } : s));
-      if (owner && owner.id === st.id) {
-        const up = { ...owner, balance_due: nb };
-        setOwner(up); localStorage.setItem("malaabi_owner", JSON.stringify(up));
-      }
+    const res = await stadiumApi("confirm-booking", { ownerCode: owner?.owner_code, bookingId: id });
+    if (res.error === "unauthorized") return showToast(L("wrongCode"), "#FF4444");
+    if (res.error === "already_handled") return showToast(L("accepted2"), "#FF6D00");
+    if (res.error || !res.ok) return showToast(L("netError"), "#FF4444");
+
+    setMyBookingsList(p => p.map(b => b.id === id
+      ? { ...b, status: "confirmed", code: res.code, handled_by: "owner", commission: res.commission }
+      : b));
+
+    if (owner) {
+      const up = { ...owner, balance_due: res.balance_due };
+      setOwner(up); localStorage.setItem("malaabi_owner", JSON.stringify(up));
     }
-    setBookings(p => p.map(b => b.id === id ? { ...b, status: "confirmed", code, handled_by: "owner", commission: comm } : b));
-    showToast("✅ " + t.confirmed + " — " + code);
+    setStadiums(p => p.map(s => s.id === owner?.id ? { ...s, balance_due: res.balance_due } : s));
+    showToast("✅ " + t.confirmed + " — " + res.code);
   };
 
   const rejectBooking = async (id) => {
-    await supabase.from("bookings").update({ status: "rejected", handled_by: "owner" }).eq("id", id);
-    setBookings(p => p.map(b => b.id === id ? { ...b, status: "rejected", handled_by: "owner" } : b));
+    const res = await stadiumApi("reject-booking", { ownerCode: owner?.owner_code, bookingId: id });
+    if (res.error === "unauthorized") return showToast(L("wrongCode"), "#FF4444");
+    if (res.error || !res.ok) return showToast(L("netError"), "#FF4444");
+    setMyBookingsList(p => p.map(b => b.id === id ? { ...b, status: "rejected", handled_by: "owner" } : b));
     showToast(t.rejectDone, "#FF4444");
   };
 
   const resetDue = async (id) => {
-    await supabase.from("stadiums").update({ balance_due: 0 }).eq("id", id);
+    const res = await stadiumApi("admin-reset-due", { adminPass, stadiumId: id });
+    if (res.error) return showToast(L("netError"), "#FF4444");
     setStadiums(p => p.map(s => s.id === id ? { ...s, balance_due: 0 } : s));
     showToast("✅ " + L("resetDue"));
   };
@@ -652,14 +779,16 @@ export default function App() {
   const saveRate = async (id) => {
     const v = parseFloat(rateEdit[id]);
     if (isNaN(v) || v < 0 || v > 100) return showToast("0-100", "#FF4444");
-    await supabase.from("stadiums").update({ commission_rate: v }).eq("id", id);
+    const res = await stadiumApi("admin-set-rate", { adminPass, stadiumId: id, payload: { rate: v } });
+    if (res.error) return showToast(L("netError"), "#FF4444");
     setStadiums(p => p.map(s => s.id === id ? { ...s, commission_rate: v } : s));
     showToast("✅");
   };
 
   const toggleSuspend = async (st) => {
-    const ns = st.status === "suspended" ? "active" : "suspended";
-    await supabase.from("stadiums").update({ status: ns }).eq("id", st.id);
+    const res = await stadiumApi("admin-toggle-suspend", { adminPass, stadiumId: st.id });
+    if (res.error || !res.status) return showToast(L("netError"), "#FF4444");
+    const ns = res.status;
     setStadiums(p => p.map(s => s.id === st.id ? { ...s, status: ns } : s));
     showToast(ns === "suspended" ? "⛔ " + L("suspend") : "✅ " + L("activate"), ns === "suspended" ? "#FF4444" : COLORS.accent);
   };
@@ -675,38 +804,67 @@ export default function App() {
 
   const handleEdit = async () => {
     if (!editName || !editWilaya || !editHood || !editPrice) return showToast(t.enterAll, "#FF4444");
-    const { data } = await supabase.from("stadiums").update({
-      name: editName, wilaya: editWilaya, hood: editHood, price: parseInt(editPrice),
-      owner_phone: editOwnerPhone, payments: editPayments, working_hours: editWorkingHours,
-      image: editImage.trim() || pickImage(stadiums.filter(s => s.id !== editStadium.id)),   // 🖼 جديد
-      latitude: editLat ? parseFloat(editLat) : null,     // 📍 جديد
-      longitude: editLng ? parseFloat(editLng) : null,    // 📍 جديد
-    }).eq("id", editStadium.id).select().single();
-    if (data) setStadiums(p => p.map(s => s.id === editStadium.id ? data : s));
+    const res = await stadiumApi("admin-edit-stadium", {
+      adminPass, stadiumId: editStadium.id,
+      payload: {
+        name: editName, wilaya: editWilaya, hood: editHood, price: editPrice,
+        owner_phone: editOwnerPhone, payments: editPayments, working_hours: editWorkingHours,
+        image: editImage.trim() || pickImage(stadiums.filter(s => s.id !== editStadium.id)),
+        latitude: editLat ? parseFloat(editLat) : null,
+        longitude: editLng ? parseFloat(editLng) : null,
+      },
+    });
+    if (res.error || !res.stadium) return showToast(L("netError"), "#FF4444");
+    setStadiums(p => p.map(s => s.id === editStadium.id ? res.stadium : s));
     setEditStadium(null); showToast(t.editSaved);
   };
 
   const handleAdd = async () => {
     if (!newName || !newWilayaSelect || !newHood || !newPrice) return showToast(t.enterAll, "#FF4444");
     const colors = ["#00E676","#00B0FF","#FF6D00","#FF4081","#7C4DFF","#00BCD4"];
-    const { data } = await supabase.from("stadiums").insert({
-      name: newName, wilaya: newWilayaSelect, hood: newHood, price: parseInt(newPrice),
-      color: colors[stadiums.length % colors.length], payments: newPayments, owner_phone: newOwnerPhone,
-      working_hours: newWorkingHours, image: newImage.trim() || pickImage(stadiums),
-      latitude: newLat ? parseFloat(newLat) : null,       // 📍 جديد
-      longitude: newLng ? parseFloat(newLng) : null,      // 📍 جديد
-      owner_code: genOwnerCode(), commission_rate: 12, balance_due: 0, status: "active"
-    }).select().single();
-    if (data) { setStadiums(p => [...p, data]); showToast("✅ " + L("ownerCodeIs") + ": " + data.owner_code); }
+    const res = await stadiumApi("admin-add-stadium", {
+      adminPass,
+      payload: {
+        name: newName, wilaya: newWilayaSelect, hood: newHood, price: newPrice,
+        color: colors[stadiums.length % colors.length], payments: newPayments,
+        owner_phone: newOwnerPhone, working_hours: newWorkingHours,
+        image: newImage.trim() || pickImage(stadiums),
+        latitude: newLat ? parseFloat(newLat) : null,
+        longitude: newLng ? parseFloat(newLng) : null,
+      },
+    });
+    if (res.error || !res.stadium) return showToast(L("netError"), "#FF4444");
+    setStadiums(p => [...p, res.stadium]);
+    showToast("✅ " + L("ownerCodeIs") + ": " + res.stadium.owner_code);
     setNewName(""); setNewWilayaSelect(""); setNewHood(""); setNewPrice(""); setNewPayments({}); setNewOwnerPhone(""); setNewWorkingHours([...ALL_HOURS]);
-    setNewLat(""); setNewLng(""); setNewImage("");          // 📍 جديد
+    setNewLat(""); setNewLng(""); setNewImage("");
   };
 
   const handleAddWilaya = async () => {
     if (!newWilaya || wilayas.includes(newWilaya)) return;
-    await supabase.from("wilayas").insert({ name: newWilaya });
+    const res = await stadiumApi("admin-add-wilaya", { adminPass, payload: { name: newWilaya } });
+    if (res.error) return showToast(L("netError"), "#FF4444");
     setWilayas(p => [...p, newWilaya]); setNewWilaya("");
     showToast(t.wilayaAdded);
+  };
+
+  // 🗑 حذف ولاية — مع تحذير إن كانت تحوي ملاعب
+  const handleDeleteWilaya = async (name) => {
+    const info = await stadiumApi("admin-wilaya-info", { adminPass, payload: { name } });
+    if (info.error) return showToast(L("netError"), "#FF4444");
+
+    const msg = info.count > 0
+      ? `⚠️ ${name}\n\n${info.count} ${L("wilayaHasStadiums")}`
+      : `${name}\n\n${L("wilayaEmpty")}`;
+    if (!confirm(msg)) return;
+
+    const res = await stadiumApi("admin-delete-wilaya", { adminPass, payload: { name } });
+    if (res.error) return showToast(L("netError"), "#FF4444");
+
+    setWilayas(p => p.filter(w => w !== name));
+    setStadiums(p => p.filter(s => s.wilaya !== name));
+    if (filterWilaya === name) setFilterWilaya("الكل");
+    showToast("🗑 " + L("wilayaDeleted") + (res.deletedStadiums ? ` (${res.deletedStadiums})` : ""), "#FF4444");
   };
 
   const toggleHour = (h, isEdit) => {
@@ -717,7 +875,8 @@ export default function App() {
   const isBooked = (sid, d, h) => bookings.some(b => b.stadium_id === sid && b.date === d && b.hour === h && b.status !== "rejected");
 
   const confirmedBookings = bookings.filter(b => b.status === "confirmed");
-  const myBookings = user ? bookings.filter(b => b.client_phone === user.phone) : [];
+  // 🔒 حجوزات الزبون تأتي من الخادم — جدول الحجوزات لم يعد مقروءاً مباشرة
+  const myBookings = user ? myBookingsList : [];
   const myConfirmedBookings = myBookings.filter(b => b.status === "confirmed");
   const unreadNotifs = myBookings.filter(b => b.status !== "pending").length;
   const totalDues = stadiums.reduce((a,s) => a + (s.balance_due || 0), 0);
@@ -743,7 +902,8 @@ export default function App() {
   });
 
   const pendingBookings = bookings.filter(b => b.status === "pending");
-  const ownerBookings = owner ? bookings.filter(b => b.stadium_id === owner.id) : [];
+  // 🔒 حجوزات صاحب الملعب تأتي من الخادم بعد التحقق من كوده
+  const ownerBookings = owner ? myBookingsList : [];
   const ownerPending = ownerBookings.filter(b => b.status === "pending");
   const payApp = selectedPayApp ? PAYMENT_APPS.find(p => p.id === selectedPayApp) : null;
   const stadiumPayNum = selected && payApp ? (selected.payments?.[selectedPayApp] || "") : "";
@@ -919,7 +1079,7 @@ export default function App() {
 
   // ✅ واجهة صاحب الملعب
   if (screen === "owner" && owner) {
-    const st = stadiums.find(s => s.id === owner.id) || owner;
+    const st = owner;   // 🔐 بياناته الكاملة تأتي من stadium-api لا من العرض العام
     const conf = ownerBookings.filter(b => b.status === "confirmed");
     return (
       <div style={{minHeight:"100vh", background:COLORS.bg, fontFamily:"Tajawal,sans-serif", direction:isRTL?"rtl":"ltr", color:"#fff", paddingBottom:"24px"}}>
@@ -954,6 +1114,14 @@ export default function App() {
             )}
           </div>
 
+          {/* 🔑 زر إظهار الكود وزر تغييره — متقابلان */}
+          <div style={{display:"flex", gap:"8px", marginBottom:"16px"}}>
+            <button onClick={() => setShowOwnerCode(v => !v)} style={{flex:1, padding:"11px 8px", background:"#00E67615", color:COLORS.accent, border:"1px solid #00E67644", borderRadius:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>
+              🔑 {showOwnerCode ? <b style={{letterSpacing:"2px", fontSize:"13px"}}>{owner?.owner_code}</b> : `${L("myCode")} • M••••••`}
+            </button>
+            <button onClick={() => { if (confirm(L("confirmChangeCode"))) changeOwnerCode(); }} style={{flex:1, padding:"11px 8px", background:"#7C4DFF15", color:"#7C4DFF", border:"1px solid #7C4DFF44", borderRadius:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{L("changeCode")}</button>
+          </div>
+
           <div style={{display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:"12px", marginBottom:"20px"}}>
             <div style={{background:COLORS.card, borderRadius:"14px", padding:"16px", border:`1px solid ${COLORS.border}`, textAlign:"center"}}>
               <div style={{fontSize:"26px"}}>✅</div>
@@ -983,7 +1151,7 @@ export default function App() {
                   <div style={{background:`${pa?.color}22`, color:pa?.color, padding:"4px 10px", borderRadius:"20px", fontSize:"12px", fontWeight:"700", height:"fit-content"}}>{pa?.name}</div>
                 </div>
                 <div style={{background:COLORS.bg, borderRadius:"10px", padding:"10px 14px", marginBottom:"10px", fontSize:"13px"}}>{t.serialNum}: <span style={{color:COLORS.accent, fontWeight:"700"}}>{b.transaction_num}</span></div>
-                {b.proof_url && <a href={b.proof_url} target="_blank" rel="noreferrer" style={{display:"block", textAlign:"center", padding:"10px", background:"#00B0FF22", color:COLORS.accent2, border:"1px solid #00B0FF44", borderRadius:"10px", fontWeight:"700", fontSize:"13px", textDecoration:"none", marginBottom:"10px"}}>{L("viewProof")}</a>}
+                {b.proof_url && <button onClick={() => openProof(b.id)} style={{display:"block", width:"100%", textAlign:"center", padding:"10px", background:"#00B0FF22", color:COLORS.accent2, border:"1px solid #00B0FF44", borderRadius:"10px", fontWeight:"700", fontSize:"13px", cursor:"pointer", fontFamily:"inherit", marginBottom:"10px"}}>{L("viewProof")}</button>}
                 <div style={{display:"flex", gap:"10px"}}>
                   <button onClick={() => confirmBooking(b.id)} style={{flex:1, padding:"11px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{t.confirm}</button>
                   <button onClick={() => rejectBooking(b.id)} style={{flex:1, padding:"11px", background:"#FF444422", color:"#FF4444", border:"1px solid #FF444444", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit"}}>{t.reject}</button>
@@ -1001,6 +1169,12 @@ export default function App() {
                   <div style={{fontWeight:"700"}}>{b.client_name}</div>
                   <div style={{color:COLORS.muted, fontSize:"12px"}}>📅 {b.date} — {b.hour}:00</div>
                   {b.status === "confirmed" && <div style={{color:"#FF6D00", fontSize:"12px", marginTop:"3px"}}>{L("commission")}: {b.commission || 0}</div>}
+                  {b.status === "confirmed" && b.code && (
+                    <div style={{marginTop:"5px", background:`${COLORS.accent}18`, borderRadius:"8px", padding:"4px 10px", display:"inline-block"}}>
+                      <span style={{color:COLORS.muted, fontSize:"10px"}}>{L("bookingCode")}: </span>
+                      <span style={{color:COLORS.accent, fontWeight:"800", letterSpacing:"2px", fontSize:"12px"}}>{b.code}</span>
+                    </div>
+                  )}
                 </div>
                 <div style={{background:`${sc}22`, color:sc, padding:"5px 12px", borderRadius:"20px", fontSize:"12px", fontWeight:"700"}}>{b.status==="confirmed"?L("accepted2"):L("rejected2")}</div>
               </div>
@@ -1028,7 +1202,7 @@ export default function App() {
         <div style={{display:"flex", alignItems:"center", gap:"6px"}}>
           <LangButton/>
           <button onClick={handleLogout} style={{padding:"5px 10px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"8px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{t.logout}</button>
-          {tab === "admin" && <button onClick={() => setTab("client")} style={{padding:"5px 10px", background:"#FF444422", border:"none", borderRadius:"8px", color:"#FF4444", fontWeight:"600", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{t.closeAdmin}</button>}
+          {tab === "admin" && <button onClick={exitAdmin} style={{padding:"5px 10px", background:"#FF444422", border:"none", borderRadius:"8px", color:"#FF4444", fontWeight:"600", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{t.closeAdmin}</button>}
         </div>
       </div>
 
@@ -1040,7 +1214,7 @@ export default function App() {
                 <div style={{background:`linear-gradient(135deg, ${COLORS.card}, #0a1628)`, borderRadius:"16px", padding:"20px 16px", marginBottom:"16px", border:`1px solid ${COLORS.border}`}}>
                   <div style={{fontSize:"22px", fontWeight:"800", marginBottom:"4px", background:"linear-gradient(135deg,#00E676,#00B0FF)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>{t.bookYourStadium}</div>
                   <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"12px"}}>{t.chooseStadium}</div>
-                  <input style={{...inp, marginBottom:"8px", background:"#ffffff11"}} placeholder={t.search} value={searchText} onChange={e => setSearchText(e.target.value)}/>
+                  <input style={{...inp, marginBottom:"8px", background:"#ffffff11"}} type="search" name="malaabi-search" autoComplete="off" placeholder={t.search} value={searchText} onChange={e => setSearchText(e.target.value)}/>
                   <select style={{...sel, marginBottom:"8px", background:"#ffffff11"}} value={sortBy} onChange={e => { const v = e.target.value; if (v === "nearest") return findNearest(); setSortBy(v); }}>
                     <option value="default">{t.sortDefault}</option>
                     <option value="price_asc">{t.sortPriceAsc}</option>
@@ -1201,7 +1375,13 @@ export default function App() {
                         <span>{t.serialNum}: <b style={{color:COLORS.accent}}>{b.transaction_num}</b></span>
                         <span style={{color:pa?.color, fontWeight:"700"}}>{pa?.name}</span>
                       </div>
-                      {b.proof_url && <a href={b.proof_url} target="_blank" rel="noreferrer" style={{display:"block", textAlign:"center", padding:"11px", background:"#00B0FF22", color:COLORS.accent2, border:"1px solid #00B0FF44", borderRadius:"10px", fontWeight:"700", fontSize:"13px", textDecoration:"none"}}>{L("viewProof")}</a>}
+                      {b.proof_url && <button onClick={() => openProof(b.id)} style={{display:"block", width:"100%", textAlign:"center", padding:"11px", background:"#00B0FF22", color:COLORS.accent2, border:"1px solid #00B0FF44", borderRadius:"10px", fontWeight:"700", fontSize:"13px", cursor:"pointer", fontFamily:"inherit"}}>{L("viewProof")}</button>}
+                      {b.status === "confirmed" && b.code && (
+                        <div style={{marginTop:"8px", textAlign:"center", background:`${COLORS.accent}15`, borderRadius:"10px", padding:"7px"}}>
+                          <span style={{color:COLORS.muted, fontSize:"11px"}}>{L("bookingCode")}: </span>
+                          <span style={{color:COLORS.accent, fontWeight:"800", letterSpacing:"3px", fontSize:"14px"}}>{b.code}</span>
+                        </div>
+                      )}
                       {b.status !== "pending" && <div style={{color:"#7C4DFF", fontSize:"12px", marginTop:"8px", textAlign:"center"}}>{L("handledBy")}: <b>{L("owner")}</b>{b.commission ? ` — ${L("commission")}: ${b.commission}` : ""}</div>}
                     </div>
                   );
@@ -1319,7 +1499,12 @@ export default function App() {
                     <button onClick={handleAddWilaya} style={{padding:"10px 16px", background:COLORS.accent2, border:"none", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{t.add}</button>
                   </div>
                   <div style={{display:"flex", gap:"8px", flexWrap:"wrap", marginTop:"12px"}}>
-                    {wilayas.map(w => <div key={w} style={{background:"#00B0FF22", color:COLORS.accent2, padding:"4px 12px", borderRadius:"20px", fontSize:"12px", fontWeight:"700"}}>{w}</div>)}
+                    {wilayas.map(w => (
+                      <div key={w} style={{background:"#00B0FF22", color:COLORS.accent2, padding:"4px 6px 4px 12px", borderRadius:"20px", fontSize:"12px", fontWeight:"700", display:"flex", alignItems:"center", gap:"6px"}}>
+                        {w}
+                        <button onClick={() => handleDeleteWilaya(w)} title={L("delWilaya")} style={{width:"20px", height:"20px", borderRadius:"50%", background:"#FF444433", color:"#FF6B6B", border:"none", cursor:"pointer", fontFamily:"inherit", fontSize:"11px", lineHeight:"1", display:"flex", alignItems:"center", justifyContent:"center", padding:0}}>✕</button>
+                      </div>
+                    ))}
                   </div>
                 </div>
                 <div style={{background:COLORS.card, borderRadius:"16px", border:`1px solid ${COLORS.border}`, padding:"20px"}}>
@@ -1559,6 +1744,36 @@ export default function App() {
               <button onClick={() => setConfirmDelete(null)} style={{flex:1, padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>{t.cancel}</button>
               <button onClick={() => handleDelete(confirmDelete.id)} style={{flex:1, padding:"12px", background:"#FF4444", border:"none", borderRadius:"12px", color:"#fff", fontWeight:"700", cursor:"pointer", fontFamily:"inherit"}}>{t.delete}</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 👑 نافذة دخول لوحة التحكم */}
+      {showAdminLogin && (
+        <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.92)", zIndex:300, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px", backdropFilter:"blur(6px)"}} onClick={e => e.target===e.currentTarget && setShowAdminLogin(false)}>
+          <div style={{background:`linear-gradient(160deg, ${COLORS.card}, #0a1020)`, borderRadius:"28px", border:"1px solid #7C4DFF44", width:"100%", maxWidth:"380px", padding:"36px 28px", textAlign:"center", boxShadow:"0 30px 80px rgba(124,77,255,0.25)"}}>
+            <div style={{width:"72px", height:"72px", margin:"0 auto 18px", borderRadius:"50%", background:"linear-gradient(135deg,#7C4DFF,#00B0FF)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"34px", boxShadow:"0 10px 30px rgba(124,77,255,0.4)"}}>👑</div>
+            <div style={{fontSize:"20px", fontWeight:"900", marginBottom:"6px", background:"linear-gradient(135deg,#7C4DFF,#00B0FF)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>{L("adminTitle")}</div>
+            <div style={{color:COLORS.muted, fontSize:"12px", marginBottom:"24px"}}>🔒 {L("adminPassLabel")}</div>
+
+            <input
+              type="password"
+              name="malaabi-admin"
+              autoComplete="new-password"
+              autoFocus
+              value={adminPassInput}
+              onChange={e => setAdminPassInput(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleAdminLogin()}
+              style={{width:"100%", background:COLORS.bg, border:"1px solid #7C4DFF44", borderRadius:"14px", padding:"15px", color:"#fff", fontSize:"17px", fontFamily:"inherit", textAlign:"center", letterSpacing:"3px", marginBottom:"18px", boxSizing:"border-box", outline:"none"}}
+              placeholder="••••••••"
+            />
+
+            <button onClick={handleAdminLogin} disabled={adminChecking} style={{width:"100%", padding:"15px", background: adminChecking ? COLORS.bg : "linear-gradient(135deg,#7C4DFF,#00B0FF)", border:"none", borderRadius:"14px", fontWeight:"900", fontSize:"16px", cursor: adminChecking ? "wait" : "pointer", fontFamily:"inherit", color: adminChecking ? COLORS.muted : "#fff"}}>
+              {adminChecking ? L("checking") : L("adminEnter")}
+            </button>
+            <button onClick={() => { setShowAdminLogin(false); setAdminPassInput(""); }} style={{width:"100%", padding:"12px", background:"transparent", border:"none", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", marginTop:"8px", fontSize:"13px"}}>
+              {lang==="ar" ? "إلغاء" : lang==="fr" ? "Annuler" : "Cancel"}
+            </button>
           </div>
         </div>
       )}
