@@ -230,6 +230,12 @@ const TXT = {
   wrongPass: { ar:"كلمة السر خاطئة", fr:"Mot de passe incorrect", en:"Wrong password" },
   commanderWelcome: { ar:"مرحباً بك أيها القائد 👑", fr:"Bienvenue Commandant 👑", en:"Welcome Commander 👑" },
   checking: { ar:"جاري التحقق...", fr:"Vérification...", en:"Checking..." },
+  pickSlots: { ar:"اختر مواعيدك", fr:"Choisissez vos créneaux", en:"Pick your slots" },
+  myCart: { ar:"مواعيدك", fr:"Vos créneaux", en:"Your slots" },
+  cartEmpty: { ar:"لم تختر أي موعد بعد", fr:"Aucun créneau choisi", en:"No slots picked yet" },
+  maxSlots: { ar:"الحد الأقصى 70 موعداً", fr:"Maximum 70 créneaux", en:"Max 70 slots" },
+  copied: { ar:"✅ تم نسخ الرقم", fr:"✅ Numéro copié", en:"✅ Number copied" },
+  copyNum: { ar:"نسخ", fr:"Copier", en:"Copy" },
   blockHours: { ar:"🚫 إغلاق مواعيد", fr:"🚫 Fermer des créneaux", en:"🚫 Block slots" },
   pickDate: { ar:"اختر التاريخ", fr:"Choisissez la date", en:"Pick a date" },
   pickHours: { ar:"اختر الساعات المراد إغلاقها", fr:"Choisissez les heures", en:"Pick hours to block" },
@@ -249,7 +255,6 @@ const TXT = {
   groupBooking: { ar:"حجز متكرر", fr:"Réservation récurrente", en:"Recurring booking" },
   acceptAll: { ar:"قبول الكل", fr:"Tout accepter", en:"Accept all" },
   rejectAll: { ar:"رفض الكل", fr:"Tout refuser", en:"Reject all" },
-  checking2: { ar:"جاري الفحص...", fr:"Vérification...", en:"Checking..." },
   rateTitle: { ar:"كيف كانت تجربتك؟", fr:"Comment était votre expérience ?", en:"How was your experience?" },
   rateSend: { ar:"إرسال التقييم", fr:"Envoyer l\'avis", en:"Send rating" },
   rateComment: { ar:"تعليق (اختياري)", fr:"Commentaire (optionnel)", en:"Comment (optional)" },
@@ -303,7 +308,6 @@ export default function App() {
   const [sortBy, setSortBy] = useState("default");
   const [selected, setSelected] = useState(null);
   const [bookDate, setBookDate] = useState(today);
-  const [bookHour, setBookHour] = useState(null);
   const [step, setStep] = useState(1);
   const [selectedPayApp, setSelectedPayApp] = useState(null);
   const [transactionNum, setTransactionNum] = useState("");
@@ -372,9 +376,8 @@ export default function App() {
   const [blockedList, setBlockedList] = useState([]);    // 🚫 المواعيد المغلقة
   const [blockDate, setBlockDate] = useState(today);     // 🚫 تاريخ الإغلاق
   const [blockHoursSel, setBlockHoursSel] = useState([]);// 🚫 الساعات المختارة
-  const [repeatWeeks, setRepeatWeeks] = useState(1);     // 🔁 عدد الأسابيع
-  const [busyDates, setBusyDates] = useState([]);        // 🔁 التواريخ المتعارضة
-  const [checkingSlots, setCheckingSlots] = useState(false);
+  const [cart, setCart] = useState([]);                  // 🛒 سلة المواعيد
+  const [showPass, setShowPass] = useState({});          // 👁 إظهار كلمات السر
   const [sessionPass, setSessionPass] = useState(() => sessionStorage.getItem("mb_sp") || "");   // 🔒 تُمحى بإغلاق التبويب
   const [myBookingsList, setMyBookingsList] = useState([]);   // 🔒 حجوزات الزبون الكاملة
 
@@ -384,6 +387,47 @@ export default function App() {
   const notify = (title, body) => {
     if (!("Notification" in window)) return;
     if (Notification.permission === "granted") new Notification(title, { body, icon: "/icon.png" });
+  };
+
+  // 👁 أيقونة العين — SVG بسيط
+  const EyeIcon = ({ open }) => (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1.5 12S5 5.5 12 5.5 22.5 12 22.5 12 19 18.5 12 18.5 1.5 12 1.5 12z"/>
+      <circle cx="12" cy="12" r="3.2"/>
+      {!open && <line x1="3" y1="21" x2="21" y2="3"/>}
+    </svg>
+  );
+
+  // 🔒 حقل كلمة سر بزر إظهار — دالة لا مكوّن، حتى لا يفقد التركيز عند الكتابة
+  const passField = ({ id, value, onChange, placeholder, maxLength = 4, onEnter, extra }) => (
+    <div style={{position:"relative", marginBottom:"16px"}}>
+      <input
+        type={showPass[id] ? "text" : "password"}
+        value={value}
+        maxLength={maxLength}
+        placeholder={placeholder}
+        onChange={onChange}
+        onKeyDown={e => e.key === "Enter" && onEnter && onEnter()}
+        style={{...inp, marginBottom:0, paddingInlineEnd:"46px", ...extra}}
+      />
+      <button type="button" onClick={() => setShowPass(p => ({ ...p, [id]: !p[id] }))}
+        style={{position:"absolute", insetInlineEnd:"12px", top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color: showPass[id] ? COLORS.accent : COLORS.muted, padding:"4px", display:"flex", alignItems:"center"}}>
+        <EyeIcon open={!!showPass[id]}/>
+      </button>
+    </div>
+  );
+
+  // 📋 نسخ نص إلى الحافظة
+  const copyText = async (txt) => {
+    try {
+      await navigator.clipboard.writeText(String(txt));
+      showToast(L("copied"));
+    } catch (_e) {
+      const el = document.createElement("textarea");
+      el.value = String(txt); document.body.appendChild(el);
+      el.select(); document.execCommand("copy"); document.body.removeChild(el);
+      showToast(L("copied"));
+    }
   };
 
   const LangButton = () => (
@@ -768,43 +812,39 @@ export default function App() {
   };
 
   const handleBook = async () => {
-    if (bookHour === null || !selectedPayApp || !transactionNum) return;
+    if (cart.length === 0 || !selectedPayApp || !transactionNum) return;
     if (!proofUrl) return showToast(L("proofRequired"), "#FF4444");
 
-    // 🔁 التواريخ المتاحة فعلاً بعد استبعاد المتعارض
-    const allDates = weekDates(bookDate, repeatWeeks);
-    const okDates = allDates.filter(d => !busyDates.includes(d));
-    if (okDates.length === 0) return showToast(L("noSlotsLeft"), "#FF4444");
-
-    const dup = myBookingsList.some(b => b.stadium_id === selected.id && okDates.includes(b.date) && b.hour === bookHour && b.status !== "rejected");
+    const dup = myBookingsList.some(b => b.stadium_id === selected.id && b.status !== "rejected"
+      && cart.some(c => c.date === b.date && c.hour === b.hour));
     if (dup) return showToast(t.duplicateBooking, "#FF4444");
 
-    // معرّف واحد يجمع مواعيد الحجز المتكرر
-    const gid = okDates.length > 1
+    // معرّف واحد يجمع مواعيد الحجز المتعدد
+    const gid = cart.length > 1
       ? "G" + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase()
       : null;
 
-    const rows = okDates.map(d => ({
+    const rows = cart.map(c => ({
       stadium_id: selected.id, stadium_name: selected.name,
       client_name: user.name, client_phone: user.phone,
-      date: d, hour: bookHour, pay_app: selectedPayApp,
+      date: c.date, hour: c.hour, pay_app: selectedPayApp,
       transaction_num: transactionNum, status: "pending", proof_url: proofUrl,
       group_id: gid,
     }));
 
     const { data } = await supabase.from("bookings").insert(rows).select();
     if (data) {
-      setBookings(p => [...p, ...okDates.map(d => ({ stadium_id: selected.id, date: d, hour: bookHour, status: "pending" }))]);
+      setBookings(p => [...p, ...cart.map(c => ({ stadium_id: selected.id, date: c.date, hour: c.hour, status: "pending" }))]);
       setMyBookingsList(p => [...p, ...data]);
     }
     closeModal();
-    showToast(t.bookingSuccess + (okDates.length > 1 ? ` (${okDates.length})` : ""));
+    showToast(t.bookingSuccess + (cart.length > 1 ? ` (${cart.length})` : ""));
   };
 
   const closeModal = () => {
-    setSelected(null); setStep(1); setBookHour(null);
+    setSelected(null); setStep(1);
     setSelectedPayApp(null); setTransactionNum(""); setProofUrl("");
-    setRepeatWeeks(1); setBusyDates([]);
+    setCart([]);
   };
 
   // ✅ صاحب الملعب فقط
@@ -990,28 +1030,14 @@ export default function App() {
     showToast("🗑", "#FF4444");
   };
 
-  // 🔁 توليد تواريخ الأسابيع المتتالية
-  const weekDates = (start, n) => {
-    const out = [];
-    for (let i = 0; i < n; i++) {
-      const d = new Date(start + "T00:00:00");
-      d.setDate(d.getDate() + i * 7);
-      out.push(d.toISOString().split("T")[0]);
-    }
-    return out;
-  };
+  // 🛒 مفتاح الموعد
+  const inCart = (d, h) => cart.some(c => c.date === d && c.hour === h);
 
-  // 🔁 فحص التعارض في الأسابيع المختارة
-  const checkRepeatSlots = async (weeks) => {
-    if (!selected || bookHour === null) return;
-    const dates = weekDates(bookDate, weeks);
-    if (weeks === 1) { setBusyDates([]); return; }
-    setCheckingSlots(true);
-    const res = await stadiumApi("check-slots", {
-      payload: { stadiumId: selected.id, dates, hour: bookHour },
-    });
-    setCheckingSlots(false);
-    setBusyDates(res.busy ?? []);
+  // 🛒 إضافة أو إزالة موعد من السلة
+  const toggleCartSlot = (d, h) => {
+    if (inCart(d, h)) return setCart(p => p.filter(c => !(c.date === d && c.hour === h)));
+    if (cart.length >= 70) return showToast(L("maxSlots"), "#FF4444");
+    setCart(p => [...p, { date: d, hour: h }].sort((a,b) => a.date === b.date ? a.hour - b.hour : a.date < b.date ? -1 : 1));
   };
 
   // 🚫 جلب المواعيد المغلقة
@@ -1109,14 +1135,17 @@ export default function App() {
   const payApp = selectedPayApp ? PAYMENT_APPS.find(p => p.id === selectedPayApp) : null;
   const stadiumPayNum = selected && payApp ? (selected.payments?.[selectedPayApp] || "") : "";
   const stadiumHours = selected ? (selected.working_hours || ALL_HOURS) : ALL_HOURS;
-  // 🔁 التواريخ المقترحة والمبلغ الإجمالي
-  const repeatDates = selected && bookDate ? weekDates(bookDate, repeatWeeks) : [];
-  const availableDates = repeatDates.filter(d => !busyDates.includes(d));
-  const totalPrice = (selected?.price || 0) * availableDates.length;
+  // 🛒 المبلغ الإجمالي = السعر × عدد المواعيد
+  const totalPrice = (selected?.price || 0) * cart.length;
 
   const inp = { width:"100%", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"10px", padding:"12px 16px", color:"#fff", fontSize:"15px", fontFamily:"inherit", marginBottom:"16px", boxSizing:"border-box", outline:"none" };
   const lbl = { color:COLORS.muted, fontSize:"13px", marginBottom:"6px", display:"block" };
-  const sel = { ...inp };
+  // 🎨 قائمة منسدلة بلون التطبيق — الخلفية والكتابة والخيارات
+  const sel = { ...inp, background:COLORS.bg, color:"#fff", WebkitAppearance:"none", appearance:"none",
+    backgroundImage:`url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238892A4' d='M6 8L0 0h12z'/%3E%3C/svg%3E")`,
+    backgroundRepeat:"no-repeat", backgroundPosition: isRTL ? "left 16px center" : "right 16px center",
+    paddingInlineEnd:"38px" };
+  const opt = { background:COLORS.card, color:"#fff" };
 
   const BottomNav = () => (
     <div style={{position:"fixed", bottom:0, left:0, right:0, background:COLORS.card, borderTop:`1px solid ${COLORS.border}`, display:"flex", zIndex:50, paddingBottom:"8px"}}>
@@ -1174,11 +1203,11 @@ export default function App() {
                 <label style={lbl}>{t.phone}</label>
                 <input style={inp} placeholder={t.enter8} maxLength={8} value={regPhone} onChange={e => setRegPhone(cleanPhone(e.target.value))}/>
                 <label style={lbl}>{t.password}</label>
-                <input style={inp} type="password" placeholder={t.enter4} maxLength={4} value={regPass} onChange={e => setRegPass(e.target.value.replace(/\D/g,""))}/>
+                {passField({ id:"reg", value:regPass, placeholder:t.enter4, onChange:e => setRegPass(e.target.value.replace(/\D/g,"")) })}
                 <label style={lbl}>🔐 {L("securityQ")}</label>
                 <select style={sel} value={regQuestion} onChange={e => setRegQuestion(e.target.value)}>
-                  <option value="">{L("chooseQ")}</option>
-                  {SECURITY_QUESTIONS.map(q => <option key={q.id} value={q.id}>{q[lang]}</option>)}
+                  <option style={opt} value="">{L("chooseQ")}</option>
+                  {SECURITY_QUESTIONS.map(q => <option style={opt} key={q.id} value={q.id}>{q[lang]}</option>)}
                 </select>
                 {regQuestion && (
                   <>
@@ -1195,7 +1224,7 @@ export default function App() {
                 <label style={lbl}>{t.phone}</label>
                 <input style={inp} placeholder={t.enter8} maxLength={8} value={loginPhone} onChange={e => setLoginPhone(cleanPhone(e.target.value))}/>
                 <label style={lbl}>{t.password}</label>
-                <input style={{...inp, marginBottom:"10px"}} type="password" placeholder={t.enter4} maxLength={4} value={loginPass} onChange={e => setLoginPass(e.target.value.replace(/\D/g,""))} onKeyDown={e => e.key === "Enter" && handleLogin()}/>
+                <div style={{marginBottom:"10px"}}>{passField({ id:"login", value:loginPass, placeholder:t.enter4, onEnter:handleLogin, onChange:e => setLoginPass(e.target.value.replace(/\D/g,"")), extra:{marginBottom:0} })}</div>
                 <button onClick={handleLogin} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"16px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{t.enterApp}</button>
 
                 {/* 🔑 نسيت كلمة السر */}
@@ -1255,9 +1284,9 @@ export default function App() {
               {forgotStep===3 && (
                 <>
                   <label style={lbl}>{L("newPass")}</label>
-                  <input style={inp} type="password" maxLength={4} placeholder={t.enter4} value={newPass1} onChange={e => setNewPass1(e.target.value.replace(/\D/g,""))}/>
+                  {passField({ id:"np1", value:newPass1, placeholder:t.enter4, onChange:e => setNewPass1(e.target.value.replace(/\D/g,"")) })}
                   <label style={lbl}>{L("confirmPass")}</label>
-                  <input style={inp} type="password" maxLength={4} placeholder={t.enter4} value={newPass2} onChange={e => setNewPass2(e.target.value.replace(/\D/g,""))}/>
+                  {passField({ id:"np2", value:newPass2, placeholder:t.enter4, onChange:e => setNewPass2(e.target.value.replace(/\D/g,"")) })}
                   <button onClick={forgotReset} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"15px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{L("savePass")}</button>
                 </>
               )}
@@ -1506,22 +1535,22 @@ export default function App() {
                 <div style={{background:`linear-gradient(135deg, ${COLORS.card}, #0a1628)`, borderRadius:"16px", padding:"20px 16px", marginBottom:"16px", border:`1px solid ${COLORS.border}`}}>
                   <div style={{fontSize:"22px", fontWeight:"800", marginBottom:"4px", background:"linear-gradient(135deg,#00E676,#00B0FF)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>{t.bookYourStadium}</div>
                   <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"12px"}}>{t.chooseStadium}</div>
-                  <input style={{...inp, marginBottom:"8px", background:"#ffffff11"}} type="search" name="malaabi-search" autoComplete="off" placeholder={t.search} value={searchText} onChange={e => setSearchText(e.target.value)}/>
-                  <select style={{...sel, marginBottom:"8px", background:"#ffffff11"}} value={sortBy} onChange={e => { const v = e.target.value; if (v === "nearest") return findNearest(); setSortBy(v); }}>
-                    <option value="default">{t.sortDefault}</option>
-                    <option value="price_asc">{t.sortPriceAsc}</option>
-                    <option value="price_desc">{t.sortPriceDesc}</option>
-                    <option value="popular">{t.sortPopular}</option>
-                    <option value="rating">⭐ {L("sortRating")}</option>
-                    <option value="nearest">📍 {L("sortNearest")}</option>
+                  <input style={{...inp, marginBottom:"8px", background:COLORS.bg, color:"#fff", WebkitAppearance:"none", appearance:"none"}} type="text" name="malaabi-search" autoComplete="off" placeholder={t.search} value={searchText} onChange={e => setSearchText(e.target.value)}/>
+                  <select style={{...sel, marginBottom:"8px"}} value={sortBy} onChange={e => { const v = e.target.value; if (v === "nearest") return findNearest(); setSortBy(v); }}>
+                    <option style={opt} value="default">{t.sortDefault}</option>
+                    <option style={opt} value="price_asc">{t.sortPriceAsc}</option>
+                    <option style={opt} value="price_desc">{t.sortPriceDesc}</option>
+                    <option style={opt} value="popular">{t.sortPopular}</option>
+                    <option style={opt} value="rating">⭐ {L("sortRating")}</option>
+                    <option style={opt} value="nearest">📍 {L("sortNearest")}</option>
                   </select>
                   {/* 🎯 زر الأقرب لي */}
                   <div style={{display:"flex", gap:"8px"}}>
-                    <button onClick={findNearest} style={{flex:2, padding:"12px", background: sortBy==="nearest"?"linear-gradient(135deg,#00E676,#00B0FF)":"#ffffff11", color: sortBy==="nearest"?"#000":COLORS.accent, border:`1px solid ${sortBy==="nearest"?"transparent":COLORS.border}`, borderRadius:"10px", fontWeight:"800", cursor:"pointer", fontFamily:"inherit", fontSize:"14px"}}>
+                    <button onClick={findNearest} style={{flex:2, padding:"12px", background: sortBy==="nearest"?"linear-gradient(135deg,#00E676,#00B0FF)":COLORS.bg, color: sortBy==="nearest"?"#000":COLORS.accent, border:`1px solid ${sortBy==="nearest"?"transparent":COLORS.border}`, borderRadius:"10px", fontWeight:"800", cursor:"pointer", fontFamily:"inherit", fontSize:"14px"}}>
                       {L("nearestBtn")}
                     </button>
                     {sortBy==="nearest" && (
-                      <button onClick={() => setSortBy("default")} style={{flex:1, padding:"12px", background:"#ffffff11", color:COLORS.muted, border:`1px solid ${COLORS.border}`, borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>
+                      <button onClick={() => setSortBy("default")} style={{flex:1, padding:"12px", background:COLORS.bg, color:COLORS.muted, border:`1px solid ${COLORS.border}`, borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>
                         {L("showAllBtn")}
                       </button>
                     )}
@@ -1854,8 +1883,8 @@ export default function App() {
                   <input style={inp} value={newName} onChange={e => setNewName(e.target.value)}/>
                   <label style={lbl}>{t.wilaya}</label>
                   <select style={sel} value={newWilayaSelect} onChange={e => setNewWilayaSelect(e.target.value)}>
-                    <option value="">{t.chooseWilaya}</option>
-                    {wilayas.map(w => <option key={w} value={w}>{w}</option>)}
+                    <option style={opt} value="">{t.chooseWilaya}</option>
+                    {wilayas.map(w => <option style={opt} key={w} value={w}>{w}</option>)}
                   </select>
                   <label style={lbl}>{t.hood}</label>
                   <input style={inp} value={newHood} onChange={e => setNewHood(e.target.value)}/>
@@ -1938,7 +1967,7 @@ export default function App() {
             <input style={inp} value={editName} onChange={e => setEditName(e.target.value)}/>
             <label style={lbl}>{t.wilaya}</label>
             <select style={sel} value={editWilaya} onChange={e => setEditWilaya(e.target.value)}>
-              {wilayas.map(w => <option key={w} value={w}>{w}</option>)}
+              {wilayas.map(w => <option style={opt} key={w} value={w}>{w}</option>)}
             </select>
             <label style={lbl}>{t.hood}</label>
             <input style={inp} value={editHood} onChange={e => setEditHood(e.target.value)}/>
@@ -2029,56 +2058,49 @@ export default function App() {
             )}
             {step===1 && (
               <>
-                <label style={lbl}>{t.date}</label>
-                <input type="date" style={inp} value={bookDate} min={today} onChange={e => { setBookDate(e.target.value); setBookHour(null); }}/>
-                <label style={lbl}>{t.chooseHour}</label>
+                <label style={lbl}>{L("pickSlots")}</label>
+                <input type="date" style={inp} value={bookDate} min={today} onChange={e => setBookDate(e.target.value)}/>
+
                 <div style={{display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:"6px", marginBottom:"16px"}}>
                   {stadiumHours.map(h => {
                     const tk = isBooked(selected.id, bookDate, h);
-                    const s2 = bookHour===h;
-                    return <button key={h} disabled={tk} onClick={() => !tk && setBookHour(h)} style={{padding:"8px 4px", borderRadius:"10px", border: s2?`2px solid ${selected.color}`:"2px solid transparent", background: tk?COLORS.bg:s2?`${selected.color}22`:COLORS.bg, color: tk?"#374151":s2?selected.color:COLORS.muted, cursor:tk?"not-allowed":"pointer", fontSize:"11px", fontWeight:"600", fontFamily:"inherit"}}>{h}:00{tk && <span style={{display:"block", fontSize:"9px", color:"#4b5563"}}>{t.booked}</span>}</button>;
+                    const picked = inCart(bookDate, h);
+                    return (
+                      <button key={h} disabled={tk} onClick={() => toggleCartSlot(bookDate, h)}
+                        style={{padding:"8px 4px", borderRadius:"10px", border: picked?`2px solid ${selected.color}`:"2px solid transparent", background: tk?COLORS.bg : picked?`${selected.color}33`:COLORS.bg, color: tk?"#374151" : picked?selected.color:COLORS.muted, cursor:tk?"not-allowed":"pointer", fontSize:"11px", fontWeight: picked?"800":"600", fontFamily:"inherit"}}>
+                        {h}:00{tk && <span style={{display:"block", fontSize:"9px", color:"#4b5563"}}>{t.booked}</span>}
+                      </button>
+                    );
                   })}
                 </div>
-                {/* 🔁 الحجز المتكرر */}
-                {bookHour !== null && (
-                  <div style={{background:"#7C4DFF12", border:"1px solid #7C4DFF33", borderRadius:"14px", padding:"14px", marginBottom:"16px"}}>
-                    <div style={{fontSize:"13px", fontWeight:"700", color:"#7C4DFF", marginBottom:"10px"}}>{L("repeat")}</div>
-                    <div style={{display:"flex", gap:"6px", marginBottom: repeatWeeks>1 ? "12px" : 0}}>
-                      {[1,2,3,4].map(n => (
-                        <button key={n} onClick={() => { setRepeatWeeks(n); checkRepeatSlots(n); }} style={{flex:1, padding:"9px 4px", borderRadius:"10px", border: repeatWeeks===n?"2px solid #7C4DFF":`2px solid ${COLORS.border}`, background: repeatWeeks===n?"#7C4DFF22":COLORS.bg, color: repeatWeeks===n?"#7C4DFF":COLORS.muted, cursor:"pointer", fontFamily:"inherit", fontWeight:"800", fontSize:"13px"}}>
-                          {n===1 ? "1" : `${n}`}
-                        </button>
-                      ))}
-                    </div>
-                    {repeatWeeks > 1 && (
-                      checkingSlots ? (
-                        <div style={{textAlign:"center", color:COLORS.muted, fontSize:"12px", padding:"8px"}}>{L("checking2")}</div>
-                      ) : (
-                        <>
-                          {repeatDates.map(d => {
-                            const busy = busyDates.includes(d);
-                            return (
-                              <div key={d} style={{display:"flex", justifyContent:"space-between", alignItems:"center", padding:"7px 10px", background: busy?"#FF444415":"#00E67612", borderRadius:"9px", marginBottom:"5px", fontSize:"12px"}}>
-                                <span style={{color: busy?"#FF6B6B":COLORS.accent, textDecoration: busy?"line-through":"none", fontWeight:"600"}}>
-                                  {busy ? "❌" : "✅"} {d} — {bookHour}:00
-                                </span>
-                                {busy && <span style={{color:"#FF6B6B", fontSize:"11px"}}>{L("slotBusy")}</span>}
-                              </div>
-                            );
-                          })}
-                          <div style={{marginTop:"10px", padding:"11px", background:COLORS.bg, borderRadius:"11px", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
-                            <span style={{color:COLORS.muted, fontSize:"12px"}}>{L("totalAmount")} <span style={{fontSize:"11px"}}>({availableDates.length} {L("sessions")})</span></span>
-                            <span style={{color:COLORS.accent, fontWeight:"900", fontSize:"18px"}}>{totalPrice}</span>
-                          </div>
-                        </>
-                      )
-                    )}
+
+                {/* 🛒 السلة */}
+                <div style={{background:COLORS.bg, borderRadius:"14px", padding:"14px", marginBottom:"16px"}}>
+                  <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom: cart.length?"10px":0}}>
+                    <span style={{fontSize:"13px", fontWeight:"800"}}>🛒 {L("myCart")} {cart.length>0 && `(${cart.length})`}</span>
+                    {cart.length>0 && <span style={{color:COLORS.accent, fontWeight:"900", fontSize:"19px"}}>{totalPrice}</span>}
                   </div>
-                )}
+
+                  {cart.length === 0 ? (
+                    <div style={{color:COLORS.muted, fontSize:"12px", textAlign:"center", padding:"10px"}}>{L("cartEmpty")}</div>
+                  ) : (
+                    <>
+                      <div style={{maxHeight:"170px", overflowY:"auto", display:"flex", flexWrap:"wrap", gap:"6px"}}>
+                        {cart.map(c => (
+                          <div key={`${c.date}-${c.hour}`} style={{background:`${selected.color}22`, color:selected.color, padding:"5px 6px 5px 11px", borderRadius:"18px", fontSize:"11px", fontWeight:"700", display:"flex", alignItems:"center", gap:"6px"}}>
+                            {c.date.slice(5)} • {c.hour}:00
+                            <button onClick={() => toggleCartSlot(c.date, c.hour)} style={{width:"17px", height:"17px", borderRadius:"50%", background:"#FF444433", color:"#FF6B6B", border:"none", cursor:"pointer", fontFamily:"inherit", fontSize:"10px", lineHeight:"1", display:"flex", alignItems:"center", justifyContent:"center", padding:0}}>✕</button>
+                          </div>
+                        ))}
+                      </div>
+
+                    </>
+                  )}
+                </div>
 
                 <div style={{display:"flex", gap:"12px"}}>
                   <button onClick={closeModal} style={{flex:1, padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>{t.cancel}</button>
-                  <button disabled={bookHour===null || (repeatWeeks>1 && availableDates.length===0)} onClick={() => setStep(2)} style={{flex:2, padding:"12px", background:bookHour===null?COLORS.bg:`linear-gradient(135deg,${selected.color},${selected.color}BB)`, border:"none", borderRadius:"12px", color:bookHour===null?COLORS.muted:"#000", fontWeight:"700", cursor:bookHour===null?"not-allowed":"pointer", fontFamily:"inherit"}}>{t.next}</button>
+                  <button disabled={cart.length===0} onClick={() => setStep(2)} style={{flex:2, padding:"12px", background:cart.length===0?COLORS.bg:`linear-gradient(135deg,${selected.color},${selected.color}BB)`, border:"none", borderRadius:"12px", color:cart.length===0?COLORS.muted:"#000", fontWeight:"700", cursor:cart.length===0?"not-allowed":"pointer", fontFamily:"inherit"}}>{t.next}</button>
                 </div>
               </>
             )}
@@ -2090,9 +2112,22 @@ export default function App() {
                 </div>
                 {selectedPayApp && stadiumPayNum && (
                   <div style={{background:COLORS.bg, borderRadius:"12px", padding:"14px", marginBottom:"16px"}}>
-                    <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"8px"}}>{t.sendAmount} <strong style={{color:"#fff", fontSize:"16px"}}>{totalPrice || selected.price}</strong>{availableDates.length>1 && <span style={{color:"#7C4DFF", fontSize:"11px"}}> ({availableDates.length} {L("sessions")})</span>}</div>
-                    <div style={{fontSize:"20px", fontWeight:"800", color:payApp?.color, letterSpacing:"2px"}}>{stadiumPayNum}</div>
-                    <div style={{color:COLORS.muted, fontSize:"12px", marginTop:"4px"}}>{t.via} {payApp?.name}</div>
+                    <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"10px"}}>
+                      {t.sendAmount} <strong style={{color:COLORS.accent, fontSize:"19px"}}>{totalPrice}</strong>
+                      {cart.length>1 && <span style={{color:"#7C4DFF", fontSize:"11px"}}> ({cart.length} {L("sessions")})</span>}
+                    </div>
+                    {/* 📋 رقم الدفع قابل للنسخ */}
+                    <div onClick={() => copyText(stadiumPayNum)} style={{display:"flex", alignItems:"center", justifyContent:"space-between", gap:"10px", background:`${payApp?.color}18`, border:`1px solid ${payApp?.color}44`, borderRadius:"11px", padding:"11px 14px", cursor:"pointer"}}>
+                      <span style={{fontSize:"20px", fontWeight:"800", color:payApp?.color, letterSpacing:"2px"}}>{stadiumPayNum}</span>
+                      <span style={{display:"flex", alignItems:"center", gap:"5px", color:payApp?.color, fontSize:"11px", fontWeight:"700", whiteSpace:"nowrap"}}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="9" y="9" width="12" height="12" rx="2"/>
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                        {L("copyNum")}
+                      </span>
+                    </div>
+                    <div style={{color:COLORS.muted, fontSize:"12px", marginTop:"7px"}}>{t.via} {payApp?.name}</div>
                   </div>
                 )}
                 <label style={lbl}>{t.serialNum}</label>
@@ -2161,17 +2196,23 @@ export default function App() {
             <div style={{fontSize:"20px", fontWeight:"900", marginBottom:"6px", background:"linear-gradient(135deg,#7C4DFF,#00B0FF)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>{L("adminTitle")}</div>
             <div style={{color:COLORS.muted, fontSize:"12px", marginBottom:"24px"}}>🔒 {L("adminPassLabel")}</div>
 
-            <input
-              type="password"
-              name="malaabi-admin"
-              autoComplete="new-password"
-              autoFocus
-              value={adminPassInput}
-              onChange={e => setAdminPassInput(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && handleAdminLogin()}
-              style={{width:"100%", background:COLORS.bg, border:"1px solid #7C4DFF44", borderRadius:"14px", padding:"15px", color:"#fff", fontSize:"17px", fontFamily:"inherit", textAlign:"center", letterSpacing:"3px", marginBottom:"18px", boxSizing:"border-box", outline:"none"}}
-              placeholder="••••••••"
-            />
+            <div style={{position:"relative", marginBottom:"18px"}}>
+              <input
+                type={showPass.admin ? "text" : "password"}
+                name="malaabi-admin"
+                autoComplete="new-password"
+                autoFocus
+                value={adminPassInput}
+                onChange={e => setAdminPassInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleAdminLogin()}
+                style={{width:"100%", background:COLORS.bg, border:"1px solid #7C4DFF44", borderRadius:"14px", padding:"15px 46px", color:"#fff", fontSize:"17px", fontFamily:"inherit", textAlign:"center", letterSpacing:"3px", boxSizing:"border-box", outline:"none"}}
+                placeholder="••••••••"
+              />
+              <button type="button" onClick={() => setShowPass(p => ({ ...p, admin: !p.admin }))}
+                style={{position:"absolute", insetInlineEnd:"14px", top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color: showPass.admin ? "#7C4DFF" : COLORS.muted, padding:"4px", display:"flex", alignItems:"center"}}>
+                <EyeIcon open={!!showPass.admin}/>
+              </button>
+            </div>
 
             <button onClick={handleAdminLogin} disabled={adminChecking} style={{width:"100%", padding:"15px", background: adminChecking ? COLORS.bg : "linear-gradient(135deg,#7C4DFF,#00B0FF)", border:"none", borderRadius:"14px", fontWeight:"900", fontSize:"16px", cursor: adminChecking ? "wait" : "pointer", fontFamily:"inherit", color: adminChecking ? COLORS.muted : "#fff"}}>
               {adminChecking ? L("checking") : L("adminEnter")}
@@ -2194,8 +2235,8 @@ export default function App() {
             <div style={{color:COLORS.muted, fontSize:"13px", lineHeight:"1.9", marginBottom:"18px", textAlign:lang==="ar"?"right":"left"}}>{L("setupQDesc")}</div>
             <label style={lbl}>{L("securityQ")}</label>
             <select style={sel} value={setupQuestion} onChange={e => setSetupQuestion(e.target.value)}>
-              <option value="">{L("chooseQ")}</option>
-              {SECURITY_QUESTIONS.map(q => <option key={q.id} value={q.id}>{q[lang]}</option>)}
+              <option style={opt} value="">{L("chooseQ")}</option>
+              {SECURITY_QUESTIONS.map(q => <option style={opt} key={q.id} value={q.id}>{q[lang]}</option>)}
             </select>
             {setupQuestion && (
               <>
@@ -2203,7 +2244,7 @@ export default function App() {
                 <input style={{...inp, marginBottom:"6px"}} value={setupAnswer} onChange={e => setSetupAnswer(e.target.value)}/>
                 <div style={{color:"#FF6D00", fontSize:"12px", marginBottom:"14px"}}>⚠️ {L("answerHint")}</div>
                 <label style={lbl}>🔒 {L("confirmIdentity")}</label>
-                <input style={inp} type="password" maxLength={4} placeholder={t.enter4} value={setupPass} onChange={e => setSetupPass(e.target.value.replace(/\D/g,""))}/>
+                {passField({ id:"setup", value:setupPass, placeholder:t.enter4, onChange:e => setSetupPass(e.target.value.replace(/\D/g,"")) })}
               </>
             )}
             <button onClick={saveSecurityQ} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"15px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{L("saveQ")}</button>

@@ -320,6 +320,26 @@ Deno.serve(async (req) => {
       return reply({ ok: true, blocked: data ?? [] });
     }
 
+    // ============ 🛒 فحص تعارض مواعيد متعددة ============
+    if (action === "check-slots-multi") {
+      const sid = payload?.stadiumId;
+      const slots: { date: string; hour: number }[] = Array.isArray(payload?.slots) ? payload.slots : [];
+      if (!sid || slots.length === 0) return reply({ busy: [] });
+
+      const dates = [...new Set(slots.map(s => s.date))];
+      const { data: bk } = await db.from("bookings")
+        .select("date, hour").eq("stadium_id", sid).in("date", dates).neq("status", "rejected");
+      const { data: bl } = await db.from("blocked_slots")
+        .select("date, hour").eq("stadium_id", sid).in("date", dates);
+
+      const taken = new Set([
+        ...(bk ?? []).map((x: Record<string, unknown>) => `${x.date}|${x.hour}`),
+        ...(bl ?? []).map((x: Record<string, unknown>) => `${x.date}|${x.hour}`),
+      ]);
+      const busy = slots.filter(s => taken.has(`${s.date}|${s.hour}`));
+      return reply({ busy });
+    }
+
     // ============ 🔁 فحص التعارض قبل الحجز المتكرر ============
     if (action === "check-slots") {
       const sid = payload?.stadiumId;
