@@ -21,7 +21,7 @@ const reply = (body: unknown, status = 200) =>
 
 // 🔑 توليد الأكواد
 const genCode = () => Math.random().toString(36).substring(2, 10).toUpperCase();
-const genOwnerCode = () => "M" + Math.random().toString(36).substring(2, 8).toUpperCase();
+const genOwnerCode = () => Math.random().toString(36).substring(2, 10).toUpperCase();
 
 // 🧹 بيانات الملعب التي يحق لصاحبه رؤيتها
 const ownerView = (s: Record<string, unknown>) => ({
@@ -548,10 +548,10 @@ Deno.serve(async (req) => {
     // ============ حذف ملعب ============
     if (action === "admin-delete-stadium") {
       if (!isAdmin()) return reply({ error: "wrong_pass" }, 401);
-      // نحذف ما يتبع الملعب أولاً حتى لا تبقى بيانات يتيمة
+      // 🔔 لا نحذف bookings — كل حجز يحمل اسم الملعب والزبون داخل صفه،
+      // فحذفه هنا كان يمسح إشعارات الزبائن وسجل حجوزاتهم بلا داعٍ.
       await db.from("ratings").delete().eq("stadium_id", stadiumId);
       await db.from("blocked_slots").delete().eq("stadium_id", stadiumId);
-      await db.from("bookings").delete().eq("stadium_id", stadiumId);
       const { error } = await db.from("stadiums").delete().eq("id", stadiumId);
       if (error) return reply({ error: "delete_failed" }, 500);
       return reply({ ok: true });
@@ -609,11 +609,10 @@ Deno.serve(async (req) => {
       const { data: sts } = await db.from("stadiums").select("id").eq("wilaya", name);
       const ids = (sts ?? []).map((x: Record<string, unknown>) => x.id);
 
-      // نحذف حجوزات تلك الملاعب ثم الملاعب نفسها
+      // 🔔 لا نحذف bookings هنا أيضاً — لنفس السبب: تحافظ على إشعارات الزبائن
       if (ids.length > 0) {
         await db.from("ratings").delete().in("stadium_id", ids);
         await db.from("blocked_slots").delete().in("stadium_id", ids);
-        await db.from("bookings").delete().in("stadium_id", ids);
         await db.from("stadiums").delete().in("id", ids);
       }
 
