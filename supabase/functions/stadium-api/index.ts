@@ -320,6 +320,98 @@ Deno.serve(async (req) => {
       return reply({ ok: true, blocked: data ?? [] });
     }
 
+    // ============ 🛒 إنشاء حجز — كل الفحوصات تتم هنا ============
+    if (action === "create-booking") {
+      const p = payload ?? {};
+      const phone = String(p.phone ?? "");
+      const pass = String(p.password ?? "");
+      const sid = p.stadiumId;
+      const slots = Array.isArray(p.slots) ? p.slots : [];
+      const payApp = String(p.payApp ?? "");
+      const txn = String(p.transactionNum ?? "").trim();
+      const proof = String(p.proofUrl ?? "").trim();
+
+      // 1️⃣ هوية الزبون
+      if (!/^[234]\d{7}$/.test(phone)) return reply({ error: "unauthorized" }, 401);
+      const { data: u } = await db.from("users")
+        .select("name, password").eq("phone", phone).maybeSingle();
+      if (!u) return reply({ error: "unauthorized" }, 401);
+      const okPass = await bcrypt.compare(pass, String(u.password));
+      if (!okPass) return reply({ error: "unauthorized" }, 401);
+
+      // 2️⃣ البيانات الأساسية
+      if (!sid || slots.length === 0) return reply({ error: "missing_data" }, 400);
+      if (slots.length > 70) return reply({ error: "too_many" }, 400);
+      if (!txn) return reply({ error: "missing_data" }, 400);
+      if (!proof) return reply({ error: "proof_required" }, 400);
+
+      // 3️⃣ الملعب موجود وغير معلق
+      const { data: stB } = await db.from("stadiums")
+        .select("*").eq("id", sid).maybeSingle();
+      if (!stB) return reply({ error: "not_found" }, 404);
+      if (stB.status === "suspended") return reply({ error: "suspended" }, 403);
+
+      // 4️⃣ وسيلة الدفع يجب أن يقبلها هذا الملعب
+      if (!stB.payments?.[payApp]) return reply({ error: "bad_payment" }, 400);
+
+      // 5️⃣ تنظيف المواعيد: تاريخ صالح، ضمن ساعات العمل، وليس في الماضي
+      const wh: number[] = stB.working_hours ?? [...Array(24).keys()];
+      const now = new Date();
+      const todayStr = now.toISOString().split("T")[0];
+      const nowHour = now.getUTCHours();   // موريتانيا على توقيت غرينتش
+      const seen = new Set<string>();
+      const clean: { date: string; hour: number }[] = [];
+
+      for (const s of slots) {
+        const d = String(s?.date ?? "");
+        const h = parseInt(s?.hour);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return reply({ error: "bad_slot" }, 400);
+        if (!(h >= 0 && h <= 23)) return reply({ error: "bad_slot" }, 400);
+        if (d < todayStr) return reply({ error: "past_date" }, 400);
+        if (d === todayStr && h <= nowHour) return reply({ error: "past_date" }, 400);
+        if (!wh.includes(h)) return reply({ error: "closed_hour" }, 400);
+        const k = `${d}|${h}`;
+        if (seen.has(k)) continue;
+        seen.add(k);
+        clean.push({ date: d, hour: h });
+      }
+      if (clean.length === 0) return reply({ error: "missing_data" }, 400);
+
+      // 6️⃣ التعارض: محجوز مسبقاً أو مغلق من صاحب الملعب
+      const dts = [...new Set(clean.map(s => s.date))];
+      const { data: bkx } = await db.from("bookings")
+        .select("date, hour").eq("stadium_id", sid).in("date", dts).neq("status", "rejected");
+      const { data: blx } = await db.from("blocked_slots")
+        .select("date, hour").eq("stadium_id", sid).in("date", dts);
+
+      const takenSet = new Set([
+        ...(bkx ?? []).map((x: Record<string, unknown>) => `${x.date}|${x.hour}`),
+        ...(blx ?? []).map((x: Record<string, unknown>) => `${x.date}|${x.hour}`),
+      ]);
+      const busySlots = clean.filter(s => takenSet.has(`${s.date}|${s.hour}`));
+      if (busySlots.length > 0) return reply({ error: "slots_busy", busy: busySlots }, 409);
+
+      // 7️⃣ الإدخال — الاسم والحالة يكتبهما الخادم لا المتصفح
+      const gid = clean.length > 1
+        ? "G" + Date.now().toString(36).toUpperCase() +
+          Math.random().toString(36).substring(2, 6).toUpperCase()
+        : null;
+
+      const newRows = clean.map(s => ({
+        stadium_id: stB.id, stadium_name: stB.name,
+        client_name: u.name, client_phone: phone,
+        date: s.date, hour: s.hour, pay_app: payApp,
+        transaction_num: txn.slice(0, 40), status: "pending",
+        proof_url: proof, group_id: gid,
+      }));
+
+      const { data: inserted, error: insErr } = await db.from("bookings")
+        .insert(newRows).select();
+      if (insErr) return reply({ error: "insert_failed" }, 500);
+
+      return reply({ ok: true, bookings: inserted ?? [] });
+    }
+
     // ============ 🛒 فحص تعارض مواعيد متعددة ============
     if (action === "check-slots-multi") {
       const sid = payload?.stadiumId;
@@ -456,6 +548,10 @@ Deno.serve(async (req) => {
     // ============ حذف ملعب ============
     if (action === "admin-delete-stadium") {
       if (!isAdmin()) return reply({ error: "wrong_pass" }, 401);
+      // نحذف ما يتبع الملعب أولاً حتى لا تبقى بيانات يتيمة
+      await db.from("ratings").delete().eq("stadium_id", stadiumId);
+      await db.from("blocked_slots").delete().eq("stadium_id", stadiumId);
+      await db.from("bookings").delete().eq("stadium_id", stadiumId);
       const { error } = await db.from("stadiums").delete().eq("id", stadiumId);
       if (error) return reply({ error: "delete_failed" }, 500);
       return reply({ ok: true });
@@ -515,6 +611,8 @@ Deno.serve(async (req) => {
 
       // نحذف حجوزات تلك الملاعب ثم الملاعب نفسها
       if (ids.length > 0) {
+        await db.from("ratings").delete().in("stadium_id", ids);
+        await db.from("blocked_slots").delete().in("stadium_id", ids);
         await db.from("bookings").delete().in("stadium_id", ids);
         await db.from("stadiums").delete().in("id", ids);
       }

@@ -13,8 +13,7 @@ const PAYMENT_APPS = [
 
 const ALL_HOURS = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23];
 const today = new Date().toISOString().split("T")[0];
-const genCode = () => Math.random().toString(36).substring(2,10).toUpperCase();
-const genOwnerCode = () => "M" + Math.random().toString(36).substring(2,8).toUpperCase();
+// ⚠️ رقم التواصل — غيّره إذا أردت رقماً موريتانياً (222...)
 const WHATSAPP_NUM = "21654542791";
 
 const COLORS = {
@@ -109,8 +108,6 @@ const SECURITY_QUESTIONS = [
   { id:"q5", ar:"ما اسم صديق طفولتك؟", fr:"Nom de votre ami d'enfance ?", en:"Your childhood friend's name?" },
 ];
 const qText = (id, lang) => SECURITY_QUESTIONS.find(q => q.id === id)?.[lang] || "";
-// توحيد صيغة الجواب قبل التشفير والمقارنة
-const normAnswer = (a) => a.trim().toLowerCase().replace(/\s+/g, " ");
 
 // 📞 أرقام الهاتف الموريتانية: 8 أرقام تبدأ بـ 2 أو 3 أو 4
 const PHONE_PREFIXES = ["2","3","4"];
@@ -172,7 +169,7 @@ const TXT = {
   newBooking: { ar:"حجز جديد", fr:"Nouvelle réservation", en:"New booking" },
   bookingAccepted: { ar:"تم قبول حجزك", fr:"Réservation confirmée", en:"Booking confirmed" },
   bookingRejected: { ar:"تم رفض حجزك", fr:"Réservation refusée", en:"Booking rejected" },
-  // 📍 نصوص الموقع الجديدة
+  // 📍 نصوص الموقع
   location: { ar:"موقع الملعب", fr:"Localisation du terrain", en:"Field location" },
   myLocation: { ar:"📍 موقعي الحالي", fr:"📍 Ma position", en:"📍 My location" },
   checkLocation: { ar:"🗺 تحقق من الموقع", fr:"🗺 Vérifier", en:"🗺 Check on map" },
@@ -189,7 +186,7 @@ const TXT = {
   sortNearest: { ar:"الأقرب إليّ", fr:"Le plus proche", en:"Nearest to me" },
   kmAway: { ar:"كم منك", fr:"km de vous", en:"km away" },
   enableLocation: { ar:"فعّل موقعك لعرض المسافة", fr:"Activez votre position", en:"Enable location for distance" },
-  // 🔑 شاشة الدخول الجديدة
+  // 🔑 شاشة الدخول
   forgotPass: { ar:"نسيت كلمة السر؟", fr:"Mot de passe oublié ?", en:"Forgot password?" },
   createNewAccount: { ar:"إنشاء حساب جديد", fr:"Créer un nouveau compte", en:"Create new account" },
   haveAccount: { ar:"لديك حساب؟ تسجيل الدخول", fr:"Déjà un compte ? Se connecter", en:"Have an account? Log in" },
@@ -258,7 +255,7 @@ const TXT = {
   rateTitle: { ar:"كيف كانت تجربتك؟", fr:"Comment était votre expérience ?", en:"How was your experience?" },
   rateSend: { ar:"إرسال التقييم", fr:"Envoyer l\'avis", en:"Send rating" },
   rateComment: { ar:"تعليق (اختياري)", fr:"Commentaire (optionnel)", en:"Comment (optional)" },
-  rateThanks: { ar:"⭐ شكراً على تقييمك", fr:"⭐ Merci pour votre avis", en:"⭐ Thanks for your rating" },
+  rateThanks: { ar:"⭐ شكراً لتقييم الملعب", fr:"⭐ Merci d\'avoir évalué le terrain", en:"⭐ Thanks for rating the field" },
   yourRating: { ar:"تقييمك", fr:"Votre note", en:"Your rating" },
   rateTooEarly: { ar:"لم ينته موعد الحجز بعد", fr:"La réservation n\'est pas terminée", en:"Booking not finished yet" },
   alreadyRated: { ar:"قيّمت هذا الحجز مسبقاً", fr:"Déjà évalué", en:"Already rated" },
@@ -279,6 +276,13 @@ const TXT = {
   confirmIdentity: { ar:"أدخل كلمة سرك للتأكيد", fr:"Entrez votre mot de passe", en:"Enter your password to confirm" },
   invalidPhone: { ar:"الرقم غير صحيح", fr:"Numéro invalide", en:"Invalid number" },
   tooManyTries: { ar:"محاولات كثيرة، حاول لاحقاً", fr:"Trop de tentatives", en:"Too many attempts" },
+  // 🔒 رسائل الحجز الخادمي
+  slotTakenNow: { ar:"⚠️ أحد المواعيد حُجز للتو — اختر وقتاً آخر", fr:"⚠️ Un créneau vient d\'être pris", en:"⚠️ A slot was just taken" },
+  closedHour: { ar:"هذه الساعة خارج أوقات عمل الملعب", fr:"Heure hors service", en:"Hour outside working hours" },
+  pastDate: { ar:"لا يمكن الحجز في وقت مضى", fr:"Créneau déjà passé", en:"That time has passed" },
+  needRelogin: { ar:"يرجى تسجيل الدخول مجدداً لإتمام الحجز", fr:"Reconnectez-vous pour réserver", en:"Please log in again to book" },
+  badPayment: { ar:"هذا الملعب لا يقبل وسيلة الدفع المختارة", fr:"Moyen de paiement non accepté", en:"Payment method not accepted" },
+  rateNow: { ar:"⭐ قيّم هذا الحجز", fr:"⭐ Évaluer cette réservation", en:"⭐ Rate this booking" },
 };
 
 export default function App() {
@@ -324,8 +328,8 @@ export default function App() {
   const [newOwnerPhone, setNewOwnerPhone] = useState("");
   const [newImage, setNewImage] = useState("");    // 🖼 رابط صورة مخصص (اختياري)
   const [uploadingImg, setUploadingImg] = useState(false);  // 🖼 حالة رفع الصورة
-  const [newLat, setNewLat] = useState("");        // 📍 جديد
-  const [newLng, setNewLng] = useState("");        // 📍 جديد
+  const [newLat, setNewLat] = useState("");        // 📍 الموقع
+  const [newLng, setNewLng] = useState("");        // 📍 الموقع
   const [newWorkingHours, setNewWorkingHours] = useState([...ALL_HOURS]);
   const [loginPhone, setLoginPhone] = useState("");
   const [loginPass, setLoginPass] = useState("");
@@ -340,8 +344,8 @@ export default function App() {
   const [editPrice, setEditPrice] = useState("");
   const [editOwnerPhone, setEditOwnerPhone] = useState("");
   const [editImage, setEditImage] = useState("");  // 🖼 رابط صورة مخصص (اختياري)
-  const [editLat, setEditLat] = useState("");      // 📍 جديد
-  const [editLng, setEditLng] = useState("");      // 📍 جديد
+  const [editLat, setEditLat] = useState("");      // 📍 الموقع
+  const [editLng, setEditLng] = useState("");      // 📍 الموقع
   const [editPayments, setEditPayments] = useState({});
   const [editWorkingHours, setEditWorkingHours] = useState([...ALL_HOURS]);
   const [showLangMenu, setShowLangMenu] = useState(false);
@@ -791,8 +795,8 @@ export default function App() {
     const fn = `${Date.now()}_${Math.random().toString(36).substring(2,8)}.${file.name.split(".").pop()}`;
     const { error } = await supabase.storage.from("proofs").upload(fn, file);
     if (error) { setUploading(false); return showToast("خطأ في الرفع", "#FF4444"); }
-    const { data } = supabase.storage.from("proofs").getPublicUrl(fn);
-    setProofUrl(data.publicUrl); setUploading(false);
+    // 🔒 نخزّن اسم الملف فقط — الرابط يُولَّد مؤقتاً عند العرض
+    setProofUrl(fn); setUploading(false);
     showToast("✅");
   };
 
@@ -811,34 +815,36 @@ export default function App() {
     showToast(L("imageUploaded"));
   };
 
+  // 🔒 الحجز يمر بالخادم — سبعة فحوصات قبل الإدخال
   const handleBook = async () => {
     if (cart.length === 0 || !selectedPayApp || !transactionNum) return;
     if (!proofUrl) return showToast(L("proofRequired"), "#FF4444");
+    if (!sessionPass) return showToast(L("needRelogin"), "#FF4444");
 
-    const dup = myBookingsList.some(b => b.stadium_id === selected.id && b.status !== "rejected"
-      && cart.some(c => c.date === b.date && c.hour === b.hour));
-    if (dup) return showToast(t.duplicateBooking, "#FF4444");
+    const res = await stadiumApi("create-booking", {
+      payload: {
+        phone: user.phone, password: sessionPass,
+        stadiumId: selected.id, slots: cart,
+        payApp: selectedPayApp, transactionNum, proofUrl,
+      },
+    });
 
-    // معرّف واحد يجمع مواعيد الحجز المتعدد
-    const gid = cart.length > 1
-      ? "G" + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase()
-      : null;
+    if (res.error === "slots_busy")     { loadData(); return showToast(L("slotTakenNow"), "#FF4444"); }
+    if (res.error === "suspended")      return showToast(L("suspended"), "#FF4444");
+    if (res.error === "closed_hour")    return showToast(L("closedHour"), "#FF4444");
+    if (res.error === "past_date")      return showToast(L("pastDate"), "#FF4444");
+    if (res.error === "bad_payment")    return showToast(L("badPayment"), "#FF4444");
+    if (res.error === "proof_required") return showToast(L("proofRequired"), "#FF4444");
+    if (res.error === "unauthorized")   return showToast(L("needRelogin"), "#FF4444");
+    if (res.error || !res.bookings)     return showToast(L("netError"), "#FF4444");
 
-    const rows = cart.map(c => ({
-      stadium_id: selected.id, stadium_name: selected.name,
-      client_name: user.name, client_phone: user.phone,
-      date: c.date, hour: c.hour, pay_app: selectedPayApp,
-      transaction_num: transactionNum, status: "pending", proof_url: proofUrl,
-      group_id: gid,
-    }));
-
-    const { data } = await supabase.from("bookings").insert(rows).select();
-    if (data) {
-      setBookings(p => [...p, ...cart.map(c => ({ stadium_id: selected.id, date: c.date, hour: c.hour, status: "pending" }))]);
-      setMyBookingsList(p => [...p, ...data]);
-    }
+    const nb = res.bookings;
+    setBookings(p => [...p, ...nb.map(b => ({
+      stadium_id: b.stadium_id, date: b.date, hour: b.hour, status: "pending",
+    }))]);
+    setMyBookingsList(p => [...p, ...nb]);
     closeModal();
-    showToast(t.bookingSuccess + (cart.length > 1 ? ` (${cart.length})` : ""));
+    showToast(t.bookingSuccess + (nb.length > 1 ? ` (${nb.length})` : ""));
   };
 
   const closeModal = () => {
@@ -902,9 +908,9 @@ export default function App() {
     setEditStadium(st); setEditName(st.name); setEditWilaya(st.wilaya); setEditHood(st.hood);
     setEditPrice(st.price); setEditOwnerPhone(st.owner_phone || ""); setEditPayments(st.payments || {});
     setEditWorkingHours(st.working_hours || [...ALL_HOURS]);
-    setEditImage(st.image || "");                                 // 🖼 جديد
-    setEditLat(st.latitude != null ? String(st.latitude) : "");   // 📍 جديد
-    setEditLng(st.longitude != null ? String(st.longitude) : ""); // 📍 جديد
+    setEditImage(st.image || "");                                 // 🖼 الصورة
+    setEditLat(st.latitude != null ? String(st.latitude) : "");   // 📍 الموقع
+    setEditLng(st.longitude != null ? String(st.longitude) : ""); // 📍 الموقع
   };
 
   const handleEdit = async () => {
@@ -1010,7 +1016,7 @@ export default function App() {
     setMyRatings(p => [...p, { booking_id: rateBooking.id, stars: rateStars, comment: rateText }]);
     setRateBooking(null); setRateStars(0); setRateText("");
     loadData();   // تحديث المعدلات المعروضة
-    showToast(L("rateThanks"));
+    showToast(L("rateThanks"), "#FFD700");
   };
 
   // ⭐ تقييمات ملعب المالك
@@ -1169,6 +1175,7 @@ export default function App() {
       ))}
     </div>
   );
+
   // ✅ شاشة الدخول — 3 خيارات
   if (screen === "login" || screen === "register" || screen === "ownerLogin") {
     const isReg = screen === "register";
@@ -1191,7 +1198,7 @@ export default function App() {
                   <div style={{fontWeight:"800", fontSize:"17px", color:"#FF6D00"}}>{L("ownerLogin")}</div>
                 </div>
                 <label style={lbl}>{L("ownerCode")}</label>
-                <input style={{...inp, letterSpacing:"4px", textAlign:"center", fontWeight:"800", fontSize:"18px"}} placeholder="M••••••" value={ownerCodeInput} onChange={e => setOwnerCodeInput(e.target.value.toUpperCase())}/>
+                <input style={{...inp, letterSpacing:"4px", textAlign:"center", fontWeight:"800", fontSize:"18px"}} placeholder="••••••••" value={ownerCodeInput} onChange={e => setOwnerCodeInput(e.target.value.toUpperCase())}/>
                 <button onClick={handleOwnerLogin} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#FF6D00,#FF4081)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"16px", cursor:"pointer", fontFamily:"inherit", color:"#fff"}}>{t.enterApp}</button>
                 <button onClick={() => setScreen("login")} style={{width:"100%", padding:"12px", background:"transparent", border:"none", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", marginTop:"10px", fontSize:"13px"}}>{L("backToLogin")}</button>
               </>
@@ -1351,7 +1358,7 @@ export default function App() {
           {/* 🔑 زر إظهار الكود وزر تغييره — متقابلان */}
           <div style={{display:"flex", gap:"8px", marginBottom:"16px"}}>
             <button onClick={() => setShowOwnerCode(v => !v)} style={{flex:1, padding:"11px 8px", background:"#00E67615", color:COLORS.accent, border:"1px solid #00E67644", borderRadius:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>
-              🔑 {showOwnerCode ? <b style={{letterSpacing:"2px", fontSize:"13px"}}>{owner?.owner_code}</b> : `${L("myCode")} • M••••••`}
+              🔑 {showOwnerCode ? <b style={{letterSpacing:"2px", fontSize:"13px"}}>{owner?.owner_code}</b> : `${L("myCode")} • ••••••••`}
             </button>
             <button onClick={() => { if (confirm(L("confirmChangeCode"))) changeOwnerCode(); }} style={{flex:1, padding:"11px 8px", background:"#7C4DFF15", color:"#7C4DFF", border:"1px solid #7C4DFF44", borderRadius:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{L("changeCode")}</button>
           </div>
@@ -1515,6 +1522,7 @@ export default function App() {
       </div>
     </div>
   );
+
   return (
     <div style={{minHeight:"100vh", background:COLORS.bg, fontFamily:"Tajawal,sans-serif", direction:isRTL?"rtl":"ltr", color:"#fff", touchAction:"pan-x pan-y", paddingBottom:"70px"}}>
       <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet"/>
@@ -1647,15 +1655,11 @@ export default function App() {
                             <span style={{color:COLORS.accent, fontWeight:"800", letterSpacing:"2px"}}>{b.code}</span>
                           </div>
                         )}
-                        {/* ⭐ تقييم الحجز بعد انتهاء موعده */}
+                        {/* ⭐ تقييم الحجز بعد انتهاء موعده — زر واحد واضح */}
                         {canRate(b) && (
                           <div style={{marginTop:"10px", background:"#FFD70012", border:"1px solid #FFD70033", borderRadius:"12px", padding:"12px"}}>
                             <div style={{fontSize:"12px", color:"#FFD700", fontWeight:"700", marginBottom:"8px"}}>{L("rateTitle")}</div>
-                            <div style={{display:"flex", gap:"6px", justifyContent:"center"}}>
-                              {[1,2,3,4,5].map(n => (
-                                <button key={n} onClick={() => { setRateBooking(b); setRateStars(n); setRateText(""); }} style={{background:"none", border:"none", cursor:"pointer", fontSize:"26px", padding:0, lineHeight:1, filter: "grayscale(1) opacity(0.45)"}}>⭐</button>
-                              ))}
-                            </div>
+                            <button onClick={() => { setRateBooking(b); setRateStars(0); setRateText(""); }} style={{width:"100%", padding:"10px", background:"linear-gradient(135deg,#FFD700,#FF9500)", border:"none", borderRadius:"10px", fontWeight:"800", fontSize:"13px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{L("rateNow")}</button>
                           </div>
                         )}
                         {myRatingOf(b.id) && (
@@ -1953,7 +1957,7 @@ export default function App() {
             <div style={{fontSize:"48px", marginBottom:"12px"}}>💬</div>
             <div style={{fontSize:"20px", fontWeight:"800", marginBottom:"8px", color:COLORS.accent}}>{lang==="ar" ? "اتصل بنا" : "Contact Us"}</div>
             <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"24px"}}>{lang==="ar" ? "تواصل معنا عبر واتساب" : "Via WhatsApp"}</div>
-            <button onClick={() => window.open(`https://wa.me/${WHATSAPP_NUM}?text=${encodeURIComponent(lang==="ar" ? "مرحبا، أريد الاستفسار عن تطبيق ملاعبي" : "Bonjour, Malaabi")}`, "_blank")} style={{width:"100%", padding:"14px", background:"#25D366", border:"none", borderRadius:"14px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"15px", color:"#fff", marginBottom:"12px"}}>📱 WhatsApp — +216 54542791</button>
+            <button onClick={() => window.open(`https://wa.me/${WHATSAPP_NUM}?text=${encodeURIComponent(lang==="ar" ? "مرحبا، أريد الاستفسار عن تطبيق ملاعبي" : "Bonjour, Malaabi")}`, "_blank")} style={{width:"100%", padding:"14px", background:"#25D366", border:"none", borderRadius:"14px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"15px", color:"#fff", marginBottom:"12px"}}>📱 WhatsApp — +{WHATSAPP_NUM}</button>
             <button onClick={() => setShowContact(false)} style={{width:"100%", padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>{lang==="ar" ? "اغلاق" : "Close"}</button>
           </div>
         </div>
@@ -2084,17 +2088,14 @@ export default function App() {
                   {cart.length === 0 ? (
                     <div style={{color:COLORS.muted, fontSize:"12px", textAlign:"center", padding:"10px"}}>{L("cartEmpty")}</div>
                   ) : (
-                    <>
-                      <div style={{maxHeight:"170px", overflowY:"auto", display:"flex", flexWrap:"wrap", gap:"6px"}}>
-                        {cart.map(c => (
-                          <div key={`${c.date}-${c.hour}`} style={{background:`${selected.color}22`, color:selected.color, padding:"5px 6px 5px 11px", borderRadius:"18px", fontSize:"11px", fontWeight:"700", display:"flex", alignItems:"center", gap:"6px"}}>
-                            {c.date.slice(5)} • {c.hour}:00
-                            <button onClick={() => toggleCartSlot(c.date, c.hour)} style={{width:"17px", height:"17px", borderRadius:"50%", background:"#FF444433", color:"#FF6B6B", border:"none", cursor:"pointer", fontFamily:"inherit", fontSize:"10px", lineHeight:"1", display:"flex", alignItems:"center", justifyContent:"center", padding:0}}>✕</button>
-                          </div>
-                        ))}
-                      </div>
-
-                    </>
+                    <div style={{maxHeight:"170px", overflowY:"auto", display:"flex", flexWrap:"wrap", gap:"6px"}}>
+                      {cart.map(c => (
+                        <div key={`${c.date}-${c.hour}`} style={{background:`${selected.color}22`, color:selected.color, padding:"5px 6px 5px 11px", borderRadius:"18px", fontSize:"11px", fontWeight:"700", display:"flex", alignItems:"center", gap:"6px"}}>
+                          {c.date.slice(5)} • {c.hour}:00
+                          <button onClick={() => toggleCartSlot(c.date, c.hour)} style={{width:"17px", height:"17px", borderRadius:"50%", background:"#FF444433", color:"#FF6B6B", border:"none", cursor:"pointer", fontFamily:"inherit", fontSize:"10px", lineHeight:"1", display:"flex", alignItems:"center", justifyContent:"center", padding:0}}>✕</button>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
 
