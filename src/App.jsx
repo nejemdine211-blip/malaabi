@@ -176,6 +176,9 @@ const TXT = {
   locating: { ar:"📍 جاري تحديد الموقع...", fr:"📍 Localisation...", en:"📍 Locating..." },
   locationSet: { ar:"✅ تم تحديد الموقع", fr:"✅ Position définie", en:"✅ Location set" },
   locationFailed: { ar:"تعذر تحديد الموقع", fr:"Échec de localisation", en:"Location failed" },
+  locationDenied: { ar:"رفضت إذن الموقع — فعّله من إعدادات الجهاز", fr:"Permission refusée — activez la localisation dans les réglages", en:"Permission denied — enable location in device settings" },
+  locationTimeout: { ar:"انتهت المهلة — جرّب في مكان مفتوح", fr:"Délai dépassé — essayez en extérieur", en:"Timed out — try in an open area" },
+  locationUnavailable: { ar:"تعذر تحديد موقعك الآن، حاول مجدداً", fr:"Position indisponible, réessayez", en:"Position unavailable, try again" },
   noGeo: { ar:"المتصفح لا يدعم تحديد الموقع", fr:"Géolocalisation non supportée", en:"Geolocation not supported" },
   directions: { ar:"📍 الموقع", fr:"📍 Localisation", en:"📍 Location" },
   nearestBtn: { ar:"🎯 الأقرب لي", fr:"🎯 Le plus proche", en:"🎯 Nearest to me" },
@@ -603,6 +606,13 @@ export default function App() {
   const showToast = (msg, color=COLORS.accent) => { setToast({msg, color}); setTimeout(() => setToast(null), 4000); };
 
   // 📍 تحديد الموقع الحالي — للمشرف عند إضافة/تعديل ملعب
+  const geoErrorKey = (err) => {
+    if (err?.code === 1) return "locationDenied";      // PERMISSION_DENIED
+    if (err?.code === 3) return "locationTimeout";      // TIMEOUT
+    if (err?.code === 2) return "locationUnavailable";  // POSITION_UNAVAILABLE
+    return "locationFailed";
+  };
+
   const getMyLocation = (isEdit = false) => {
     if (!navigator.geolocation) return showToast(L("noGeo"), "#FF4444");
     showToast(L("locating"), COLORS.accent2);
@@ -614,7 +624,7 @@ export default function App() {
         else { setNewLat(la); setNewLng(lo); }
         showToast(L("locationSet"));
       },
-      () => showToast(L("locationFailed"), "#FF4444"),
+      (err) => showToast(L(geoErrorKey(err)), "#FF4444"),
       { enableHighAccuracy: true, timeout: 10000 }
     );
   };
@@ -628,7 +638,7 @@ export default function App() {
         setMyPos({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         showToast(L("locationSet"));
       },
-      () => showToast(L("locationFailed"), "#FF4444"),
+      (err) => showToast(L(geoErrorKey(err)), "#FF4444"),
       { enableHighAccuracy: true, timeout: 10000 }
     );
   };
@@ -644,7 +654,7 @@ export default function App() {
         setSortBy("nearest");
         showToast(L("locationSet"));
       },
-      () => showToast(L("locationFailed"), "#FF4444"),
+      (err) => showToast(L(geoErrorKey(err)), "#FF4444"),
       { enableHighAccuracy: true, timeout: 10000 }
     );
   };
