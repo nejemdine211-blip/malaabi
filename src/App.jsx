@@ -290,8 +290,6 @@ const TXT = {
   noFavorites: { ar:"لم تُضف أي ملعب للمفضلة بعد", fr:"Aucun terrain ajouté aux favoris", en:"No favorite fields yet" },
   noFavoritesHint: { ar:"اضغط على ♡ داخل بطاقة الملعب لإضافته هنا", fr:"Appuyez sur ♡ sur une carte pour l'ajouter ici", en:"Tap ♡ on a field card to add it here" },
   // 👋 الترحيب الشخصي
-  greeting: { ar:"مرحباً بطل", fr:"Salut champion", en:"Hi champion" },
-  readyToPlay: { ar:"مستعد للمباراة القادمة؟ ⚽", fr:"Prêt pour le prochain match ? ⚽", en:"Ready for the next match? ⚽" },
   findField: { ar:"أين تريد اللعب؟", fr:"Où voulez-vous jouer ?", en:"Where do you want to play?" },
 };
 
@@ -440,11 +438,12 @@ export default function App() {
 
   // 🎨 اسم العلامة بلونين — أبيض ثم أخضر على آخر الأحرف، كما في هوية ملاعبي البصرية
   const BrandName = ({ text, size = "32px" }) => {
-    const greenLen = Math.min(3, Math.max(1, Math.floor(text.length / 2)));
-    const head = text.slice(0, text.length - greenLen);
-    const tail = text.slice(text.length - greenLen);
+    const upper = text.toUpperCase();
+    const greenLen = Math.min(3, Math.max(1, Math.floor(upper.length / 2)));
+    const head = upper.slice(0, upper.length - greenLen);
+    const tail = upper.slice(upper.length - greenLen);
     return (
-      <span style={{fontSize:size, fontWeight:"800"}}>
+      <span style={{fontSize:size, fontWeight:"800", userSelect:"none", WebkitUserSelect:"none", MozUserSelect:"none", msUserSelect:"none", letterSpacing:"0.5px"}}>
         <span style={{color:"#ffffff"}}>{head}</span><span style={{color:"#80D030"}}>{tail}</span>
       </span>
     );
@@ -582,10 +581,10 @@ export default function App() {
     <div style={{minHeight:"100vh", background:"#0B0E08", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Arial,sans-serif"}}>
       <div style={{textAlign:"center"}}>
         <img src="/logo.png" alt="malaabi" style={{width:"96px", height:"96px", marginBottom:"14px", filter:"drop-shadow(0 0 20px #80D03066)"}}/>
-        <div style={{fontSize:"48px", fontWeight:"900", letterSpacing:"3px", marginBottom:"8px"}}>
-          <span style={{color:"#ffffff"}}>mala</span><span style={{color:"#80D030"}}>abi</span>
+        <div style={{fontSize:"48px", fontWeight:"900", letterSpacing:"3px", marginBottom:"8px", userSelect:"none", WebkitUserSelect:"none", MozUserSelect:"none", msUserSelect:"none"}}>
+          <span style={{color:"#ffffff"}}>MALA</span><span style={{color:"#80D030"}}>ABI</span>
         </div>
-        <div style={{color:"#80D030", fontSize:"14px"}}>⚽ احجز ملعبك بسهولة</div>
+        <div style={{color:"#80D030", fontSize:"14px", userSelect:"none", WebkitUserSelect:"none"}}>⚽ احجز ملعبك بسهولة</div>
       </div>
     </div>
   );
@@ -1289,7 +1288,7 @@ export default function App() {
           )}
           {ratingsMap[s.id] && (
             <div style={{position:"absolute", top: user ? "48px" : "10px", insetInlineEnd:"10px", background:"rgba(0,0,0,0.65)", color:"#FFD700", padding:"4px 10px", borderRadius:"20px", fontSize:"11px", fontWeight:"800", backdropFilter:"blur(4px)"}}>
-              ⭐ {ratingsMap[s.id].avg_stars} <span style={{color:"#ffffff99", fontWeight:"600"}}>({ratingsMap[s.id].total})</span>
+              ⭐ {ratingsMap[s.id].avg_stars}
             </div>
           )}
           <div style={{position:"absolute", bottom:"10px", right:"12px", left:"12px"}}>
@@ -1692,14 +1691,6 @@ export default function App() {
           <>
             {bottomTab==="stadiums" && (
               <>
-                {/* 👋 ترحيب شخصي */}
-                {user && (
-                  <div style={{marginBottom:"14px"}}>
-                    <div style={{fontSize:"19px", fontWeight:"800", color:"#fff"}}>{L("greeting")} {user.name?.split(" ")[0]} 👋</div>
-                    <div style={{color:COLORS.muted, fontSize:"13px", marginTop:"2px"}}>{L("readyToPlay")}</div>
-                  </div>
-                )}
-
                 <div style={{background:`linear-gradient(135deg, ${COLORS.card}, #0a1628)`, borderRadius:"16px", padding:"20px 16px", marginBottom:"16px", border:`1px solid ${COLORS.border}`}}>
                   <div style={{fontSize:"16px", fontWeight:"800", marginBottom:"10px", color:"#fff"}}>{L("findField")}</div>
                   <div style={{position:"relative", marginBottom:"8px"}}>
