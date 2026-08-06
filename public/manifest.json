@@ -1,22 +1,15 @@
 {
-  "name": "ملاعبي",
-  "short_name": "ملاعبي",
-  "description": "احجز ملعبك بسهولة",
-  "start_url": "/",
+  "name": "Malaabi",
+  "short_name": "Malaabi",
+  "theme_color": "#17223D",
+  "background_color": "#17223D",
   "display": "standalone",
-  "background_color": "#070B14",
-  "theme_color": "#00E676",
-  "orientation": "portrait",
   "icons": [
     {
       "src": "/icon.png",
       "sizes": "512x512",
-      "type": "image/png"
-    },
-    {
-      "src": "/icon.png",
-      "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
