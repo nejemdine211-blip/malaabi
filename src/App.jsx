@@ -294,6 +294,9 @@ const TXT = {
 };
 
 export default function App() {
+  // 🔒 خصائص تمنع حفظ/نسخ الشعار عبر الضغط المطوّل أو كليك يمين أو السحب
+  const noCopyImgProps = { draggable: false, onContextMenu: (e) => e.preventDefault() };
+  const noCopyStyle = { WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none" };
   const [lang, setLang] = useState(() => localStorage.getItem("malaabi_lang") || "ar");
   const t = translations[lang];
   const L = (k) => TXT[k][lang];
@@ -580,7 +583,7 @@ export default function App() {
   if (splash) return (
     <div style={{minHeight:"100vh", background:"#0B0E08", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Arial,sans-serif"}}>
       <div style={{textAlign:"center"}}>
-        <img src="/logo.png" alt="malaabi" style={{width:"96px", height:"96px", marginBottom:"14px", filter:"drop-shadow(0 0 20px #80D03066)"}}/>
+        <img src="/logo.png" alt="malaabi" {...noCopyImgProps} style={{width:"96px", height:"96px", marginBottom:"14px", filter:"drop-shadow(0 0 20px #80D03066)", ...noCopyStyle}}/>
         <div style={{fontSize:"48px", fontWeight:"900", letterSpacing:"3px", marginBottom:"8px", userSelect:"none", WebkitUserSelect:"none", MozUserSelect:"none", msUserSelect:"none"}}>
           <span style={{color:"#ffffff"}}>MALA</span><span style={{color:"#80D030"}}>ABI</span>
         </div>
@@ -1328,7 +1331,7 @@ export default function App() {
         <div style={{position:"fixed", top:"16px", left:"16px", zIndex:999}}><LangButton/></div>
         <div style={{width:"100%", maxWidth:"400px"}}>
           <div style={{textAlign:"center", marginBottom:"32px"}}>
-            <img src="/logo.png" alt="malaabi" style={{width:"84px", height:"84px", marginBottom:"8px", filter:"drop-shadow(0 0 20px #80D03066)"}}/>
+            <img src="/logo.png" alt="malaabi" {...noCopyImgProps} style={{width:"84px", height:"84px", marginBottom:"8px", filter:"drop-shadow(0 0 20px #80D03066)", ...noCopyStyle}}/>
             <div><BrandName text={t.appName}/></div>
             <div style={{color:COLORS.muted, marginTop:"8px", fontSize:"15px"}}>{t.appSlogan}</div>
           </div>
@@ -1670,7 +1673,7 @@ export default function App() {
       <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet"/>
       <div style={{background:COLORS.card, borderBottom:`1px solid ${COLORS.border}`, padding:"12px 16px", display:"flex", justifyContent:"space-between", alignItems:"center", position:"sticky", top:0, zIndex:50}}>
         <div onClick={handleLogoClick} style={{display:"flex", alignItems:"center", gap:"7px", cursor:"pointer", userSelect:"none"}}>
-          <img src="/logo.png" alt="malaabi" style={{width:"26px", height:"26px"}}/>
+          <img src="/logo.png" alt="malaabi" {...noCopyImgProps} style={{width:"26px", height:"26px", ...noCopyStyle}}/>
           <BrandName text={t.appName} size="17px"/>
         </div>
         <div style={{display:"flex", alignItems:"center", gap:"6px"}}>
