@@ -1,9 +1,13 @@
 {
+  "id": "/",
   "name": "Malaabi",
   "short_name": "Malaabi",
+  "description": "تطبيق ملاعبي لتنظيم وحجز الملاعب الرياضية بسهولة وسرعة.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
   "theme_color": "#17223D",
   "background_color": "#17223D",
-  "display": "standalone",
   "icons": [
     {
       "src": "/icon.png",
