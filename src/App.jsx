@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { supabase } from "./supabase";
 import { translations } from "./translations";
 
@@ -283,6 +283,24 @@ const TXT = {
   needRelogin: { ar:"يرجى تسجيل الدخول مجدداً لإتمام الحجز", fr:"Reconnectez-vous pour réserver", en:"Please log in again to book" },
   badPayment: { ar:"هذا الملعب لا يقبل وسيلة الدفع المختارة", fr:"Moyen de paiement non accepté", en:"Payment method not accepted" },
   rateNow: { ar:"⭐ قيّم هذا الحجز", fr:"⭐ Évaluer cette réservation", en:"⭐ Rate this booking" },
+  // ⭐ المفضلة
+  favorites: { ar:"المفضلة", fr:"Favoris", en:"Favorites" },
+  addedFav: { ar:"⭐ أُضيف للمفضلة", fr:"⭐ Ajouté aux favoris", en:"⭐ Added to favorites" },
+  removedFav: { ar:"أُزيل من المفضلة", fr:"Retiré des favoris", en:"Removed from favorites" },
+  noFavorites: { ar:"لم تُضف أي ملعب للمفضلة بعد", fr:"Aucun terrain ajouté aux favoris", en:"No favorite fields yet" },
+  noFavoritesHint: { ar:"اضغط على ♡ داخل بطاقة الملعب لإضافته هنا", fr:"Appuyez sur ♡ sur une carte pour l'ajouter ici", en:"Tap ♡ on a field card to add it here" },
+  // 👋 الترحيب الشخصي
+  greeting: { ar:"مرحباً بطل", fr:"Salut champion", en:"Hi champion" },
+  readyToPlay: { ar:"مستعد للمباراة القادمة؟ ⚽", fr:"Prêt pour le prochain match ? ⚽", en:"Ready for the next match? ⚽" },
+  findField: { ar:"أين تريد اللعب؟", fr:"Où voulez-vous jouer ?", en:"Where do you want to play?" },
+  // 🔥 الملاعب الشائعة
+  popularFields: { ar:"الملاعب الشائعة", fr:"Terrains populaires", en:"Popular fields" },
+  seeAll: { ar:"عرض الكل", fr:"Voir tout", en:"See all" },
+  // 📋 كيف يعمل التطبيق
+  howItWorks: { ar:"كيف يعمل التطبيق؟", fr:"Comment ça marche ?", en:"How it works?" },
+  step1Title: { ar:"اختر ملعباً", fr:"Choisissez un terrain", en:"Choose a field" },
+  step2Title: { ar:"اختر موعدك", fr:"Sélectionnez un créneau", en:"Pick your slot" },
+  step3Title: { ar:"احجز والعب", fr:"Réservez et jouez", en:"Book and play" },
 };
 
 export default function App() {
@@ -384,6 +402,7 @@ export default function App() {
   const [showPass, setShowPass] = useState({});          // 👁 إظهار كلمات السر
   const [sessionPass, setSessionPass] = useState(() => sessionStorage.getItem("mb_sp") || "");   // 🔒 تُمحى بإغلاق التبويب
   const [myBookingsList, setMyBookingsList] = useState([]);   // 🔒 حجوزات الزبون الكاملة
+  const [favorites, setFavorites] = useState([]);             // ⭐ أرقام الملاعب المفضلة للزبون
 
   const changeLang = (l) => { setLang(l); localStorage.setItem("malaabi_lang", l); };
   const langLabel = lang === "ar" ? "🌐 ع" : lang === "fr" ? "🌐 FR" : "🌐 EN";
@@ -486,6 +505,8 @@ export default function App() {
           .then(r => { if (r.bookings) setMyBookingsList(r.bookings); });
         stadiumApi("my-ratings", { payload: { phone: saved.phone, password: sp } })
           .then(r => { if (r.ratings) setMyRatings(r.ratings); });
+        stadiumApi("my-favorites", { payload: { phone: saved.phone, password: sp } })
+          .then(r => { if (r.favorites) setFavorites(r.favorites); });
       }
     } else if (savedOwner?.owner_code) {
       setOwner(savedOwner); setScreen("owner");
@@ -605,7 +626,7 @@ export default function App() {
     localStorage.setItem("malaabi_user", JSON.stringify(data));
     setScreen("app");
     setSessionPass(loginPass); sessionStorage.setItem("mb_sp", loginPass);
-    loadMyBookings(data.phone, loginPass); loadMyRatings(data.phone, loginPass);
+    loadMyBookings(data.phone, loginPass); loadMyRatings(data.phone, loginPass); loadFavorites(data.phone, loginPass);
     showToast(t.welcome + " " + data.name);
   };
 
@@ -735,7 +756,7 @@ export default function App() {
     localStorage.removeItem("malaabi_user");
     localStorage.removeItem("malaabi_owner");
     setUser(null); setOwner(null);
-    setSessionPass(""); sessionStorage.removeItem("mb_sp"); setMyBookingsList([]); setAdminPass(""); setMyRatings([]); setOwnerRatings([]);
+    setSessionPass(""); sessionStorage.removeItem("mb_sp"); setMyBookingsList([]); setAdminPass(""); setMyRatings([]); setOwnerRatings([]); setFavorites([]);
     setScreen("login"); setTab("client"); setBottomTab("stadiums");
   };
 
@@ -1000,6 +1021,30 @@ export default function App() {
     if (res.ratings) setMyRatings(res.ratings);
   };
 
+  // ⭐ جلب قائمة الملاعب المفضلة للزبون
+  const loadFavorites = async (phone, pass) => {
+    const ph = phone || user?.phone, pw = pass || sessionPass;
+    if (!ph || !pw) return;
+    const res = await stadiumApi("my-favorites", { payload: { phone: ph, password: pw } });
+    if (res.favorites) setFavorites(res.favorites);
+  };
+
+  // ⭐ إضافة/إزالة ملعب من المفضلة
+  const toggleFavorite = async (stadiumId) => {
+    if (!user || !sessionPass) return showToast(L("needRelogin"), "#FF4444");
+    // تحديث فوري في الواجهة، ثم تأكيد من الخادم
+    const wasFav = favorites.includes(stadiumId);
+    setFavorites(p => wasFav ? p.filter(id => id !== stadiumId) : [...p, stadiumId]);
+    const res = await stadiumApi("toggle-favorite", {
+      payload: { phone: user.phone, password: sessionPass, stadiumId },
+    });
+    if (res.error) {
+      setFavorites(p => wasFav ? [...p, stadiumId] : p.filter(id => id !== stadiumId));
+      return showToast(L("netError"), "#FF4444");
+    }
+    showToast(res.favorited ? L("addedFav") : L("removedFav"), res.favorited ? "#FF4081" : COLORS.muted);
+  };
+
   // ⭐ إرسال تقييم
   const submitRating = async () => {
     if (!rateStars) return showToast(L("pickStars"), "#FF4444");
@@ -1157,6 +1202,7 @@ export default function App() {
     <div style={{position:"fixed", bottom:0, left:0, right:0, background:COLORS.card, borderTop:`1px solid ${COLORS.border}`, display:"flex", zIndex:50, paddingBottom:"8px"}}>
       {[
         { id:"stadiums", icon:"🏟", label: lang==="ar"?"الملاعب":lang==="fr"?"Terrains":"Fields" },
+        { id:"favorites", icon:"❤️", label: L("favorites"), badge: favorites.length },
         { id:"profile", icon:"👤", label: lang==="ar"?"حسابي":lang==="fr"?"Profil":"Profile" },
         { id:"notifs", icon:"🔔", label: lang==="ar"?"الإشعارات":lang==="fr"?"Notifs":"Notifs", badge: unreadNotifs },
         { id:"contact", icon:"💬", label: lang==="ar"?"اتصل بنا":lang==="fr"?"Contact":"Contact" },
@@ -1166,15 +1212,71 @@ export default function App() {
           if (item.id === "profile") return setShowProfile(true);
           setBottomTab(item.id);
         }} style={{flex:1, padding:"10px 4px 4px", background:"none", border:"none", cursor:"pointer", fontFamily:"inherit", display:"flex", flexDirection:"column", alignItems:"center", gap:"4px"}}>
-          <div style={{fontSize:"22px", position:"relative"}}>
+          <div style={{fontSize:"20px", position:"relative"}}>
             {item.icon}
             {item.badge > 0 && <div style={{position:"absolute", top:"-4px", right:"-4px", background:"#FF4444", color:"#fff", borderRadius:"50%", width:"16px", height:"16px", fontSize:"10px", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:"700"}}>{item.badge}</div>}
           </div>
-          <div style={{fontSize:"10px", color: bottomTab===item.id?COLORS.accent:COLORS.muted, fontWeight: bottomTab===item.id?"700":"400"}}>{item.label}</div>
+          <div style={{fontSize:"9.5px", color: bottomTab===item.id?COLORS.accent:COLORS.muted, fontWeight: bottomTab===item.id?"700":"400"}}>{item.label}</div>
         </button>
       ))}
     </div>
   );
+
+  // 🏟 بطاقة ملعب قابلة لإعادة الاستخدام — الشبكة الرئيسية، الشائعة، والمفضلة
+  const StadiumCardView = ({ s, wide }) => {
+    const hrs = s.working_hours || ALL_HOURS;
+    const free = hrs.filter(h => !isBooked(s.id, today, h)).length;
+    const dist = stadiumDistance(s);
+    const isFav = favorites.includes(s.id);
+    return (
+      <div style={{background:COLORS.card, borderRadius:"20px", border:`1px solid ${COLORS.border}`, overflow:"hidden", boxShadow:"0 4px 20px rgba(0,0,0,0.3)", width: wide ? "250px" : "auto", flexShrink: wide ? 0 : undefined}}>
+        <div style={{position:"relative"}}>
+          <div style={{position:"absolute", inset:0, background:`linear-gradient(135deg, ${s.color}44, ${COLORS.card})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"44px"}}>⚽</div>
+          <img src={stadiumImage(s)} alt={s.name} onError={e => onImgError(e, s.id || 0)} style={{width:"100%", height:"140px", objectFit:"cover", display:"block", position:"relative"}}/>
+          <div style={{position:"absolute", inset:0, background:`linear-gradient(to bottom, transparent 50%, ${COLORS.card} 100%)`}}></div>
+          {/* ❤️ زر المفضلة */}
+          {user && (
+            <button onClick={(e) => { e.stopPropagation(); toggleFavorite(s.id); }} style={{position:"absolute", top:"10px", insetInlineEnd:"10px", width:"30px", height:"30px", borderRadius:"50%", background:"rgba(0,0,0,0.55)", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"15px", backdropFilter:"blur(4px)", zIndex:2}}>
+              {isFav ? "❤️" : "🤍"}
+            </button>
+          )}
+          {/* 📍 شارة المسافة */}
+          {dist != null && (
+            <div style={{position:"absolute", top:"10px", insetInlineStart:"10px", background:"rgba(0,0,0,0.65)", color:COLORS.accent, padding:"4px 10px", borderRadius:"20px", fontSize:"11px", fontWeight:"800", backdropFilter:"blur(4px)"}}>
+              📍 {dist < 1 ? Math.round(dist*1000) + " m" : dist.toFixed(1) + " " + L("kmAway")}
+            </div>
+          )}
+          {ratingsMap[s.id] && (
+            <div style={{position:"absolute", top: user ? "48px" : "10px", insetInlineEnd:"10px", background:"rgba(0,0,0,0.65)", color:"#FFD700", padding:"4px 10px", borderRadius:"20px", fontSize:"11px", fontWeight:"800", backdropFilter:"blur(4px)"}}>
+              ⭐ {ratingsMap[s.id].avg_stars} <span style={{color:"#ffffff99", fontWeight:"600"}}>({ratingsMap[s.id].total})</span>
+            </div>
+          )}
+          <div style={{position:"absolute", bottom:"10px", right:"12px", left:"12px"}}>
+            <div style={{fontWeight:"800", fontSize:"18px", color:"#fff", textShadow:"0 2px 8px rgba(0,0,0,0.8)"}}>{s.name}</div>
+            <div style={{color:"#ffffffaa", fontSize:"12px"}}>📍 {s.wilaya} — {s.hood}</div>
+          </div>
+        </div>
+        <div style={{padding:"12px 16px 16px"}}>
+          <div style={{display:"flex", justifyContent:"space-between", marginBottom:"12px"}}>
+            <div style={{background:`${s.color}22`, borderRadius:"10px", padding:"8px 12px", textAlign:"center"}}>
+              <div style={{color:s.color, fontWeight:"800", fontSize:"16px"}}>{s.price}</div>
+              <div style={{color:COLORS.muted, fontSize:"10px"}}>{t.pricePerHour}</div>
+            </div>
+            <div style={{background:"#00E67622", borderRadius:"10px", padding:"8px 12px", textAlign:"center"}}>
+              <div style={{color:COLORS.accent, fontWeight:"800", fontSize:"16px"}}>{free}</div>
+              <div style={{color:COLORS.muted, fontSize:"10px"}}>{t.hourAvailable}</div>
+            </div>
+          </div>
+          <div style={{display:"flex", gap:"8px"}}>
+            <button onClick={() => { setSelected(s); setStep(1); setBookDate(today); }} style={{flex:2, padding:"11px", background:`linear-gradient(135deg, ${s.color}, ${s.color}BB)`, border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"14px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{t.bookNow}</button>
+            {hasLocation(s) && (
+              <button onClick={() => window.open(directionsLink(s.latitude, s.longitude), "_blank")} style={{flex:1, padding:"11px", background:"#00B0FF22", color:COLORS.accent2, border:"1px solid #00B0FF44", borderRadius:"12px", fontWeight:"700", fontSize:"13px", cursor:"pointer", fontFamily:"inherit"}}>{L("directions")}</button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   // ✅ شاشة الدخول — 3 خيارات
   if (screen === "login" || screen === "register" || screen === "ownerLogin") {
@@ -1540,11 +1642,21 @@ export default function App() {
           <>
             {bottomTab==="stadiums" && (
               <>
+                {/* 👋 ترحيب شخصي */}
+                {user && (
+                  <div style={{marginBottom:"14px"}}>
+                    <div style={{fontSize:"19px", fontWeight:"800", color:"#fff"}}>{L("greeting")} {user.name?.split(" ")[0]} 👋</div>
+                    <div style={{color:COLORS.muted, fontSize:"13px", marginTop:"2px"}}>{L("readyToPlay")}</div>
+                  </div>
+                )}
+
                 <div style={{background:`linear-gradient(135deg, ${COLORS.card}, #0a1628)`, borderRadius:"16px", padding:"20px 16px", marginBottom:"16px", border:`1px solid ${COLORS.border}`}}>
-                  <div style={{fontSize:"22px", fontWeight:"800", marginBottom:"4px", background:"linear-gradient(135deg,#00E676,#00B0FF)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>{t.bookYourStadium}</div>
-                  <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"12px"}}>{t.chooseStadium}</div>
-                  <input style={{...inp, marginBottom:"8px", background:COLORS.bg, color:"#fff", WebkitAppearance:"none", appearance:"none"}} type="text" name="malaabi-search" autoComplete="off" placeholder={t.search} value={searchText} onChange={e => setSearchText(e.target.value)}/>
-                  <select style={{...sel, marginBottom:"8px"}} value={sortBy} onChange={e => { const v = e.target.value; if (v === "nearest") return findNearest(); setSortBy(v); }}>
+                  <div style={{fontSize:"16px", fontWeight:"800", marginBottom:"10px", color:"#fff"}}>{L("findField")}</div>
+                  <div style={{position:"relative", marginBottom:"8px"}}>
+                    <span style={{position:"absolute", insetInlineStart:"14px", top:"50%", transform:"translateY(-50%)", fontSize:"16px", pointerEvents:"none"}}>📍</span>
+                    <input style={{...inp, marginBottom:0, background:COLORS.bg, color:"#fff", WebkitAppearance:"none", appearance:"none", paddingInlineStart:"40px"}} type="text" name="malaabi-search" autoComplete="off" placeholder={t.search} value={searchText} onChange={e => setSearchText(e.target.value)}/>
+                  </div>
+                  <select style={{...sel, marginTop:"8px", marginBottom:"8px"}} value={sortBy} onChange={e => { const v = e.target.value; if (v === "nearest") return findNearest(); setSortBy(v); }}>
                     <option style={opt} value="default">{t.sortDefault}</option>
                     <option style={opt} value="price_asc">{t.sortPriceAsc}</option>
                     <option style={opt} value="price_desc">{t.sortPriceDesc}</option>
@@ -1564,6 +1676,52 @@ export default function App() {
                     )}
                   </div>
                 </div>
+
+                {/* 🔥 الملاعب الشائعة — عرض أفقي */}
+                {(() => {
+                  const popular = stadiums
+                    .filter(s => s.status !== "suspended")
+                    .map(s => ({ s, cnt: confirmedBookings.filter(b => b.stadium_id === s.id).length }))
+                    .sort((a, b) => b.cnt - a.cnt)
+                    .slice(0, 8)
+                    .map(x => x.s);
+                  if (popular.length === 0) return null;
+                  return (
+                    <div style={{marginBottom:"22px"}}>
+                      <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"12px"}}>
+                        <div style={{fontSize:"17px", fontWeight:"800"}}>🔥 {L("popularFields")}</div>
+                        <button onClick={() => setSortBy("popular")} style={{background:"none", border:"none", color:COLORS.accent2, fontWeight:"700", fontSize:"13px", cursor:"pointer", fontFamily:"inherit"}}>{L("seeAll")}</button>
+                      </div>
+                      <div style={{display:"flex", gap:"12px", overflowX:"auto", paddingBottom:"6px", scrollbarWidth:"none"}}>
+                        {popular.map(s => <StadiumCardView key={s.id} s={s} wide/>)}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* 📋 كيف يعمل التطبيق */}
+                <div style={{background:COLORS.card, borderRadius:"16px", border:`1px solid ${COLORS.border}`, padding:"18px 16px", marginBottom:"20px"}}>
+                  <div style={{fontSize:"16px", fontWeight:"800", marginBottom:"16px"}}>📋 {L("howItWorks")}</div>
+                  <div style={{display:"flex", alignItems:"flex-start", justifyContent:"space-between"}}>
+                    {[
+                      { n:1, icon:"🏟", label:L("step1Title") },
+                      { n:2, icon:"🕐", label:L("step2Title") },
+                      { n:3, icon:"✅", label:L("step3Title") },
+                    ].map((step, i, arr) => (
+                      <Fragment key={step.n}>
+                        <div style={{display:"flex", flexDirection:"column", alignItems:"center", gap:"8px", flex:1}}>
+                          <div style={{width:"48px", height:"48px", borderRadius:"50%", background:"linear-gradient(135deg,#00E676,#00B0FF)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"20px", position:"relative"}}>
+                            {step.icon}
+                            <div style={{position:"absolute", bottom:"-6px", insetInlineEnd:"-2px", width:"18px", height:"18px", borderRadius:"50%", background:COLORS.bg, border:`2px solid ${COLORS.card}`, fontSize:"10px", fontWeight:"800", color:COLORS.accent, display:"flex", alignItems:"center", justifyContent:"center"}}>{step.n}</div>
+                          </div>
+                          <div style={{fontSize:"11px", color:COLORS.muted, fontWeight:"700", textAlign:"center"}}>{step.label}</div>
+                        </div>
+                        {i < arr.length - 1 && <div style={{flex:0.5, height:"2px", background:COLORS.border, marginTop:"24px"}}></div>}
+                      </Fragment>
+                    ))}
+                  </div>
+                </div>
+
                 <div style={{display:"flex", gap:"8px", flexWrap:"wrap", marginBottom:"16px"}}>
                   {[t.all, ...wilayas].map((w, i) => {
                     const act = i === 0 ? filterWilaya === "الكل" : filterWilaya === w;
@@ -1576,57 +1734,27 @@ export default function App() {
                   </div>
                 ) : (
                   <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))", gap:"16px"}}>
-                    {filteredStadiums.map((s) => {
-                      const hrs = s.working_hours || ALL_HOURS;
-                      const free = hrs.filter(h => !isBooked(s.id, today, h)).length;
-                      const dist = stadiumDistance(s);
-                      return (
-                        <div key={s.id} style={{background:COLORS.card, borderRadius:"20px", border:`1px solid ${COLORS.border}`, overflow:"hidden", boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>
-                          <div style={{position:"relative"}}>
-                            <div style={{position:"absolute", inset:0, background:`linear-gradient(135deg, ${s.color}44, ${COLORS.card})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"44px"}}>⚽</div>
-                            <img src={stadiumImage(s)} alt={s.name} onError={e => onImgError(e, s.id || 0)} style={{width:"100%", height:"140px", objectFit:"cover", display:"block", position:"relative"}}/>
-                            <div style={{position:"absolute", inset:0, background:`linear-gradient(to bottom, transparent 50%, ${COLORS.card} 100%)`}}></div>
-                            {/* 📍 شارة المسافة */}
-                            {dist != null && (
-                              <div style={{position:"absolute", top:"10px", insetInlineStart:"10px", background:"rgba(0,0,0,0.65)", color:COLORS.accent, padding:"4px 10px", borderRadius:"20px", fontSize:"11px", fontWeight:"800", backdropFilter:"blur(4px)"}}>
-                                📍 {dist < 1 ? Math.round(dist*1000) + " m" : dist.toFixed(1) + " " + L("kmAway")}
-                              </div>
-                            )}
-                            {ratingsMap[s.id] && (
-                              <div style={{position:"absolute", top:"10px", insetInlineEnd:"10px", background:"rgba(0,0,0,0.65)", color:"#FFD700", padding:"4px 10px", borderRadius:"20px", fontSize:"11px", fontWeight:"800", backdropFilter:"blur(4px)"}}>
-                                ⭐ {ratingsMap[s.id].avg_stars} <span style={{color:"#ffffff99", fontWeight:"600"}}>({ratingsMap[s.id].total})</span>
-                              </div>
-                            )}
-                            <div style={{position:"absolute", bottom:"10px", right:"12px", left:"12px"}}>
-                              <div style={{fontWeight:"800", fontSize:"18px", color:"#fff", textShadow:"0 2px 8px rgba(0,0,0,0.8)"}}>{s.name}</div>
-                              <div style={{color:"#ffffffaa", fontSize:"12px"}}>📍 {s.wilaya} — {s.hood}</div>
-                            </div>
-                          </div>
-                          <div style={{padding:"12px 16px 16px"}}>
-                            <div style={{display:"flex", justifyContent:"space-between", marginBottom:"12px"}}>
-                              <div style={{background:`${s.color}22`, borderRadius:"10px", padding:"8px 12px", textAlign:"center"}}>
-                                <div style={{color:s.color, fontWeight:"800", fontSize:"16px"}}>{s.price}</div>
-                                <div style={{color:COLORS.muted, fontSize:"10px"}}>{t.pricePerHour}</div>
-                              </div>
-                              <div style={{background:"#00E67622", borderRadius:"10px", padding:"8px 12px", textAlign:"center"}}>
-                                <div style={{color:COLORS.accent, fontWeight:"800", fontSize:"16px"}}>{free}</div>
-                                <div style={{color:COLORS.muted, fontSize:"10px"}}>{t.hourAvailable}</div>
-                              </div>
-                            </div>
-                            <div style={{display:"flex", gap:"8px"}}>
-                              <button onClick={() => { setSelected(s); setStep(1); setBookDate(today); }} style={{flex:2, padding:"11px", background:`linear-gradient(135deg, ${s.color}, ${s.color}BB)`, border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"14px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{t.bookNow}</button>
-                              {/* 🧭 زر الاتجاهات */}
-                              {hasLocation(s) && (
-                                <button onClick={() => window.open(directionsLink(s.latitude, s.longitude), "_blank")} style={{flex:1, padding:"11px", background:"#00B0FF22", color:COLORS.accent2, border:"1px solid #00B0FF44", borderRadius:"12px", fontWeight:"700", fontSize:"13px", cursor:"pointer", fontFamily:"inherit"}}>{L("directions")}</button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {filteredStadiums.map((s) => <StadiumCardView key={s.id} s={s} />)}
                   </div>
                 )}
               </>
+            )}
+
+            {bottomTab==="favorites" && (
+              <div>
+                <div style={{fontSize:"20px", fontWeight:"800", marginBottom:"20px"}}>❤️ {L("favorites")}</div>
+                {favorites.length===0 ? (
+                  <div style={{textAlign:"center", padding:"60px 20px", color:COLORS.muted}}>
+                    <div style={{fontSize:"48px", marginBottom:"12px"}}>🤍</div>
+                    <div style={{fontWeight:"700", marginBottom:"6px"}}>{L("noFavorites")}</div>
+                    <div style={{fontSize:"13px"}}>{L("noFavoritesHint")}</div>
+                  </div>
+                ) : (
+                  <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))", gap:"16px"}}>
+                    {stadiums.filter(s => favorites.includes(s.id)).map(s => <StadiumCardView key={s.id} s={s} />)}
+                  </div>
+                )}
+              </div>
             )}
 
             {bottomTab==="notifs" && (

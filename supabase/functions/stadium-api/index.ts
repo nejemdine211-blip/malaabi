@@ -320,6 +320,54 @@ Deno.serve(async (req) => {
       return reply({ ok: true, blocked: data ?? [] });
     }
 
+    // ============ ⭐ تبديل حالة المفضلة (إضافة/إزالة) ============
+    if (action === "toggle-favorite") {
+      const p = payload ?? {};
+      const phone = String(p.phone ?? "");
+      const pass = String(p.password ?? "");
+      const sid = p.stadiumId;
+
+      if (!/^[234]\d{7}$/.test(phone)) return reply({ error: "unauthorized" }, 401);
+      const { data: u } = await db.from("users")
+        .select("password").eq("phone", phone).maybeSingle();
+      if (!u) return reply({ error: "unauthorized" }, 401);
+      const ok = await bcrypt.compare(pass, String(u.password));
+      if (!ok) return reply({ error: "unauthorized" }, 401);
+      if (!sid) return reply({ error: "missing_data" }, 400);
+
+      const { data: existing } = await db.from("favorites")
+        .select("id").eq("client_phone", phone).eq("stadium_id", sid).maybeSingle();
+
+      if (existing) {
+        const { error } = await db.from("favorites").delete().eq("id", existing.id);
+        if (error) return reply({ error: "delete_failed" }, 500);
+        return reply({ ok: true, favorited: false });
+      } else {
+        const { error } = await db.from("favorites")
+          .insert({ client_phone: phone, stadium_id: sid });
+        if (error) return reply({ error: "insert_failed" }, 500);
+        return reply({ ok: true, favorited: true });
+      }
+    }
+
+    // ============ ⭐ جلب قائمة المفضلة ============
+    if (action === "my-favorites") {
+      const p = payload ?? {};
+      const phone = String(p.phone ?? "");
+      const pass = String(p.password ?? "");
+
+      if (!/^[234]\d{7}$/.test(phone)) return reply({ error: "unauthorized" }, 401);
+      const { data: u } = await db.from("users")
+        .select("password").eq("phone", phone).maybeSingle();
+      if (!u) return reply({ error: "unauthorized" }, 401);
+      const ok = await bcrypt.compare(pass, String(u.password));
+      if (!ok) return reply({ error: "unauthorized" }, 401);
+
+      const { data } = await db.from("favorites")
+        .select("stadium_id").eq("client_phone", phone);
+      return reply({ favorites: (data ?? []).map((x: Record<string, unknown>) => x.stadium_id) });
+    }
+
     // ============ 🛒 إنشاء حجز — كل الفحوصات تتم هنا ============
     if (action === "create-booking") {
       const p = payload ?? {};
@@ -552,6 +600,7 @@ Deno.serve(async (req) => {
       // فحذفه هنا كان يمسح إشعارات الزبائن وسجل حجوزاتهم بلا داعٍ.
       await db.from("ratings").delete().eq("stadium_id", stadiumId);
       await db.from("blocked_slots").delete().eq("stadium_id", stadiumId);
+      await db.from("favorites").delete().eq("stadium_id", stadiumId);
       const { error } = await db.from("stadiums").delete().eq("id", stadiumId);
       if (error) return reply({ error: "delete_failed" }, 500);
       return reply({ ok: true });
@@ -613,6 +662,7 @@ Deno.serve(async (req) => {
       if (ids.length > 0) {
         await db.from("ratings").delete().in("stadium_id", ids);
         await db.from("blocked_slots").delete().in("stadium_id", ids);
+        await db.from("favorites").delete().in("stadium_id", ids);
         await db.from("stadiums").delete().in("id", ids);
       }
 
