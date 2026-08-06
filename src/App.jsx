@@ -133,9 +133,9 @@ const distanceKm = (lat1, lng1, lat2, lng2) => {
 };
 
 const aboutText = {
-  ar: "ملاعبي هو أول تطبيق موريتاني متخصص في حجز ملاعب كرة القدم. نهدف إلى تسهيل عملية الحجز بين الزبائن وأصحاب الملاعب بطريقة سريعة وآمنة. يمكنك اختيار الملعب المناسب لك، تحديد الوقت، والدفع عبر تطبيقات الدفع المحلية مثل Bankily وMasrvi وSEDAD.",
-  fr: "Malaabi est la première application mauritanienne spécialisée dans la réservation de terrains de football. Notre objectif est de faciliter le processus de réservation entre les clients et les propriétaires de terrains de manière rapide et sécurisée.",
-  en: "Malaabi is the first Mauritanian app specialized in booking football fields. We aim to facilitate the booking process between clients and field owners in a fast and secure way.",
+  ar: "ملاعبي هو أول تطبيق موريتاني متخصص في حجز ملاعب كرة القدم إلكترونياً، يجمع بين الزبائن وأصحاب الملاعب في مكان واحد بطريقة سريعة وآمنة وبلا تعقيد.\n\nتصفّح الملاعب القريبة منك، اطّلع على الأسعار والمواعيد المتاحة لحظياً، واحجز موعدك في دقائق معدودة. ادفع بسهولة عبر تطبيقات الدفع المحلية، واحفظ ملاعبك المفضّلة للرجوع إليها بسرعة عند الحاجة. تصلك إشعارات فورية بحالة حجزك، وتبقى كل تفاصيل ملاعبك وحجوزاتك في مكان واحد، بلا مكالمات هاتفية وبلا انتظار.\n\nصُنع في موريتانيا، لأهل موريتانيا، ليكون حجز ملعبك القادم أسهل خطوة في يومك.",
+  fr: "Malaabi est la première application mauritanienne dédiée à la réservation de terrains de football en ligne, réunissant clients et propriétaires de terrains en un seul endroit, de façon rapide, sécurisée et sans complications.\n\nParcourez les terrains proches de vous, consultez les prix et les créneaux disponibles en temps réel, et réservez en quelques minutes seulement. Payez facilement via les applications de paiement locales, et enregistrez vos terrains favoris pour les retrouver rapidement. Recevez des notifications instantanées sur l'état de votre réservation, et gardez tous les détails de vos terrains et réservations au même endroit, sans appels téléphoniques ni attente.\n\nConçu en Mauritanie, pour les Mauritaniens, pour faire de votre prochaine réservation le geste le plus simple de votre journée.",
+  en: "Malaabi is Mauritania's first app dedicated to booking football fields online, bringing clients and field owners together in one place — quickly, securely, and without hassle.\n\nBrowse fields near you, check live prices and available time slots, and book in just a few minutes. Pay easily through local payment apps, and save your favorite fields for quick access whenever you need them. Get instant notifications on your booking status, and keep all your field and booking details in one place — no phone calls, no waiting.\n\nMade in Mauritania, for Mauritanians, to make your next booking the easiest part of your day.",
 };
 
 const TXT = {
@@ -583,7 +583,7 @@ export default function App() {
   if (splash) return (
     <div style={{minHeight:"100vh", background:"#0B0E08", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Arial,sans-serif"}}>
       <div style={{textAlign:"center"}}>
-        <img src="/logo.png" alt="malaabi" {...noCopyImgProps} style={{width:"96px", height:"96px", marginBottom:"14px", filter:"drop-shadow(0 0 20px #80D03066)", ...noCopyStyle}}/>
+        <div role="img" aria-label="malaabi" {...noCopyImgProps} style={{width:"96px", height:"96px", marginBottom:"14px", marginInline:"auto", filter:"drop-shadow(0 0 20px #80D03066)", backgroundImage:"url(/logo.png)", backgroundSize:"contain", backgroundRepeat:"no-repeat", backgroundPosition:"center", ...noCopyStyle}}/>
         <div style={{fontSize:"48px", fontWeight:"900", letterSpacing:"3px", marginBottom:"8px", userSelect:"none", WebkitUserSelect:"none", MozUserSelect:"none", msUserSelect:"none"}}>
           <span style={{color:"#ffffff"}}>MALA</span><span style={{color:"#80D030"}}>ABI</span>
         </div>
@@ -1331,7 +1331,7 @@ export default function App() {
         <div style={{position:"fixed", top:"16px", left:"16px", zIndex:999}}><LangButton/></div>
         <div style={{width:"100%", maxWidth:"400px"}}>
           <div style={{textAlign:"center", marginBottom:"32px"}}>
-            <img src="/logo.png" alt="malaabi" {...noCopyImgProps} style={{width:"84px", height:"84px", marginBottom:"8px", filter:"drop-shadow(0 0 20px #80D03066)", ...noCopyStyle}}/>
+            <div role="img" aria-label="malaabi" {...noCopyImgProps} style={{width:"84px", height:"84px", marginBottom:"8px", marginInline:"auto", filter:"drop-shadow(0 0 20px #80D03066)", backgroundImage:"url(/logo.png)", backgroundSize:"contain", backgroundRepeat:"no-repeat", backgroundPosition:"center", ...noCopyStyle}}/>
             <div><BrandName text={t.appName}/></div>
             <div style={{color:COLORS.muted, marginTop:"8px", fontSize:"15px"}}>{t.appSlogan}</div>
           </div>
@@ -1449,12 +1449,24 @@ export default function App() {
         )}
 
         {showAbout && (
-          <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setShowAbout(false)}>
-            <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"420px", padding:"32px", textAlign:"center"}}>
-              <div style={{fontSize:"48px", marginBottom:"12px"}}>⚽</div>
-              <div style={{fontSize:"22px", fontWeight:"800", color:COLORS.accent, marginBottom:"16px"}}>malaabi</div>
-              <div style={{color:COLORS.muted, fontSize:"14px", lineHeight:"2", marginBottom:"24px", textAlign:lang==="ar"?"right":"left"}}>{aboutText[lang]}</div>
-              <button onClick={() => setShowAbout(false)} style={{width:"100%", padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>{lang==="ar" ? "اغلاق" : lang==="fr" ? "Fermer" : "Close"}</button>
+          <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.88)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px", backdropFilter:"blur(4px)"}} onClick={e => e.target===e.currentTarget && setShowAbout(false)}>
+            <div style={{background:`linear-gradient(160deg, ${COLORS.card}, #060905)`, borderRadius:"28px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"440px", maxHeight:"88vh", overflow:"hidden", boxShadow:"0 30px 80px rgba(0,0,0,0.5)"}}>
+              {/* 🏟 رأسية بتوهج أخضر وشعار حقيقي */}
+              <div style={{position:"relative", padding:"36px 28px 24px", textAlign:"center", overflow:"hidden"}}>
+                <div style={{position:"absolute", top:"-60px", left:"50%", transform:"translateX(-50%)", width:"220px", height:"220px", background:"radial-gradient(circle, #80D03033, transparent 70%)", pointerEvents:"none"}}></div>
+                <div role="img" aria-label="malaabi" {...noCopyImgProps} style={{position:"relative", width:"72px", height:"72px", margin:"0 auto 14px", backgroundImage:"url(/logo.png)", backgroundSize:"contain", backgroundRepeat:"no-repeat", backgroundPosition:"center", filter:"drop-shadow(0 0 18px #80D03055)", ...noCopyStyle}}/>
+                <div style={{position:"relative"}}><BrandName text="malaabi" size="26px"/></div>
+                <div style={{position:"relative", color:COLORS.accent, fontSize:"12px", fontWeight:"700", marginTop:"6px", letterSpacing:"0.5px"}}>{lang==="ar" ? "احجز ملعبك بسهولة" : lang==="fr" ? "Réservez facilement" : "Book your field easily"}</div>
+              </div>
+
+              {/* 📜 النص — قابل للتمرير إن طال */}
+              <div style={{padding:"4px 28px 28px", overflowY:"auto", maxHeight:"52vh"}}>
+                <div style={{color:"#D7DCE5", fontSize:"14px", lineHeight:"2.1", textAlign:lang==="ar"?"right":"left", whiteSpace:"pre-line"}}>{aboutText[lang]}</div>
+              </div>
+
+              <div style={{padding:"0 28px 28px"}}>
+                <button onClick={() => setShowAbout(false)} style={{width:"100%", padding:"13px", background:"linear-gradient(135deg,#80D030,#80D030)", border:"none", borderRadius:"12px", color:"#0B0E08", fontWeight:"800", fontSize:"14px", cursor:"pointer", fontFamily:"inherit"}}>{lang==="ar" ? "حسناً، فهمت" : lang==="fr" ? "Compris" : "Got it"}</button>
+              </div>
             </div>
           </div>
         )}
@@ -1673,7 +1685,7 @@ export default function App() {
       <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet"/>
       <div style={{background:COLORS.card, borderBottom:`1px solid ${COLORS.border}`, padding:"12px 16px", display:"flex", justifyContent:"space-between", alignItems:"center", position:"sticky", top:0, zIndex:50}}>
         <div onClick={handleLogoClick} style={{display:"flex", alignItems:"center", gap:"7px", cursor:"pointer", userSelect:"none"}}>
-          <img src="/logo.png" alt="malaabi" {...noCopyImgProps} style={{width:"26px", height:"26px", ...noCopyStyle}}/>
+          <div role="img" aria-label="malaabi" {...noCopyImgProps} style={{width:"26px", height:"26px", backgroundImage:"url(/logo.png)", backgroundSize:"contain", backgroundRepeat:"no-repeat", backgroundPosition:"center", flexShrink:0, ...noCopyStyle}}/>
           <BrandName text={t.appName} size="17px"/>
         </div>
         <div style={{display:"flex", alignItems:"center", gap:"6px"}}>
