@@ -18,7 +18,7 @@ const WHATSAPP_NUM = "21654542791";
 
 const COLORS = {
   bg: "#070B14", card: "#0D1424", border: "#1A2540",
-  accent: "#00E676", accent2: "#00B0FF", text: "#ffffff", muted: "#8892A4",
+  accent: "#80D030", accent2: "#80D030", text: "#ffffff", muted: "#8892A4",
 };
 
 const STADIUM_IMAGES = [
@@ -293,14 +293,6 @@ const TXT = {
   greeting: { ar:"مرحباً بطل", fr:"Salut champion", en:"Hi champion" },
   readyToPlay: { ar:"مستعد للمباراة القادمة؟ ⚽", fr:"Prêt pour le prochain match ? ⚽", en:"Ready for the next match? ⚽" },
   findField: { ar:"أين تريد اللعب؟", fr:"Où voulez-vous jouer ?", en:"Where do you want to play?" },
-  // 🔥 الملاعب الشائعة
-  popularFields: { ar:"الملاعب الشائعة", fr:"Terrains populaires", en:"Popular fields" },
-  seeAll: { ar:"عرض الكل", fr:"Voir tout", en:"See all" },
-  // 📋 كيف يعمل التطبيق
-  howItWorks: { ar:"كيف يعمل التطبيق؟", fr:"Comment ça marche ?", en:"How it works?" },
-  step1Title: { ar:"اختر ملعباً", fr:"Choisissez un terrain", en:"Choose a field" },
-  step2Title: { ar:"اختر موعدك", fr:"Sélectionnez un créneau", en:"Pick your slot" },
-  step3Title: { ar:"احجز والعب", fr:"Réservez et jouez", en:"Book and play" },
 };
 
 export default function App() {
@@ -420,6 +412,43 @@ export default function App() {
       {!open && <line x1="3" y1="21" x2="21" y2="3"/>}
     </svg>
   );
+
+  // 🏠 أيقونات شريط التنقل — نمط خطي بسيط، مطابق لهوية العلامة
+  const HomeIcon = ({ active }) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.3 : 1.9} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 10.5 12 3l9 7.5"/>
+      <path d="M5.5 9.5V20a1 1 0 0 0 1 1H9a1 1 0 0 0 1-1v-4.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V20a1 1 0 0 0 1 1h2.5a1 1 0 0 0 1-1V9.5"/>
+    </svg>
+  );
+  const HeartIcon = ({ active }) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth={active ? 1.5 : 1.9} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 20.5s-7.5-4.6-10-9.4C.5 7.8 2.3 4.5 5.7 4c2.2-.3 4.2.8 6.3 3 2.1-2.2 4.1-3.3 6.3-3 3.4.5 5.2 3.8 3.7 7.1-2.5 4.8-10 9.4-10 9.4z"/>
+    </svg>
+  );
+  const PersonIcon = ({ active }) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.3 : 1.9} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="4"/>
+      <path d="M4.5 20.5c1.2-4 4-6 7.5-6s6.3 2 7.5 6"/>
+    </svg>
+  );
+  const BellIcon = () => (
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 7H4c0-1 2-2 2-7Z"/>
+      <path d="M10 20a2 2 0 0 0 4 0"/>
+    </svg>
+  );
+
+  // 🎨 اسم العلامة بلونين — أبيض ثم أخضر على آخر الأحرف، كما في هوية ملاعبي البصرية
+  const BrandName = ({ text, size = "32px" }) => {
+    const greenLen = Math.min(3, Math.max(1, Math.floor(text.length / 2)));
+    const head = text.slice(0, text.length - greenLen);
+    const tail = text.slice(text.length - greenLen);
+    return (
+      <span style={{fontSize:size, fontWeight:"800"}}>
+        <span style={{color:"#ffffff"}}>{head}</span><span style={{color:"#80D030"}}>{tail}</span>
+      </span>
+    );
+  };
 
   // 🔒 حقل كلمة سر بزر إظهار — دالة لا مكوّن، حتى لا يفقد التركيز عند الكتابة
   const passField = ({ id, value, onChange, placeholder, maxLength = 4, onEnter, extra }) => (
@@ -550,10 +579,13 @@ export default function App() {
   }, [user, lang]);
 
   if (splash) return (
-    <div style={{minHeight:"100vh", background:"#111", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Arial,sans-serif"}}>
+    <div style={{minHeight:"100vh", background:"#0B0E08", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Arial,sans-serif"}}>
       <div style={{textAlign:"center"}}>
-        <div style={{fontSize:"48px", fontWeight:"900", color:"#ffffff", letterSpacing:"6px", marginBottom:"8px"}}>malaabi</div>
-        <div style={{color:"#00E676", fontSize:"14px"}}>⚽ احجز ملعبك بسهولة</div>
+        <img src="/logo.png" alt="malaabi" style={{width:"96px", height:"96px", marginBottom:"14px", filter:"drop-shadow(0 0 20px #80D03066)"}}/>
+        <div style={{fontSize:"48px", fontWeight:"900", letterSpacing:"3px", marginBottom:"8px"}}>
+          <span style={{color:"#ffffff"}}>mala</span><span style={{color:"#80D030"}}>abi</span>
+        </div>
+        <div style={{color:"#80D030", fontSize:"14px"}}>⚽ احجز ملعبك بسهولة</div>
       </div>
     </div>
   );
@@ -953,7 +985,7 @@ export default function App() {
 
   const handleAdd = async () => {
     if (!newName || !newWilayaSelect || !newHood || !newPrice) return showToast(t.enterAll, "#FF4444");
-    const colors = ["#00E676","#00B0FF","#FF6D00","#FF4081","#7C4DFF","#00BCD4"];
+    const colors = ["#80D030","#80D030","#FF6D00","#FF4081","#7C4DFF","#00BCD4"];
     const res = await stadiumApi("admin-add-stadium", {
       adminPass,
       payload: {
@@ -1198,29 +1230,38 @@ export default function App() {
     paddingInlineEnd:"38px" };
   const opt = { background:COLORS.card, color:"#fff" };
 
-  const BottomNav = () => (
-    <div style={{position:"fixed", bottom:0, left:0, right:0, background:COLORS.card, borderTop:`1px solid ${COLORS.border}`, display:"flex", zIndex:50, paddingBottom:"8px"}}>
-      {[
-        { id:"stadiums", icon:"🏟", label: lang==="ar"?"الملاعب":lang==="fr"?"Terrains":"Fields" },
-        { id:"favorites", icon:"❤️", label: L("favorites"), badge: favorites.length },
-        { id:"profile", icon:"👤", label: lang==="ar"?"حسابي":lang==="fr"?"Profil":"Profile" },
-        { id:"notifs", icon:"🔔", label: lang==="ar"?"الإشعارات":lang==="fr"?"Notifs":"Notifs", badge: unreadNotifs },
-        { id:"contact", icon:"💬", label: lang==="ar"?"اتصل بنا":lang==="fr"?"Contact":"Contact" },
-      ].map(item => (
-        <button key={item.id} onClick={() => {
-          if (item.id === "contact") return setShowContact(true);
-          if (item.id === "profile") return setShowProfile(true);
-          setBottomTab(item.id);
-        }} style={{flex:1, padding:"10px 4px 4px", background:"none", border:"none", cursor:"pointer", fontFamily:"inherit", display:"flex", flexDirection:"column", alignItems:"center", gap:"4px"}}>
-          <div style={{fontSize:"20px", position:"relative"}}>
-            {item.icon}
-            {item.badge > 0 && <div style={{position:"absolute", top:"-4px", right:"-4px", background:"#FF4444", color:"#fff", borderRadius:"50%", width:"16px", height:"16px", fontSize:"10px", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:"700"}}>{item.badge}</div>}
-          </div>
-          <div style={{fontSize:"9.5px", color: bottomTab===item.id?COLORS.accent:COLORS.muted, fontWeight: bottomTab===item.id?"700":"400"}}>{item.label}</div>
-        </button>
-      ))}
-    </div>
-  );
+  const BottomNav = () => {
+    const items = [
+      { id:"stadiums", label: lang==="ar"?"الملاعب":lang==="fr"?"Accueil":"Home" },
+      { id:"favorites", label: L("favorites"), badge: favorites.length },
+      { id:"profile", label: lang==="ar"?"حسابي":lang==="fr"?"Profil":"Profile" },
+      { id:"contact", label: lang==="ar"?"اتصل بنا":lang==="fr"?"Contact":"Contact" },
+    ];
+    return (
+      <div style={{position:"fixed", bottom:0, left:0, right:0, background:COLORS.card, borderTop:`1px solid ${COLORS.border}`, display:"flex", zIndex:50, paddingBottom:"8px"}}>
+        {items.map(item => {
+          const active = bottomTab === item.id;
+          const color = active ? COLORS.accent : COLORS.muted;
+          return (
+            <button key={item.id} onClick={() => {
+              if (item.id === "contact") return setShowContact(true);
+              if (item.id === "profile") return setShowProfile(true);
+              setBottomTab(item.id);
+            }} style={{flex:1, padding:"10px 4px 4px", background:"none", border:"none", cursor:"pointer", fontFamily:"inherit", display:"flex", flexDirection:"column", alignItems:"center", gap:"5px"}}>
+              <div style={{position:"relative", color, display:"flex"}}>
+                {item.id === "stadiums" && <HomeIcon active={active}/>}
+                {item.id === "favorites" && <HeartIcon active={active}/>}
+                {item.id === "profile" && <PersonIcon active={active}/>}
+                {item.id === "contact" && <span style={{fontSize:"20px", lineHeight:1}}>💬</span>}
+                {item.badge > 0 && <div style={{position:"absolute", top:"-4px", right:"-6px", background:"#FF4444", color:"#fff", borderRadius:"50%", width:"16px", height:"16px", fontSize:"10px", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:"700"}}>{item.badge}</div>}
+              </div>
+              <div style={{fontSize:"10px", color, fontWeight: active?"700":"400"}}>{item.label}</div>
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
 
   // 🏟 بطاقة ملعب قابلة لإعادة الاستخدام — الشبكة الرئيسية، الشائعة، والمفضلة
   const StadiumCardView = ({ s, wide }) => {
@@ -1262,7 +1303,7 @@ export default function App() {
               <div style={{color:s.color, fontWeight:"800", fontSize:"16px"}}>{s.price}</div>
               <div style={{color:COLORS.muted, fontSize:"10px"}}>{t.pricePerHour}</div>
             </div>
-            <div style={{background:"#00E67622", borderRadius:"10px", padding:"8px 12px", textAlign:"center"}}>
+            <div style={{background:"#80D03022", borderRadius:"10px", padding:"8px 12px", textAlign:"center"}}>
               <div style={{color:COLORS.accent, fontWeight:"800", fontSize:"16px"}}>{free}</div>
               <div style={{color:COLORS.muted, fontSize:"10px"}}>{t.hourAvailable}</div>
             </div>
@@ -1270,7 +1311,7 @@ export default function App() {
           <div style={{display:"flex", gap:"8px"}}>
             <button onClick={() => { setSelected(s); setStep(1); setBookDate(today); }} style={{flex:2, padding:"11px", background:`linear-gradient(135deg, ${s.color}, ${s.color}BB)`, border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"14px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{t.bookNow}</button>
             {hasLocation(s) && (
-              <button onClick={() => window.open(directionsLink(s.latitude, s.longitude), "_blank")} style={{flex:1, padding:"11px", background:"#00B0FF22", color:COLORS.accent2, border:"1px solid #00B0FF44", borderRadius:"12px", fontWeight:"700", fontSize:"13px", cursor:"pointer", fontFamily:"inherit"}}>{L("directions")}</button>
+              <button onClick={() => window.open(directionsLink(s.latitude, s.longitude), "_blank")} style={{flex:1, padding:"11px", background:"#80D03022", color:COLORS.accent2, border:"1px solid #80D03044", borderRadius:"12px", fontWeight:"700", fontSize:"13px", cursor:"pointer", fontFamily:"inherit"}}>{L("directions")}</button>
             )}
           </div>
         </div>
@@ -1288,8 +1329,8 @@ export default function App() {
         <div style={{position:"fixed", top:"16px", left:"16px", zIndex:999}}><LangButton/></div>
         <div style={{width:"100%", maxWidth:"400px"}}>
           <div style={{textAlign:"center", marginBottom:"32px"}}>
-            <div style={{fontSize:"64px", marginBottom:"8px", filter:"drop-shadow(0 0 20px #00E676)"}}>⚽</div>
-            <div style={{fontSize:"32px", fontWeight:"800", background:"linear-gradient(135deg, #00E676, #00B0FF)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>{t.appName}</div>
+            <img src="/logo.png" alt="malaabi" style={{width:"84px", height:"84px", marginBottom:"8px", filter:"drop-shadow(0 0 20px #80D03066)"}}/>
+            <div><BrandName text={t.appName}/></div>
             <div style={{color:COLORS.muted, marginTop:"8px", fontSize:"15px"}}>{t.appSlogan}</div>
           </div>
           <div style={{background:COLORS.card, borderRadius:"24px", padding:"28px", border:`1px solid ${COLORS.border}`, boxShadow:"0 25px 50px rgba(0,0,0,0.5)"}}>
@@ -1325,7 +1366,7 @@ export default function App() {
                     <div style={{color:"#FF6D00", fontSize:"12px", marginBottom:"16px"}}>⚠️ {L("answerHint")}</div>
                   </>
                 )}
-                <button onClick={handleRegister} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"16px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{t.createAccount}</button>
+                <button onClick={handleRegister} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#80D030,#80D030)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"16px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{t.createAccount}</button>
                 <button onClick={() => setScreen("login")} style={{width:"100%", padding:"12px", background:"transparent", border:"none", color:COLORS.accent2, fontWeight:"700", cursor:"pointer", fontFamily:"inherit", marginTop:"12px", fontSize:"14px"}}>{L("haveAccount")}</button>
               </>
             ) : (
@@ -1334,7 +1375,7 @@ export default function App() {
                 <input style={inp} placeholder={t.enter8} maxLength={8} value={loginPhone} onChange={e => setLoginPhone(cleanPhone(e.target.value))}/>
                 <label style={lbl}>{t.password}</label>
                 <div style={{marginBottom:"10px"}}>{passField({ id:"login", value:loginPass, placeholder:t.enter4, onEnter:handleLogin, onChange:e => setLoginPass(e.target.value.replace(/\D/g,"")), extra:{marginBottom:0} })}</div>
-                <button onClick={handleLogin} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"16px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{t.enterApp}</button>
+                <button onClick={handleLogin} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#80D030,#80D030)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"16px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{t.enterApp}</button>
 
                 {/* 🔑 نسيت كلمة السر */}
                 <button onClick={() => { setShowForgot(true); setForgotPhone(loginPhone); }} style={{display:"block", width:"100%", padding:"12px", background:"transparent", border:"none", color:COLORS.accent2, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>{L("forgotPass")}</button>
@@ -1374,7 +1415,7 @@ export default function App() {
                   <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"16px", textAlign:lang==="ar"?"right":"left"}}>{L("forgotStep1")}</div>
                   <label style={lbl}>{t.phone}</label>
                   <input style={inp} placeholder={t.enter8} maxLength={8} value={forgotPhone} onChange={e => setForgotPhone(cleanPhone(e.target.value))}/>
-                  <button onClick={forgotFindUser} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"15px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{L("next2")}</button>
+                  <button onClick={forgotFindUser} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#80D030,#80D030)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"15px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{L("next2")}</button>
                 </>
               )}
 
@@ -1386,7 +1427,7 @@ export default function App() {
                   </div>
                   <label style={lbl}>{L("yourAnswer")}</label>
                   <input style={inp} value={forgotAnswer} onChange={e => setForgotAnswer(e.target.value)} onKeyDown={e => e.key === "Enter" && forgotVerify()}/>
-                  <button onClick={forgotVerify} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"15px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{L("verify")}</button>
+                  <button onClick={forgotVerify} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#80D030,#80D030)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"15px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{L("verify")}</button>
                 </>
               )}
 
@@ -1396,7 +1437,7 @@ export default function App() {
                   {passField({ id:"np1", value:newPass1, placeholder:t.enter4, onChange:e => setNewPass1(e.target.value.replace(/\D/g,"")) })}
                   <label style={lbl}>{L("confirmPass")}</label>
                   {passField({ id:"np2", value:newPass2, placeholder:t.enter4, onChange:e => setNewPass2(e.target.value.replace(/\D/g,"")) })}
-                  <button onClick={forgotReset} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"15px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{L("savePass")}</button>
+                  <button onClick={forgotReset} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#80D030,#80D030)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"15px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{L("savePass")}</button>
                 </>
               )}
 
@@ -1453,13 +1494,13 @@ export default function App() {
               </div>
             </div>
             {hasLocation(st) && (
-              <button onClick={() => window.open(mapsLink(st.latitude, st.longitude), "_blank")} style={{padding:"10px 14px", background:"#00B0FF22", color:COLORS.accent2, border:"1px solid #00B0FF44", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px", whiteSpace:"nowrap"}}>{L("showOnMap")}</button>
+              <button onClick={() => window.open(mapsLink(st.latitude, st.longitude), "_blank")} style={{padding:"10px 14px", background:"#80D03022", color:COLORS.accent2, border:"1px solid #80D03044", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px", whiteSpace:"nowrap"}}>{L("showOnMap")}</button>
             )}
           </div>
 
           {/* 🔑 زر إظهار الكود وزر تغييره — متقابلان */}
           <div style={{display:"flex", gap:"8px", marginBottom:"16px"}}>
-            <button onClick={() => setShowOwnerCode(v => !v)} style={{flex:1, padding:"11px 8px", background:"#00E67615", color:COLORS.accent, border:"1px solid #00E67644", borderRadius:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>
+            <button onClick={() => setShowOwnerCode(v => !v)} style={{flex:1, padding:"11px 8px", background:"#80D03015", color:COLORS.accent, border:"1px solid #80D03044", borderRadius:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>
               🔑 {showOwnerCode ? <b style={{letterSpacing:"2px", fontSize:"13px"}}>{owner?.owner_code}</b> : `${L("myCode")} • ••••••••`}
             </button>
             <button onClick={() => { if (confirm(L("confirmChangeCode"))) changeOwnerCode(); }} style={{flex:1, padding:"11px 8px", background:"#7C4DFF15", color:"#7C4DFF", border:"1px solid #7C4DFF44", borderRadius:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{L("changeCode")}</button>
@@ -1554,9 +1595,9 @@ export default function App() {
                   <div style={{background:`${pa?.color}22`, color:pa?.color, padding:"4px 10px", borderRadius:"20px", fontSize:"12px", fontWeight:"700", height:"fit-content"}}>{pa?.name}</div>
                 </div>
                 <div style={{background:COLORS.bg, borderRadius:"10px", padding:"10px 14px", marginBottom:"10px", fontSize:"13px"}}>{t.serialNum}: <span style={{color:COLORS.accent, fontWeight:"700"}}>{b.transaction_num}</span></div>
-                {b.proof_url && <button onClick={() => openProof(b.id)} style={{display:"block", width:"100%", textAlign:"center", padding:"10px", background:"#00B0FF22", color:COLORS.accent2, border:"1px solid #00B0FF44", borderRadius:"10px", fontWeight:"700", fontSize:"13px", cursor:"pointer", fontFamily:"inherit", marginBottom:"10px"}}>{L("viewProof")}</button>}
+                {b.proof_url && <button onClick={() => openProof(b.id)} style={{display:"block", width:"100%", textAlign:"center", padding:"10px", background:"#80D03022", color:COLORS.accent2, border:"1px solid #80D03044", borderRadius:"10px", fontWeight:"700", fontSize:"13px", cursor:"pointer", fontFamily:"inherit", marginBottom:"10px"}}>{L("viewProof")}</button>}
                 <div style={{display:"flex", gap:"10px"}}>
-                  <button onClick={() => isGroup ? handleGroup(b.group_id, true) : confirmBooking(b.id)} style={{flex:1, padding:"11px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{isGroup ? L("acceptAll") : t.confirm}</button>
+                  <button onClick={() => isGroup ? handleGroup(b.group_id, true) : confirmBooking(b.id)} style={{flex:1, padding:"11px", background:"linear-gradient(135deg,#80D030,#80D030)", border:"none", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{isGroup ? L("acceptAll") : t.confirm}</button>
                   <button onClick={() => isGroup ? handleGroup(b.group_id, false) : rejectBooking(b.id)} style={{flex:1, padding:"11px", background:"#FF444422", color:"#FF4444", border:"1px solid #FF444444", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit"}}>{isGroup ? L("rejectAll") : t.reject}</button>
                 </div>
               </div>
@@ -1619,7 +1660,7 @@ export default function App() {
   if (loading) return (
     <div style={{minHeight:"100vh", background:COLORS.bg, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Tajawal,sans-serif"}}>
       <div style={{textAlign:"center"}}>
-        <div style={{fontSize:"56px", marginBottom:"16px", filter:"drop-shadow(0 0 20px #00E676)"}}>⚽</div>
+        <div style={{fontSize:"56px", marginBottom:"16px", filter:"drop-shadow(0 0 20px #80D030)"}}>⚽</div>
         <div style={{color:COLORS.accent, fontSize:"18px", fontWeight:"700"}}>{t.loading}</div>
       </div>
     </div>
@@ -1629,8 +1670,17 @@ export default function App() {
     <div style={{minHeight:"100vh", background:COLORS.bg, fontFamily:"Tajawal,sans-serif", direction:isRTL?"rtl":"ltr", color:"#fff", touchAction:"pan-x pan-y", paddingBottom:"70px"}}>
       <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet"/>
       <div style={{background:COLORS.card, borderBottom:`1px solid ${COLORS.border}`, padding:"12px 16px", display:"flex", justifyContent:"space-between", alignItems:"center", position:"sticky", top:0, zIndex:50}}>
-        <div onClick={handleLogoClick} style={{fontSize:"18px", fontWeight:"800", background:"linear-gradient(135deg,#00E676,#00B0FF)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", cursor:"pointer", userSelect:"none"}}>⚽ {t.appName}</div>
+        <div onClick={handleLogoClick} style={{display:"flex", alignItems:"center", gap:"7px", cursor:"pointer", userSelect:"none"}}>
+          <img src="/logo.png" alt="malaabi" style={{width:"26px", height:"26px"}}/>
+          <BrandName text={t.appName} size="17px"/>
+        </div>
         <div style={{display:"flex", alignItems:"center", gap:"6px"}}>
+          {tab === "client" && (
+            <button onClick={() => setBottomTab("notifs")} style={{position:"relative", width:"32px", height:"32px", display:"flex", alignItems:"center", justifyContent:"center", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"8px", color: bottomTab==="notifs"?COLORS.accent:COLORS.muted, cursor:"pointer"}}>
+              <BellIcon/>
+              {unreadNotifs > 0 && <div style={{position:"absolute", top:"-4px", right:"-4px", background:"#FF4444", color:"#fff", borderRadius:"50%", width:"15px", height:"15px", fontSize:"9px", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:"700"}}>{unreadNotifs}</div>}
+            </button>
+          )}
           <LangButton/>
           <button onClick={handleLogout} style={{padding:"5px 10px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"8px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{t.logout}</button>
           {tab === "admin" && <button onClick={exitAdmin} style={{padding:"5px 10px", background:"#FF444422", border:"none", borderRadius:"8px", color:"#FF4444", fontWeight:"600", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{t.closeAdmin}</button>}
@@ -1666,7 +1716,7 @@ export default function App() {
                   </select>
                   {/* 🎯 زر الأقرب لي */}
                   <div style={{display:"flex", gap:"8px"}}>
-                    <button onClick={findNearest} style={{flex:2, padding:"12px", background: sortBy==="nearest"?"linear-gradient(135deg,#00E676,#00B0FF)":COLORS.bg, color: sortBy==="nearest"?"#000":COLORS.accent, border:`1px solid ${sortBy==="nearest"?"transparent":COLORS.border}`, borderRadius:"10px", fontWeight:"800", cursor:"pointer", fontFamily:"inherit", fontSize:"14px"}}>
+                    <button onClick={findNearest} style={{flex:2, padding:"12px", background: sortBy==="nearest"?"linear-gradient(135deg,#80D030,#80D030)":COLORS.bg, color: sortBy==="nearest"?"#000":COLORS.accent, border:`1px solid ${sortBy==="nearest"?"transparent":COLORS.border}`, borderRadius:"10px", fontWeight:"800", cursor:"pointer", fontFamily:"inherit", fontSize:"14px"}}>
                       {L("nearestBtn")}
                     </button>
                     {sortBy==="nearest" && (
@@ -1677,55 +1727,10 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* 🔥 الملاعب الشائعة — عرض أفقي */}
-                {(() => {
-                  const popular = stadiums
-                    .filter(s => s.status !== "suspended")
-                    .map(s => ({ s, cnt: confirmedBookings.filter(b => b.stadium_id === s.id).length }))
-                    .sort((a, b) => b.cnt - a.cnt)
-                    .slice(0, 8)
-                    .map(x => x.s);
-                  if (popular.length === 0) return null;
-                  return (
-                    <div style={{marginBottom:"22px"}}>
-                      <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"12px"}}>
-                        <div style={{fontSize:"17px", fontWeight:"800"}}>🔥 {L("popularFields")}</div>
-                        <button onClick={() => setSortBy("popular")} style={{background:"none", border:"none", color:COLORS.accent2, fontWeight:"700", fontSize:"13px", cursor:"pointer", fontFamily:"inherit"}}>{L("seeAll")}</button>
-                      </div>
-                      <div style={{display:"flex", gap:"12px", overflowX:"auto", paddingBottom:"6px", scrollbarWidth:"none"}}>
-                        {popular.map(s => <StadiumCardView key={s.id} s={s} wide/>)}
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* 📋 كيف يعمل التطبيق */}
-                <div style={{background:COLORS.card, borderRadius:"16px", border:`1px solid ${COLORS.border}`, padding:"18px 16px", marginBottom:"20px"}}>
-                  <div style={{fontSize:"16px", fontWeight:"800", marginBottom:"16px"}}>📋 {L("howItWorks")}</div>
-                  <div style={{display:"flex", alignItems:"flex-start", justifyContent:"space-between"}}>
-                    {[
-                      { n:1, icon:"🏟", label:L("step1Title") },
-                      { n:2, icon:"🕐", label:L("step2Title") },
-                      { n:3, icon:"✅", label:L("step3Title") },
-                    ].map((step, i, arr) => (
-                      <Fragment key={step.n}>
-                        <div style={{display:"flex", flexDirection:"column", alignItems:"center", gap:"8px", flex:1}}>
-                          <div style={{width:"48px", height:"48px", borderRadius:"50%", background:"linear-gradient(135deg,#00E676,#00B0FF)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"20px", position:"relative"}}>
-                            {step.icon}
-                            <div style={{position:"absolute", bottom:"-6px", insetInlineEnd:"-2px", width:"18px", height:"18px", borderRadius:"50%", background:COLORS.bg, border:`2px solid ${COLORS.card}`, fontSize:"10px", fontWeight:"800", color:COLORS.accent, display:"flex", alignItems:"center", justifyContent:"center"}}>{step.n}</div>
-                          </div>
-                          <div style={{fontSize:"11px", color:COLORS.muted, fontWeight:"700", textAlign:"center"}}>{step.label}</div>
-                        </div>
-                        {i < arr.length - 1 && <div style={{flex:0.5, height:"2px", background:COLORS.border, marginTop:"24px"}}></div>}
-                      </Fragment>
-                    ))}
-                  </div>
-                </div>
-
                 <div style={{display:"flex", gap:"8px", flexWrap:"wrap", marginBottom:"16px"}}>
                   {[t.all, ...wilayas].map((w, i) => {
                     const act = i === 0 ? filterWilaya === "الكل" : filterWilaya === w;
-                    return <button key={w} onClick={() => setFilterWilaya(i === 0 ? "الكل" : w)} style={{padding:"6px 14px", borderRadius:"20px", border:`1px solid ${act ? COLORS.accent : COLORS.border}`, cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"13px", background: act?"linear-gradient(135deg,#00E676,#00B0FF)":COLORS.card, color: act?"#000":COLORS.muted}}>{w}</button>;
+                    return <button key={w} onClick={() => setFilterWilaya(i === 0 ? "الكل" : w)} style={{padding:"6px 14px", borderRadius:"20px", border:`1px solid ${act ? COLORS.accent : COLORS.border}`, cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"13px", background: act?"linear-gradient(135deg,#80D030,#80D030)":COLORS.card, color: act?"#000":COLORS.muted}}>{w}</button>;
                   })}
                 </div>
                 {filteredStadiums.length===0 ? (
@@ -1798,7 +1803,7 @@ export default function App() {
 
                         {/* 🧭 اتجاهات الملعب في الإشعار المقبول */}
                         {b.status==="confirmed" && hasLocation(bst) && (
-                          <button onClick={() => window.open(directionsLink(bst.latitude, bst.longitude), "_blank")} style={{marginTop:"8px", display:"block", padding:"8px 14px", background:"#00B0FF22", color:COLORS.accent2, border:"1px solid #00B0FF44", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{L("directions")}</button>
+                          <button onClick={() => window.open(directionsLink(bst.latitude, bst.longitude), "_blank")} style={{marginTop:"8px", display:"block", padding:"8px 14px", background:"#80D03022", color:COLORS.accent2, border:"1px solid #80D03044", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{L("directions")}</button>
                         )}
                       </div>
                     </div>
@@ -1821,7 +1826,7 @@ export default function App() {
             {/* 👁 مشاهدة فقط */}
             {adminTab==="bookings" && (
               <div>
-                <div style={{background:"#00B0FF15", border:"1px solid #00B0FF33", borderRadius:"12px", padding:"12px", marginBottom:"16px", textAlign:"center", color:COLORS.accent2, fontSize:"13px", fontWeight:"700"}}>👁 {L("viewOnly")}</div>
+                <div style={{background:"#80D03015", border:"1px solid #80D03033", borderRadius:"12px", padding:"12px", marginBottom:"16px", textAlign:"center", color:COLORS.accent2, fontSize:"13px", fontWeight:"700"}}>👁 {L("viewOnly")}</div>
                 <div style={{display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"10px", marginBottom:"18px"}}>
                   {[["⏳",pendingBookings.length,L("waiting"),"#FF6D00"],["✅",confirmedBookings.length,L("accepted2"),COLORS.accent],["❌",bookings.filter(b=>b.status==="rejected").length,L("rejected2"),"#FF4444"]].map(([ic,v,lb,c],i)=>(
                     <div key={i} style={{background:COLORS.card, borderRadius:"12px", padding:"14px 8px", border:`1px solid ${c}33`, textAlign:"center"}}>
@@ -1851,7 +1856,7 @@ export default function App() {
                         <span>{t.serialNum}: <b style={{color:COLORS.accent}}>{b.transaction_num}</b></span>
                         <span style={{color:pa?.color, fontWeight:"700"}}>{pa?.name}</span>
                       </div>
-                      {b.proof_url && <button onClick={() => openProof(b.id)} style={{display:"block", width:"100%", textAlign:"center", padding:"11px", background:"#00B0FF22", color:COLORS.accent2, border:"1px solid #00B0FF44", borderRadius:"10px", fontWeight:"700", fontSize:"13px", cursor:"pointer", fontFamily:"inherit"}}>{L("viewProof")}</button>}
+                      {b.proof_url && <button onClick={() => openProof(b.id)} style={{display:"block", width:"100%", textAlign:"center", padding:"11px", background:"#80D03022", color:COLORS.accent2, border:"1px solid #80D03044", borderRadius:"10px", fontWeight:"700", fontSize:"13px", cursor:"pointer", fontFamily:"inherit"}}>{L("viewProof")}</button>}
                       {b.status === "confirmed" && b.code && (
                         <div style={{marginTop:"8px", textAlign:"center", background:`${COLORS.accent}15`, borderRadius:"10px", padding:"7px"}}>
                           <span style={{color:COLORS.muted, fontSize:"11px"}}>{L("bookingCode")}: </span>
@@ -1879,7 +1884,7 @@ export default function App() {
                         <div style={{color:COLORS.muted, fontSize:"12px"}}>📍 {s.wilaya} — {s.hood}</div>
                         <div style={{color:COLORS.accent2, fontSize:"12px", marginTop:"4px"}}>🔑 <b style={{letterSpacing:"1px"}}>{s.owner_code || "—"}</b></div>
                       </div>
-                      <div style={{background: s.status==="suspended"?"#FF444422":"#00E67622", color: s.status==="suspended"?"#FF4444":COLORS.accent, padding:"4px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"700"}}>{s.status==="suspended"?L("suspendedS"):L("active")}</div>
+                      <div style={{background: s.status==="suspended"?"#FF444422":"#80D03022", color: s.status==="suspended"?"#FF4444":COLORS.accent, padding:"4px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"700"}}>{s.status==="suspended"?L("suspendedS"):L("active")}</div>
                     </div>
                     <div style={{background:COLORS.bg, borderRadius:"12px", padding:"14px", marginBottom:"12px", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
                       <div>
@@ -1893,8 +1898,8 @@ export default function App() {
                       </div>
                     </div>
                     <div style={{display:"flex", gap:"8px"}}>
-                      <button onClick={() => resetDue(s.id)} style={{flex:1, padding:"10px", background:"#00E67622", color:COLORS.accent, border:"1px solid #00E67644", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>💰 {L("resetDue")}</button>
-                      <button onClick={() => toggleSuspend(s)} style={{flex:1, padding:"10px", background: s.status==="suspended"?"#00B0FF22":"#FF6D0022", color: s.status==="suspended"?COLORS.accent2:"#FF6D00", border:`1px solid ${s.status==="suspended"?"#00B0FF44":"#FF6D0044"}`, borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{s.status==="suspended"?"▶ "+L("activate"):"⛔ "+L("suspend")}</button>
+                      <button onClick={() => resetDue(s.id)} style={{flex:1, padding:"10px", background:"#80D03022", color:COLORS.accent, border:"1px solid #80D03044", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>💰 {L("resetDue")}</button>
+                      <button onClick={() => toggleSuspend(s)} style={{flex:1, padding:"10px", background: s.status==="suspended"?"#80D03022":"#FF6D0022", color: s.status==="suspended"?COLORS.accent2:"#FF6D00", border:`1px solid ${s.status==="suspended"?"#80D03044":"#FF6D0044"}`, borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{s.status==="suspended"?"▶ "+L("activate"):"⛔ "+L("suspend")}</button>
                       <button onClick={() => setConfirmDelete(s)} style={{padding:"10px 14px", background:"#FF444422", color:"#FF4444", border:"1px solid #FF444444", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>🗑</button>
                     </div>
                   </div>
@@ -1945,8 +1950,8 @@ export default function App() {
                         </div>
                       </div>
                       <div style={{display:"flex", gap:"8px", flexWrap:"wrap", justifyContent:"flex-end"}}>
-                        {hasLocation(s) && <button onClick={() => window.open(mapsLink(s.latitude, s.longitude), "_blank")} style={{padding:"8px 12px", background:"#00E67622", color:COLORS.accent, border:"1px solid #00E67644", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>🗺</button>}
-                        <button onClick={() => openEdit(s)} style={{padding:"8px 12px", background:"#00B0FF22", color:COLORS.accent2, border:"1px solid #00B0FF44", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{t.edit}</button>
+                        {hasLocation(s) && <button onClick={() => window.open(mapsLink(s.latitude, s.longitude), "_blank")} style={{padding:"8px 12px", background:"#80D03022", color:COLORS.accent, border:"1px solid #80D03044", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>🗺</button>}
+                        <button onClick={() => openEdit(s)} style={{padding:"8px 12px", background:"#80D03022", color:COLORS.accent2, border:"1px solid #80D03044", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{t.edit}</button>
                         <button onClick={() => setConfirmDelete(s)} style={{padding:"8px 12px", background:"#FF444422", color:"#FF4444", border:"1px solid #FF444444", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{t.delete}</button>
                       </div>
                     </div>
@@ -2002,7 +2007,7 @@ export default function App() {
                   </div>
                   <div style={{display:"flex", gap:"8px", flexWrap:"wrap", marginTop:"12px"}}>
                     {wilayas.map(w => (
-                      <div key={w} style={{background:"#00B0FF22", color:COLORS.accent2, padding:"4px 6px 4px 12px", borderRadius:"20px", fontSize:"12px", fontWeight:"700", display:"flex", alignItems:"center", gap:"6px"}}>
+                      <div key={w} style={{background:"#80D03022", color:COLORS.accent2, padding:"4px 6px 4px 12px", borderRadius:"20px", fontSize:"12px", fontWeight:"700", display:"flex", alignItems:"center", gap:"6px"}}>
                         {w}
                         <button onClick={() => handleDeleteWilaya(w)} title={L("delWilaya")} style={{width:"20px", height:"20px", borderRadius:"50%", background:"#FF444433", color:"#FF6B6B", border:"none", cursor:"pointer", fontFamily:"inherit", fontSize:"11px", lineHeight:"1", display:"flex", alignItems:"center", justifyContent:"center", padding:0}}>✕</button>
                       </div>
@@ -2026,7 +2031,7 @@ export default function App() {
                   <input style={inp} maxLength={8} value={newOwnerPhone} onChange={e => setNewOwnerPhone(cleanPhone(e.target.value))}/>
 
                   <label style={lbl}>🖼 {L("imageUrl")}</label>
-                  <label style={{display:"block", width:"100%", padding:"14px", background: newImage?"#00E67622":COLORS.bg, border:`2px dashed ${newImage?COLORS.accent:COLORS.border}`, borderRadius:"12px", color: newImage?COLORS.accent:COLORS.muted, fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px", textAlign:"center", marginBottom:"10px", boxSizing:"border-box"}}>
+                  <label style={{display:"block", width:"100%", padding:"14px", background: newImage?"#80D03022":COLORS.bg, border:`2px dashed ${newImage?COLORS.accent:COLORS.border}`, borderRadius:"12px", color: newImage?COLORS.accent:COLORS.muted, fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px", textAlign:"center", marginBottom:"10px", boxSizing:"border-box"}}>
                     {uploadingImg ? L("uploading") : newImage ? L("imageUploaded") : L("uploadImage")}
                     <input type="file" accept="image/*" style={{display:"none"}} onChange={e => handleUploadStadiumImage(e.target.files[0], false)}/>
                   </label>
@@ -2052,8 +2057,8 @@ export default function App() {
                     </div>
                   </div>
                   <div style={{display:"flex", gap:"8px", marginBottom:"16px"}}>
-                    <button onClick={() => getMyLocation(false)} style={{flex:1, padding:"11px", background:"#00B0FF22", color:COLORS.accent2, border:"1px solid #00B0FF44", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>{L("myLocation")}</button>
-                    {newLat && newLng && <button onClick={() => window.open(mapsLink(newLat, newLng), "_blank")} style={{flex:1, padding:"11px", background:"#00E67622", color:COLORS.accent, border:"1px solid #00E67644", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>{L("checkLocation")}</button>}
+                    <button onClick={() => getMyLocation(false)} style={{flex:1, padding:"11px", background:"#80D03022", color:COLORS.accent2, border:"1px solid #80D03044", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>{L("myLocation")}</button>
+                    {newLat && newLng && <button onClick={() => window.open(mapsLink(newLat, newLng), "_blank")} style={{flex:1, padding:"11px", background:"#80D03022", color:COLORS.accent, border:"1px solid #80D03044", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>{L("checkLocation")}</button>}
                   </div>
 
                   <div style={{fontWeight:"700", color:COLORS.accent, margin:"12px 0 10px"}}>{t.workingHours}</div>
@@ -2069,7 +2074,7 @@ export default function App() {
                       <input style={inp} value={newPayments[p.id]||""} onChange={e => setNewPayments(pr => ({...pr, [p.id]: e.target.value}))}/>
                     </div>
                   ))}
-                  <button onClick={handleAdd} style={{padding:"12px 24px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"14px", color:"#000"}}>{t.addStadiumBtn}</button>
+                  <button onClick={handleAdd} style={{padding:"12px 24px", background:"linear-gradient(135deg,#80D030,#80D030)", border:"none", borderRadius:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"14px", color:"#000"}}>{t.addStadiumBtn}</button>
                 </div>
               </div>
             )}
@@ -2109,7 +2114,7 @@ export default function App() {
             <input style={inp} maxLength={8} value={editOwnerPhone} onChange={e => setEditOwnerPhone(cleanPhone(e.target.value))}/>
 
             <label style={lbl}>🖼 {L("imageUrl")}</label>
-            <label style={{display:"block", width:"100%", padding:"14px", background: editImage?"#00E67622":COLORS.bg, border:`2px dashed ${editImage?COLORS.accent:COLORS.border}`, borderRadius:"12px", color: editImage?COLORS.accent:COLORS.muted, fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px", textAlign:"center", marginBottom:"10px", boxSizing:"border-box"}}>
+            <label style={{display:"block", width:"100%", padding:"14px", background: editImage?"#80D03022":COLORS.bg, border:`2px dashed ${editImage?COLORS.accent:COLORS.border}`, borderRadius:"12px", color: editImage?COLORS.accent:COLORS.muted, fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px", textAlign:"center", marginBottom:"10px", boxSizing:"border-box"}}>
               {uploadingImg ? L("uploading") : editImage ? L("imageUploaded") : L("uploadImage")}
               <input type="file" accept="image/*" style={{display:"none"}} onChange={e => handleUploadStadiumImage(e.target.files[0], true)}/>
             </label>
@@ -2131,8 +2136,8 @@ export default function App() {
               </div>
             </div>
             <div style={{display:"flex", gap:"8px", marginBottom:"16px"}}>
-              <button onClick={() => getMyLocation(true)} style={{flex:1, padding:"11px", background:"#00B0FF22", color:COLORS.accent2, border:"1px solid #00B0FF44", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>{L("myLocation")}</button>
-              {editLat && editLng && <button onClick={() => window.open(mapsLink(editLat, editLng), "_blank")} style={{flex:1, padding:"11px", background:"#00E67622", color:COLORS.accent, border:"1px solid #00E67644", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>{L("checkLocation")}</button>}
+              <button onClick={() => getMyLocation(true)} style={{flex:1, padding:"11px", background:"#80D03022", color:COLORS.accent2, border:"1px solid #80D03044", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>{L("myLocation")}</button>
+              {editLat && editLng && <button onClick={() => window.open(mapsLink(editLat, editLng), "_blank")} style={{flex:1, padding:"11px", background:"#80D03022", color:COLORS.accent, border:"1px solid #80D03044", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>{L("checkLocation")}</button>}
             </div>
 
             <div style={{fontWeight:"700", color:COLORS.accent, margin:"12px 0 10px"}}>{t.workingHours}</div>
@@ -2150,7 +2155,7 @@ export default function App() {
             ))}
             <div style={{display:"flex", gap:"12px"}}>
               <button onClick={() => setEditStadium(null)} style={{flex:1, padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>{t.cancel}</button>
-              <button onClick={handleEdit} style={{flex:2, padding:"12px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"12px", color:"#000", fontWeight:"700", cursor:"pointer", fontFamily:"inherit"}}>{t.saveEdit}</button>
+              <button onClick={handleEdit} style={{flex:2, padding:"12px", background:"linear-gradient(135deg,#80D030,#80D030)", border:"none", borderRadius:"12px", color:"#000", fontWeight:"700", cursor:"pointer", fontFamily:"inherit"}}>{t.saveEdit}</button>
             </div>
           </div>
         </div>
@@ -2184,7 +2189,7 @@ export default function App() {
             <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"12px"}}>📍 {selected.wilaya} - {selected.hood} - {selected.price}</div>
             {/* 🧭 اتجاهات الملعب داخل نافذة الحجز */}
             {hasLocation(selected) && (
-              <button onClick={() => window.open(directionsLink(selected.latitude, selected.longitude), "_blank")} style={{width:"100%", padding:"11px", background:"#00B0FF22", color:COLORS.accent2, border:"1px solid #00B0FF44", borderRadius:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px", marginBottom:"16px"}}>
+              <button onClick={() => window.open(directionsLink(selected.latitude, selected.longitude), "_blank")} style={{width:"100%", padding:"11px", background:"#80D03022", color:COLORS.accent2, border:"1px solid #80D03044", borderRadius:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px", marginBottom:"16px"}}>
                 {L("directions")}{stadiumDistance(selected) != null ? ` — ${stadiumDistance(selected).toFixed(1)} ${L("kmAway")}` : ""}
               </button>
             )}
@@ -2262,13 +2267,13 @@ export default function App() {
                 <label style={lbl}>{t.serialNum}</label>
                 <input style={inp} placeholder={t.enterSerial} maxLength={19} value={transactionNum} onChange={e => setTransactionNum(e.target.value)}/>
                 <label style={lbl}>{L("proof")}</label>
-                <label style={{display:"block", width:"100%", padding:"14px", background: proofUrl?"#00E67622":COLORS.bg, border:`2px dashed ${proofUrl?COLORS.accent:COLORS.border}`, borderRadius:"12px", color: proofUrl?COLORS.accent:COLORS.muted, fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px", textAlign:"center", marginBottom:"16px", boxSizing:"border-box"}}>
+                <label style={{display:"block", width:"100%", padding:"14px", background: proofUrl?"#80D03022":COLORS.bg, border:`2px dashed ${proofUrl?COLORS.accent:COLORS.border}`, borderRadius:"12px", color: proofUrl?COLORS.accent:COLORS.muted, fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px", textAlign:"center", marginBottom:"16px", boxSizing:"border-box"}}>
                   {uploading ? L("uploading") : proofUrl ? "✅ " + L("proof") : L("uploadProof")}
                   <input type="file" accept="image/*" style={{display:"none"}} onChange={e => handleUploadProof(e.target.files[0])}/>
                 </label>
                 <div style={{display:"flex", gap:"12px"}}>
                   <button onClick={() => setStep(1)} style={{flex:1, padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>{t.back}</button>
-                  <button disabled={!selectedPayApp||!transactionNum||!proofUrl} onClick={handleBook} style={{flex:2, padding:"12px", background:(!selectedPayApp||!transactionNum||!proofUrl)?COLORS.bg:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"12px", color:(!selectedPayApp||!transactionNum||!proofUrl)?COLORS.muted:"#000", fontWeight:"700", cursor:(!selectedPayApp||!transactionNum||!proofUrl)?"not-allowed":"pointer", fontFamily:"inherit"}}>{t.confirmBooking}</button>
+                  <button disabled={!selectedPayApp||!transactionNum||!proofUrl} onClick={handleBook} style={{flex:2, padding:"12px", background:(!selectedPayApp||!transactionNum||!proofUrl)?COLORS.bg:"linear-gradient(135deg,#80D030,#80D030)", border:"none", borderRadius:"12px", color:(!selectedPayApp||!transactionNum||!proofUrl)?COLORS.muted:"#000", fontWeight:"700", cursor:(!selectedPayApp||!transactionNum||!proofUrl)?"not-allowed":"pointer", fontFamily:"inherit"}}>{t.confirmBooking}</button>
                 </div>
               </>
             )}
@@ -2321,8 +2326,8 @@ export default function App() {
       {showAdminLogin && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.92)", zIndex:300, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px", backdropFilter:"blur(6px)"}} onClick={e => e.target===e.currentTarget && setShowAdminLogin(false)}>
           <div style={{background:`linear-gradient(160deg, ${COLORS.card}, #0a1020)`, borderRadius:"28px", border:"1px solid #7C4DFF44", width:"100%", maxWidth:"380px", padding:"36px 28px", textAlign:"center", boxShadow:"0 30px 80px rgba(124,77,255,0.25)"}}>
-            <div style={{width:"72px", height:"72px", margin:"0 auto 18px", borderRadius:"50%", background:"linear-gradient(135deg,#7C4DFF,#00B0FF)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"34px", boxShadow:"0 10px 30px rgba(124,77,255,0.4)"}}>👑</div>
-            <div style={{fontSize:"20px", fontWeight:"900", marginBottom:"6px", background:"linear-gradient(135deg,#7C4DFF,#00B0FF)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>{L("adminTitle")}</div>
+            <div style={{width:"72px", height:"72px", margin:"0 auto 18px", borderRadius:"50%", background:"linear-gradient(135deg,#7C4DFF,#80D030)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"34px", boxShadow:"0 10px 30px rgba(124,77,255,0.4)"}}>👑</div>
+            <div style={{fontSize:"20px", fontWeight:"900", marginBottom:"6px", background:"linear-gradient(135deg,#7C4DFF,#80D030)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>{L("adminTitle")}</div>
             <div style={{color:COLORS.muted, fontSize:"12px", marginBottom:"24px"}}>🔒 {L("adminPassLabel")}</div>
 
             <div style={{position:"relative", marginBottom:"18px"}}>
@@ -2343,7 +2348,7 @@ export default function App() {
               </button>
             </div>
 
-            <button onClick={handleAdminLogin} disabled={adminChecking} style={{width:"100%", padding:"15px", background: adminChecking ? COLORS.bg : "linear-gradient(135deg,#7C4DFF,#00B0FF)", border:"none", borderRadius:"14px", fontWeight:"900", fontSize:"16px", cursor: adminChecking ? "wait" : "pointer", fontFamily:"inherit", color: adminChecking ? COLORS.muted : "#fff"}}>
+            <button onClick={handleAdminLogin} disabled={adminChecking} style={{width:"100%", padding:"15px", background: adminChecking ? COLORS.bg : "linear-gradient(135deg,#7C4DFF,#80D030)", border:"none", borderRadius:"14px", fontWeight:"900", fontSize:"16px", cursor: adminChecking ? "wait" : "pointer", fontFamily:"inherit", color: adminChecking ? COLORS.muted : "#fff"}}>
               {adminChecking ? L("checking") : L("adminEnter")}
             </button>
             <button onClick={() => { setShowAdminLogin(false); setAdminPassInput(""); }} style={{width:"100%", padding:"12px", background:"transparent", border:"none", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", marginTop:"8px", fontSize:"13px"}}>
@@ -2376,7 +2381,7 @@ export default function App() {
                 {passField({ id:"setup", value:setupPass, placeholder:t.enter4, onChange:e => setSetupPass(e.target.value.replace(/\D/g,"")) })}
               </>
             )}
-            <button onClick={saveSecurityQ} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#00E676,#00B0FF)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"15px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{L("saveQ")}</button>
+            <button onClick={saveSecurityQ} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#80D030,#80D030)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"15px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{L("saveQ")}</button>
             <button onClick={() => setShowSetupQ(false)} style={{width:"100%", padding:"12px", background:"transparent", border:"none", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", marginTop:"8px", fontSize:"13px"}}>{L("later")}</button>
           </div>
         </div>
