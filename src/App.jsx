@@ -452,6 +452,14 @@ export default function App() {
     );
   };
 
+  // ⚽ شعار موحّد بتوهج دائري خفيف خلفه — بلا drop-shadow (يمنع ظهور توهج مربّع على خلفيات CSS)
+  const Logo = ({ size = 84, glow = 0.22, margin = "0 auto" }) => (
+    <div style={{position:"relative", width:size, height:size, margin}}>
+      <div style={{position:"absolute", inset:`-${Math.round(size*0.35)}px`, background:`radial-gradient(circle, #80D030${Math.round(glow*255).toString(16).padStart(2,"0")} 0%, transparent 68%)`, pointerEvents:"none"}}/>
+      <div role="img" aria-label="malaabi" {...noCopyImgProps} style={{position:"relative", width:"100%", height:"100%", backgroundImage:"url(/logo.png)", backgroundSize:"contain", backgroundRepeat:"no-repeat", backgroundPosition:"center", ...noCopyStyle}}/>
+    </div>
+  );
+
   // 🔒 حقل كلمة سر بزر إظهار — دالة لا مكوّن، حتى لا يفقد التركيز عند الكتابة
   const passField = ({ id, value, onChange, placeholder, maxLength = 4, onEnter, extra }) => (
     <div style={{position:"relative", marginBottom:"16px"}}>
@@ -583,7 +591,7 @@ export default function App() {
   if (splash) return (
     <div style={{minHeight:"100vh", background:"#0B0E08", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Arial,sans-serif"}}>
       <div style={{textAlign:"center"}}>
-        <div role="img" aria-label="malaabi" {...noCopyImgProps} style={{width:"96px", height:"96px", marginBottom:"14px", marginInline:"auto", filter:"drop-shadow(0 0 20px #80D03066)", backgroundImage:"url(/logo.png)", backgroundSize:"contain", backgroundRepeat:"no-repeat", backgroundPosition:"center", ...noCopyStyle}}/>
+        <div style={{marginBottom:"14px"}}><Logo size={96} glow={0.24}/></div>
         <div style={{fontSize:"48px", fontWeight:"900", letterSpacing:"3px", marginBottom:"8px", userSelect:"none", WebkitUserSelect:"none", MozUserSelect:"none", msUserSelect:"none"}}>
           <span style={{color:"#ffffff"}}>MALA</span><span style={{color:"#80D030"}}>ABI</span>
         </div>
@@ -1331,7 +1339,7 @@ export default function App() {
         <div style={{position:"fixed", top:"16px", left:"16px", zIndex:999}}><LangButton/></div>
         <div style={{width:"100%", maxWidth:"400px"}}>
           <div style={{textAlign:"center", marginBottom:"32px"}}>
-            <div role="img" aria-label="malaabi" {...noCopyImgProps} style={{width:"84px", height:"84px", marginBottom:"8px", marginInline:"auto", filter:"drop-shadow(0 0 20px #80D03066)", backgroundImage:"url(/logo.png)", backgroundSize:"contain", backgroundRepeat:"no-repeat", backgroundPosition:"center", ...noCopyStyle}}/>
+            <div style={{marginBottom:"8px"}}><Logo size={84} glow={0.24}/></div>
             <div><BrandName text={t.appName}/></div>
             <div style={{color:COLORS.muted, marginTop:"8px", fontSize:"15px"}}>{t.appSlogan}</div>
           </div>
@@ -1396,7 +1404,7 @@ export default function App() {
                 <button onClick={() => setScreen("ownerLogin")} style={{width:"100%", padding:"12px", background:"#FF6D0015", border:"1px solid #FF6D0044", borderRadius:"12px", color:"#FF6D00", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", marginTop:"12px", fontSize:"13px"}}>{L("ownerEntry")}</button>
               </>
             )}
-            <button onClick={() => setShowAbout(true)} style={{width:"100%", padding:"12px", background:"transparent", border:"none", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", marginTop:"8px", fontSize:"13px"}}>{lang==="ar" ? "🏟 تعرف علينا" : lang==="fr" ? "🏟 À propos" : "🏟 About us"}</button>
+            <button onClick={() => setShowAbout(true)} style={{width:"100%", padding:"12px", background:"transparent", border:"none", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", marginTop:"8px", fontSize:"13px"}}>{lang==="ar" ? "تعرف علينا" : lang==="fr" ? "À propos" : "About us"}</button>
           </div>
         </div>
 
@@ -1453,8 +1461,7 @@ export default function App() {
             <div style={{background:`linear-gradient(160deg, ${COLORS.card}, #060905)`, borderRadius:"28px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"440px", maxHeight:"88vh", overflow:"hidden", boxShadow:"0 30px 80px rgba(0,0,0,0.5)"}}>
               {/* 🏟 رأسية بتوهج أخضر وشعار حقيقي */}
               <div style={{position:"relative", padding:"36px 28px 24px", textAlign:"center", overflow:"hidden"}}>
-                <div style={{position:"absolute", top:"-60px", left:"50%", transform:"translateX(-50%)", width:"220px", height:"220px", background:"radial-gradient(circle, #80D03033, transparent 70%)", pointerEvents:"none"}}></div>
-                <div role="img" aria-label="malaabi" {...noCopyImgProps} style={{position:"relative", width:"72px", height:"72px", margin:"0 auto 14px", backgroundImage:"url(/logo.png)", backgroundSize:"contain", backgroundRepeat:"no-repeat", backgroundPosition:"center", filter:"drop-shadow(0 0 18px #80D03055)", ...noCopyStyle}}/>
+                <div style={{position:"relative", margin:"0 auto 14px"}}><Logo size={72} glow={0.12}/></div>
                 <div style={{position:"relative"}}><BrandName text="malaabi" size="26px"/></div>
                 <div style={{position:"relative", color:COLORS.accent, fontSize:"12px", fontWeight:"700", marginTop:"6px", letterSpacing:"0.5px"}}>{lang==="ar" ? "احجز ملعبك بسهولة" : lang==="fr" ? "Réservez facilement" : "Book your field easily"}</div>
               </div>
@@ -1685,7 +1692,7 @@ export default function App() {
       <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet"/>
       <div style={{background:COLORS.card, borderBottom:`1px solid ${COLORS.border}`, padding:"12px 16px", display:"flex", justifyContent:"space-between", alignItems:"center", position:"sticky", top:0, zIndex:50}}>
         <div onClick={handleLogoClick} style={{display:"flex", alignItems:"center", gap:"7px", cursor:"pointer", userSelect:"none"}}>
-          <div role="img" aria-label="malaabi" {...noCopyImgProps} style={{width:"26px", height:"26px", backgroundImage:"url(/logo.png)", backgroundSize:"contain", backgroundRepeat:"no-repeat", backgroundPosition:"center", flexShrink:0, ...noCopyStyle}}/>
+          <div style={{flexShrink:0}}><Logo size={26} glow={0}/></div>
           <BrandName text={t.appName} size="17px"/>
         </div>
         <div style={{display:"flex", alignItems:"center", gap:"6px"}}>
