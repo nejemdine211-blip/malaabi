@@ -1486,10 +1486,8 @@ export default function App() {
         {toast && <div style={{position:"fixed", bottom:"24px", left:"50%", transform:"translateX(-50%)", background:toast.color, color:"#fff", padding:"14px 28px", borderRadius:"16px", fontWeight:"700", zIndex:999, maxWidth:"90%", textAlign:"center"}}>{toast.msg}</div>}
       </div>
     );
-  }
-
   // ✅ واجهة صاحب الملعب
-  if (screen === "owner" && owner) {
+  } else if (screen === "owner" && owner) {
     const st = owner;   // 🔐 بياناته الكاملة تأتي من stadium-api لا من العرض العام
     const conf = ownerBookings.filter(b => b.status === "confirmed");
     mainContent = (
@@ -1682,9 +1680,7 @@ export default function App() {
         {toast && <div style={{position:"fixed", bottom:"24px", left:"50%", transform:"translateX(-50%)", background:toast.color, color:"#fff", padding:"14px 28px", borderRadius:"16px", fontWeight:"700", zIndex:999, maxWidth:"90%", textAlign:"center"}}>{toast.msg}</div>}
       </div>
     );
-  }
-
-  if (loading) {
+  } else if (loading) {
     mainContent = (
       <div style={{minHeight:"100vh", background:COLORS.bg, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Tajawal,sans-serif"}}>
         <div style={{textAlign:"center"}}>
@@ -2417,9 +2413,11 @@ export default function App() {
     <>
       {mainContent}
       {splash && (
-        <div style={{position:"fixed", inset:0, zIndex:9999, background:"#0B0E08", display:"flex", alignItems:"center", justifyContent:"center", opacity: splashFading ? 0 : 1, transition:"opacity 500ms ease", pointerEvents: splashFading ? "none" : "auto"}}>
-          <div style={{textAlign:"center"}}>
-            <div style={{marginBottom:"14px"}}><Logo size={84} glow={0.24}/></div>
+        <div style={{position:"fixed", inset:0, zIndex:9999, background:"#0B0E08", opacity: splashFading ? 0 : 1, transition:"opacity 500ms ease", pointerEvents: splashFading ? "none" : "auto"}}>
+          <div style={{position:"absolute", top:"50%", left:"50%", transform:"translate(-50%, -50%)"}}>
+            <Logo size={84} glow={0.24}/>
+          </div>
+          <div style={{position:"absolute", top:"calc(50% + 62px)", left:"50%", transform:"translateX(-50%)", textAlign:"center", whiteSpace:"nowrap"}}>
             <div style={{fontSize:"42px", fontWeight:"900", letterSpacing:"3px", marginBottom:"8px", userSelect:"none", WebkitUserSelect:"none"}}>
               <span style={{color:"#ffffff"}}>MALA</span><span style={{color:"#80D030"}}>ABI</span>
             </div>
