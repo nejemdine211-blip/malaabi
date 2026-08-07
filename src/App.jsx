@@ -305,6 +305,9 @@ export default function App() {
   const L = (k) => TXT[k][lang];
   const isRTL = lang === "ar";
   const [showContact, setShowContact] = useState(false);
+  // ⚽ شاشة الشعار — تظهر ٣ ثوانٍ ثم تتلاشى بنعومة فوق الصفحة الجاهزة أصلاً خلفها (بلا قفزة)
+  const [splash, setSplash] = useState(true);
+  const [splashFading, setSplashFading] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [bottomTab, setBottomTab] = useState("stadiums");
 
@@ -523,6 +526,12 @@ export default function App() {
     if (r.data) setRatingsMap(Object.fromEntries(r.data.map(x => [x.stadium_id, x])));
     setLoading(false);
   };
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setSplashFading(true), 3000);   // بعد ٣ ثوانٍ يبدأ التلاشي
+    const t2 = setTimeout(() => setSplash(false), 3500);        // بعد ٥٠٠ مل إضافية يُزال كلياً
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
 
   useEffect(() => {
     // 🛟 قراءة آمنة — لو كانت القيمة تالفة نمسحها بدل أن ينهار التطبيق
@@ -1326,10 +1335,11 @@ export default function App() {
   };
 
   // ✅ شاشة الدخول — 3 خيارات
+  let mainContent = null;
   if (screen === "login" || screen === "register" || screen === "ownerLogin") {
     const isReg = screen === "register";
     const isOwner = screen === "ownerLogin";
-    return (
+    mainContent = (
       <div style={{minHeight:"100vh", background:COLORS.bg, fontFamily:"Tajawal,sans-serif", direction:isRTL?"rtl":"ltr", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", padding:"24px"}}>
         <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet"/>
         <div style={{position:"fixed", top:"16px", left:"16px", zIndex:999}}><LangButton/></div>
@@ -1482,7 +1492,7 @@ export default function App() {
   if (screen === "owner" && owner) {
     const st = owner;   // 🔐 بياناته الكاملة تأتي من stadium-api لا من العرض العام
     const conf = ownerBookings.filter(b => b.status === "confirmed");
-    return (
+    mainContent = (
       <div style={{minHeight:"100vh", background:COLORS.bg, fontFamily:"Tajawal,sans-serif", direction:isRTL?"rtl":"ltr", color:"#fff", paddingBottom:"24px"}}>
         <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet"/>
         <div style={{background:COLORS.card, borderBottom:`1px solid ${COLORS.border}`, padding:"12px 16px", display:"flex", justifyContent:"space-between", alignItems:"center", position:"sticky", top:0, zIndex:50}}>
@@ -1674,16 +1684,17 @@ export default function App() {
     );
   }
 
-  if (loading) return (
-    <div style={{minHeight:"100vh", background:COLORS.bg, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Tajawal,sans-serif"}}>
-      <div style={{textAlign:"center"}}>
-        <div style={{fontSize:"56px", marginBottom:"16px", filter:"drop-shadow(0 0 20px #80D030)"}}>⚽</div>
-        <div style={{color:COLORS.accent, fontSize:"18px", fontWeight:"700"}}>{t.loading}</div>
+  if (loading) {
+    mainContent = (
+      <div style={{minHeight:"100vh", background:COLORS.bg, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Tajawal,sans-serif"}}>
+        <div style={{textAlign:"center"}}>
+          <div style={{fontSize:"56px", marginBottom:"16px", filter:"drop-shadow(0 0 20px #80D030)"}}>⚽</div>
+          <div style={{color:COLORS.accent, fontSize:"18px", fontWeight:"700"}}>{t.loading}</div>
+        </div>
       </div>
-    </div>
-  );
-
-  return (
+    );
+  } else {
+    mainContent = (
     <div style={{minHeight:"100vh", background:COLORS.bg, fontFamily:"Tajawal,sans-serif", direction:isRTL?"rtl":"ltr", color:"#fff", touchAction:"pan-x pan-y", paddingBottom:"70px"}}>
       <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet"/>
       <div style={{background:COLORS.card, borderBottom:`1px solid ${COLORS.border}`, padding:"12px 16px", display:"flex", justifyContent:"space-between", alignItems:"center", position:"sticky", top:0, zIndex:50}}>
@@ -2398,5 +2409,24 @@ export default function App() {
 
       {toast && <div style={{position:"fixed", bottom:"80px", left:"50%", transform:"translateX(-50%)", background:toast.color, color:"#fff", padding:"14px 28px", borderRadius:"16px", fontWeight:"700", zIndex:999, maxWidth:"90%", textAlign:"center"}}>{toast.msg}</div>}
     </div>
+    );
+  }
+
+  // ⚽ طبقة شعار متلاشية فوق الصفحة الجاهزة أصلاً خلفها — بلا أي قفزة موضع أو حجم
+  return (
+    <>
+      {mainContent}
+      {splash && (
+        <div style={{position:"fixed", inset:0, zIndex:9999, background:"#0B0E08", display:"flex", alignItems:"center", justifyContent:"center", opacity: splashFading ? 0 : 1, transition:"opacity 500ms ease", pointerEvents: splashFading ? "none" : "auto"}}>
+          <div style={{textAlign:"center"}}>
+            <div style={{marginBottom:"14px"}}><Logo size={84} glow={0.24}/></div>
+            <div style={{fontSize:"42px", fontWeight:"900", letterSpacing:"3px", marginBottom:"8px", userSelect:"none", WebkitUserSelect:"none"}}>
+              <span style={{color:"#ffffff"}}>MALA</span><span style={{color:"#80D030"}}>ABI</span>
+            </div>
+            <div style={{color:"#80D030", fontSize:"14px", userSelect:"none", WebkitUserSelect:"none"}}>⚽ احجز ملعبك بسهولة</div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
