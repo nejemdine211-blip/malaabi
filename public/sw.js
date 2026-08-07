@@ -1,16 +1,12 @@
-// Minimal Service Worker for Malaabi PWA
-const CACHE_NAME = 'malaabi-cache-v1';
-
-self.addEventListener('install', (event) => {
-  self.skipWaiting();
-});
-
+// 🔒 تم إيقاف Service Worker نهائياً — هذا الملف فارغ عمداً.
+// أي نسخة قديمة مسجَّلة عند المستخدمين سيتم إلغاؤها تلقائياً عبر index.html
+self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
-});
-
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+  event.waitUntil(
+    self.registration.unregister().then(() => {
+      return self.clients.matchAll();
+    }).then((clients) => {
+      clients.forEach((client) => client.navigate(client.url));
+    })
   );
 });

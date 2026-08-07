@@ -49,9 +49,10 @@
 </style>
   </head>
   <script>
+  // 🔒 لا نُسجّل أي Service Worker — وهذا يُلغي أي نسخة قديمة عالقة من زيارة سابقة
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js');
+    navigator.serviceWorker.getRegistrations().then((regs) => {
+      regs.forEach((r) => r.unregister());
     });
   }
 </script>
