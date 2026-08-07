@@ -49,10 +49,10 @@
 </style>
   </head>
   <script>
-  // 🔒 لا نُسجّل أي Service Worker — وهذا يُلغي أي نسخة قديمة عالقة من زيارة سابقة
+  // ✅ نُسجّل Service Worker الصحيح — ضروري لتحويل الموقع لتطبيق (معيار PWA أساسي)
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then((regs) => {
-      regs.forEach((r) => r.unregister());
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js');
     });
   }
 </script>
