@@ -528,8 +528,8 @@ export default function App() {
   };
 
   useEffect(() => {
-    const t1 = setTimeout(() => setSplashFading(true), 3000);   // بعد ٣ ثوانٍ يبدأ التلاشي
-    const t2 = setTimeout(() => setSplash(false), 3500);        // بعد ٥٠٠ مل إضافية يُزال كلياً
+    const t1 = setTimeout(() => setSplashFading(true), 1000);    // ثانية واحدة الآن للاختبار
+    const t2 = setTimeout(() => setSplash(false), 1500);         // + نصف ثانية للتلاشي
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
