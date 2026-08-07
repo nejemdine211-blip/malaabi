@@ -296,8 +296,88 @@ const TXT = {
   findField: { ar:"أين تريد اللعب؟", fr:"Où voulez-vous jouer ?", en:"Where do you want to play?" },
 };
 
+// (كل الأيقونات هنا مُعرَّفة خارج App عمداً — لنفس سبب BrandName وLogo أدناه: منع إعادة التركيب عند كل ضغطة)
+function EyeIcon({ open }) {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1.5 12S5 5.5 12 5.5 22.5 12 22.5 12 19 18.5 12 18.5 1.5 12 1.5 12z"/>
+      <circle cx="12" cy="12" r="3.2"/>
+      {!open && <line x1="3" y1="21" x2="21" y2="3"/>}
+    </svg>
+  );
+}
+function HomeIcon({ active }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.3 : 1.9} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 10.5 12 3l9 7.5"/>
+      <path d="M5.5 9.5V20a1 1 0 0 0 1 1H9a1 1 0 0 0 1-1v-4.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V20a1 1 0 0 0 1 1h2.5a1 1 0 0 0 1-1V9.5"/>
+    </svg>
+  );
+}
+function HeartIcon({ active }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth={active ? 1.5 : 1.9} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 20.5s-7.5-4.6-10-9.4C.5 7.8 2.3 4.5 5.7 4c2.2-.3 4.2.8 6.3 3 2.1-2.2 4.1-3.3 6.3-3 3.4.5 5.2 3.8 3.7 7.1-2.5 4.8-10 9.4-10 9.4z"/>
+    </svg>
+  );
+}
+function PersonIcon({ active }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.3 : 1.9} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="4"/>
+      <path d="M4.5 20.5c1.2-4 4-6 7.5-6s6.3 2 7.5 6"/>
+    </svg>
+  );
+}
+function BellIcon() {
+  return (
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 7H4c0-1 2-2 2-7Z"/>
+      <path d="M10 20a2 2 0 0 0 4 0"/>
+    </svg>
+  );
+}
+function CalendarIcon({ active }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.3 : 1.9} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3.5" y="5" width="17" height="16" rx="2"/>
+      <path d="M3.5 9.5h17"/>
+      <path d="M8 3v4M16 3v4"/>
+    </svg>
+  );
+}
+
+// 🔒 خصائص تمنع حفظ/نسخ الشعار عبر الضغط المطوّل أو كليك يمين أو السحب
+const noCopyImgProps = { draggable: false, onContextMenu: (e) => e.preventDefault() };
+const noCopyStyle = { WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none" };
+
+// 🎨 اسم العلامة بلونين — مُعرَّف خارج App عمداً (كان يُعاد "تركيبه" عند كل ضغطة حرف، فيسبب وميض الكرة المصاحبة له)
+function BrandName({ text, size = "32px" }) {
+  const upper = text.toUpperCase();
+  const greenLen = Math.min(3, Math.max(1, Math.floor(upper.length / 2)));
+  const head = upper.slice(0, upper.length - greenLen);
+  const tail = upper.slice(upper.length - greenLen);
+  return (
+    <span style={{fontSize:size, fontWeight:"800", userSelect:"none", WebkitUserSelect:"none", MozUserSelect:"none", msUserSelect:"none", letterSpacing:"0.5px"}}>
+      <span style={{color:"#ffffff"}}>{head}</span><span style={{color:"#80D030"}}>{tail}</span>
+    </span>
+  );
+}
+
+// ⚽ الشعار — مُعرَّف خارج App عمداً؛ هذا هو الإصلاح الحاسم لمشكلة "الكرة تتحرك عند كل ضغطة"
+function Logo({ size = 84, glow = 0.22, margin = "0 auto" }) {
+  return (
+    <div style={{position:"relative", width:size, height:size, margin}}>
+      {glow > 0 && (
+        <div style={{position:"absolute", inset:`-${Math.round(size*0.35)}px`, background:`radial-gradient(circle, #80D030${Math.round(glow*255).toString(16).padStart(2,"0")} 0%, transparent 68%)`, pointerEvents:"none"}}/>
+      )}
+      <div role="img" aria-label="malaabi" {...noCopyImgProps} style={{position:"relative", width:"100%", height:"100%", backgroundImage:"url(/logo.png)", backgroundSize:"contain", backgroundRepeat:"no-repeat", backgroundPosition:"center", ...noCopyStyle}}/>
+    </div>
+  );
+}
+
 // 🏟 بطاقة ملعب — مُعرَّفة خارج App عمداً حتى لا يُعاد "تركيبها" من جديد عند كل إعادة رسم للتطبيق
-// (وهذا كان السبب في اهتزاز/اختفاء صور الملاعب لحظياً عند أي ضغطة في أي مكان بالتطبيق)
+// (وهذا كان السبب في اهتزاز/اختفاء صور الملاعب وشعار "الكرة" لحظياً عند أي ضغطة في أي مكان بالتطبيق)
 function StadiumCardView({ s, wide, lang, t, L, bookings, myPos, favorites, user, toggleFavorite, ratingsMap, onBook }) {
   const isBooked = (sid, d, h) => bookings.some(b => b.stadium_id === sid && b.date === d && b.hour === h && b.status !== "rejected");
   const stadiumDistance = (st) => (myPos && hasLocation(st)) ? distanceKm(myPos.lat, myPos.lng, st.latitude, st.longitude) : null;
@@ -357,9 +437,7 @@ function StadiumCardView({ s, wide, lang, t, L, bookings, myPos, favorites, user
 }
 
 export default function App() {
-  // 🔒 خصائص تمنع حفظ/نسخ الشعار عبر الضغط المطوّل أو كليك يمين أو السحب
-  const noCopyImgProps = { draggable: false, onContextMenu: (e) => e.preventDefault() };
-  const noCopyStyle = { WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none" };
+  // (noCopyImgProps وnoCopyStyle انتقلا لمستوى الوحدة أسفل الملف)
   const [lang, setLang] = useState(() => localStorage.getItem("malaabi_lang") || "ar");
   const t = translations[lang];
   const L = (k) => TXT[k][lang];
@@ -471,62 +549,9 @@ export default function App() {
     if (Notification.permission === "granted") new Notification(title, { body, icon: "/icon.png" });
   };
 
-  // 👁 أيقونة العين — SVG بسيط
-  const EyeIcon = ({ open }) => (
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M1.5 12S5 5.5 12 5.5 22.5 12 22.5 12 19 18.5 12 18.5 1.5 12 1.5 12z"/>
-      <circle cx="12" cy="12" r="3.2"/>
-      {!open && <line x1="3" y1="21" x2="21" y2="3"/>}
-    </svg>
-  );
+  // (كل الأيقونات — العين، البيت، القلب، الشخص، الجرس، التقويم — انتقلت لمستوى الوحدة أسفل الملف)
 
-  // 🏠 أيقونات شريط التنقل — نمط خطي بسيط، مطابق لهوية العلامة
-  const HomeIcon = ({ active }) => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.3 : 1.9} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 10.5 12 3l9 7.5"/>
-      <path d="M5.5 9.5V20a1 1 0 0 0 1 1H9a1 1 0 0 0 1-1v-4.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V20a1 1 0 0 0 1 1h2.5a1 1 0 0 0 1-1V9.5"/>
-    </svg>
-  );
-  const HeartIcon = ({ active }) => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth={active ? 1.5 : 1.9} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 20.5s-7.5-4.6-10-9.4C.5 7.8 2.3 4.5 5.7 4c2.2-.3 4.2.8 6.3 3 2.1-2.2 4.1-3.3 6.3-3 3.4.5 5.2 3.8 3.7 7.1-2.5 4.8-10 9.4-10 9.4z"/>
-    </svg>
-  );
-  const PersonIcon = ({ active }) => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.3 : 1.9} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="8" r="4"/>
-      <path d="M4.5 20.5c1.2-4 4-6 7.5-6s6.3 2 7.5 6"/>
-    </svg>
-  );
-  const BellIcon = () => (
-    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 7H4c0-1 2-2 2-7Z"/>
-      <path d="M10 20a2 2 0 0 0 4 0"/>
-    </svg>
-  );
-
-  // 🎨 اسم العلامة بلونين — أبيض ثم أخضر على آخر الأحرف، كما في هوية ملاعبي البصرية
-  const BrandName = ({ text, size = "32px" }) => {
-    const upper = text.toUpperCase();
-    const greenLen = Math.min(3, Math.max(1, Math.floor(upper.length / 2)));
-    const head = upper.slice(0, upper.length - greenLen);
-    const tail = upper.slice(upper.length - greenLen);
-    return (
-      <span style={{fontSize:size, fontWeight:"800", userSelect:"none", WebkitUserSelect:"none", MozUserSelect:"none", msUserSelect:"none", letterSpacing:"0.5px"}}>
-        <span style={{color:"#ffffff"}}>{head}</span><span style={{color:"#80D030"}}>{tail}</span>
-      </span>
-    );
-  };
-
-  // ⚽ شعار موحّد — بلا drop-shadow (يمنع ظهور توهج مربّع على خلفيات CSS)
-  const Logo = ({ size = 84, glow = 0.22, margin = "0 auto" }) => (
-    <div style={{position:"relative", width:size, height:size, margin}}>
-      {glow > 0 && (
-        <div style={{position:"absolute", inset:`-${Math.round(size*0.35)}px`, background:`radial-gradient(circle, #80D030${Math.round(glow*255).toString(16).padStart(2,"0")} 0%, transparent 68%)`, pointerEvents:"none"}}/>
-      )}
-      <div role="img" aria-label="malaabi" {...noCopyImgProps} style={{position:"relative", width:"100%", height:"100%", backgroundImage:"url(/logo.png)", backgroundSize:"contain", backgroundRepeat:"no-repeat", backgroundPosition:"center", ...noCopyStyle}}/>
-    </div>
-  );
+  // (BrandName وLogo انتقلا لمستوى الوحدة أسفل الملف — انظر السبب في تعليق StadiumCardView)
 
   // 🔒 حقل كلمة سر بزر إظهار — دالة لا مكوّن، حتى لا يفقد التركيز عند الكتابة
   const passField = ({ id, value, onChange, placeholder, maxLength = 4, onEnter, extra }) => (
@@ -1313,14 +1338,6 @@ export default function App() {
     backgroundRepeat:"no-repeat", backgroundPosition: isRTL ? "left 16px center" : "right 16px center",
     paddingInlineEnd:"38px" };
   const opt = { background:COLORS.card, color:"#fff" };
-
-  const CalendarIcon = ({ active }) => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.3 : 1.9} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3.5" y="5" width="17" height="16" rx="2"/>
-      <path d="M3.5 9.5h17"/>
-      <path d="M8 3v4M16 3v4"/>
-    </svg>
-  );
 
   const BottomNav = () => {
     const items = [
