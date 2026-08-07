@@ -304,12 +304,14 @@ export default function App() {
   const t = translations[lang];
   const L = (k) => TXT[k][lang];
   const isRTL = lang === "ar";
-  const [showContact, setShowContact] = useState(false);
-  // ⚽ شاشة الشعار — تظهر ٣ ثوانٍ ثم تتلاشى بنعومة فوق الصفحة الجاهزة أصلاً خلفها (بلا قفزة)
-  const [splash, setSplash] = useState(true);
-  const [splashFading, setSplashFading] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [showRateNotifs, setShowRateNotifs] = useState(false);   // 🔔 إشعارات التقييم فقط، منفصلة عن الحجوزات
   const [bottomTab, setBottomTab] = useState("stadiums");
+  // 🔔 معرّفات الحجوزات التي شاهدها الزبون بالفعل — محفوظة محلياً، تبقى حتى بعد تسجيل الخروج والدخول
+  const [readNotifIds, setReadNotifIds] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("malaabi_read_notifs") || "[]"); }
+    catch (_e) { return []; }
+  });
 
   const [screen, setScreen] = useState("login");
   const [user, setUser] = useState(null);
@@ -527,12 +529,6 @@ export default function App() {
   };
 
   useEffect(() => {
-    const t1 = setTimeout(() => setSplashFading(true), 1000);    // ثانية واحدة الآن للاختبار
-    const t2 = setTimeout(() => setSplash(false), 1500);         // + نصف ثانية للتلاشي
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, []);
-
-  useEffect(() => {
     // 🛟 قراءة آمنة — لو كانت القيمة تالفة نمسحها بدل أن ينهار التطبيق
     const readSaved = (k) => {
       try {
@@ -596,6 +592,19 @@ export default function App() {
       }).subscribe();
     return () => supabase.removeChannel(ch);
   }, [user, lang]);
+
+  // 🔔 عند فتح تبويب "الحجوزات"، نُعلّم كل الحجوزات المعروضة حالياً كمقروءة — لا تُحسب مجدداً حتى بعد الخروج والدخول
+  useEffect(() => {
+    if (bottomTab !== "notifs" || !user) return;
+    const currentIds = myBookingsList.filter(b => b.status !== "pending").map(b => b.id);
+    if (currentIds.length === 0) return;
+    setReadNotifIds(prev => {
+      const merged = Array.from(new Set([...prev, ...currentIds]));
+      if (merged.length === prev.length) return prev;
+      localStorage.setItem("malaabi_read_notifs", JSON.stringify(merged));
+      return merged;
+    });
+  }, [bottomTab, myBookingsList, user]);
 
   const showToast = (msg, color=COLORS.accent) => { setToast({msg, color}); setTimeout(() => setToast(null), 4000); };
 
@@ -1200,7 +1209,8 @@ export default function App() {
   // 🔒 حجوزات الزبون تأتي من الخادم — جدول الحجوزات لم يعد مقروءاً مباشرة
   const myBookings = user ? myBookingsList : [];
   const myConfirmedBookings = myBookings.filter(b => b.status === "confirmed");
-  const unreadNotifs = myBookings.filter(b => b.status !== "pending").length;
+  const unreadNotifs = myBookings.filter(b => b.status !== "pending" && !readNotifIds.includes(b.id)).length;
+  const pendingRatingsCount = myBookings.filter(b => canRate(b)).length;   // 🔔 عدد الحجوزات التي تستحق تقييماً الآن
   const totalDues = stadiums.reduce((a,s) => a + (s.balance_due || 0), 0);
 
   // 📏 المسافة بين الزبون والملعب
@@ -1244,12 +1254,20 @@ export default function App() {
     paddingInlineEnd:"38px" };
   const opt = { background:COLORS.card, color:"#fff" };
 
+  const CalendarIcon = ({ active }) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.3 : 1.9} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3.5" y="5" width="17" height="16" rx="2"/>
+      <path d="M3.5 9.5h17"/>
+      <path d="M8 3v4M16 3v4"/>
+    </svg>
+  );
+
   const BottomNav = () => {
     const items = [
       { id:"stadiums", label: lang==="ar"?"الملاعب":lang==="fr"?"Accueil":"Home" },
+      { id:"notifs", label: lang==="ar"?"الحجوزات":lang==="fr"?"Réservations":"Reservations", badge: unreadNotifs },
       { id:"favorites", label: L("favorites"), badge: favorites.length },
       { id:"profile", label: lang==="ar"?"حسابي":lang==="fr"?"Profil":"Profile" },
-      { id:"contact", label: lang==="ar"?"اتصل بنا":lang==="fr"?"Contact":"Contact" },
     ];
     return (
       <div style={{position:"fixed", bottom:0, left:0, right:0, background:COLORS.card, borderTop:`1px solid ${COLORS.border}`, display:"flex", zIndex:50, paddingBottom:"8px"}}>
@@ -1258,15 +1276,14 @@ export default function App() {
           const color = active ? COLORS.accent : COLORS.muted;
           return (
             <button key={item.id} onClick={() => {
-              if (item.id === "contact") return setShowContact(true);
               if (item.id === "profile") return setShowProfile(true);
               setBottomTab(item.id);
             }} style={{flex:1, padding:"10px 4px 4px", background:"none", border:"none", cursor:"pointer", fontFamily:"inherit", display:"flex", flexDirection:"column", alignItems:"center", gap:"5px"}}>
               <div style={{position:"relative", color, display:"flex"}}>
                 {item.id === "stadiums" && <HomeIcon active={active}/>}
+                {item.id === "notifs" && <CalendarIcon active={active}/>}
                 {item.id === "favorites" && <HeartIcon active={active}/>}
                 {item.id === "profile" && <PersonIcon active={active}/>}
-                {item.id === "contact" && <span style={{fontSize:"20px", lineHeight:1}}>💬</span>}
                 {item.badge > 0 && <div style={{position:"absolute", top:"-4px", right:"-6px", background:"#FF4444", color:"#fff", borderRadius:"50%", width:"16px", height:"16px", fontSize:"10px", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:"700"}}>{item.badge}</div>}
               </div>
               <div style={{fontSize:"10px", color, fontWeight: active?"700":"400"}}>{item.label}</div>
@@ -1690,9 +1707,9 @@ export default function App() {
         </div>
         <div style={{display:"flex", alignItems:"center", gap:"6px"}}>
           {tab === "client" && (
-            <button onClick={() => setBottomTab("notifs")} style={{position:"relative", width:"32px", height:"32px", display:"flex", alignItems:"center", justifyContent:"center", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"8px", color: bottomTab==="notifs"?COLORS.accent:COLORS.muted, cursor:"pointer"}}>
+            <button onClick={() => setShowRateNotifs(true)} style={{position:"relative", width:"32px", height:"32px", display:"flex", alignItems:"center", justifyContent:"center", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"8px", color:COLORS.muted, cursor:"pointer"}}>
               <BellIcon/>
-              {unreadNotifs > 0 && <div style={{position:"absolute", top:"-4px", right:"-4px", background:"#FF4444", color:"#fff", borderRadius:"50%", width:"15px", height:"15px", fontSize:"9px", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:"700"}}>{unreadNotifs}</div>}
+              {pendingRatingsCount > 0 && <div style={{position:"absolute", top:"-4px", right:"-4px", background:"#FFD700", color:"#000", borderRadius:"50%", width:"15px", height:"15px", fontSize:"9px", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:"700"}}>{pendingRatingsCount}</div>}
             </button>
           )}
           <LangButton/>
@@ -1770,11 +1787,11 @@ export default function App() {
 
             {bottomTab==="notifs" && (
               <div>
-                <div style={{fontSize:"20px", fontWeight:"800", marginBottom:"20px"}}>🔔 {lang==="ar"?"الإشعارات":"Notifications"}</div>
+                <div style={{fontSize:"20px", fontWeight:"800", marginBottom:"20px"}}>📅 {lang==="ar"?"الحجوزات":lang==="fr"?"Réservations":"Reservations"}</div>
                 {myBookings.length===0 ? (
                   <div style={{textAlign:"center", padding:"60px", color:COLORS.muted}}>
-                    <div style={{fontSize:"48px", marginBottom:"12px"}}>🔔</div>
-                    <div>{lang==="ar"?"لا توجد إشعارات":"No notifications"}</div>
+                    <div style={{fontSize:"48px", marginBottom:"12px"}}>📅</div>
+                    <div>{lang==="ar"?"لا توجد حجوزات":"No reservations"}</div>
                   </div>
                 ) : myBookings.slice().reverse().map((b,i) => {
                   const sc = b.status==="confirmed"?COLORS.accent:b.status==="rejected"?"#FF4444":"#FF6D00";
@@ -1794,20 +1811,13 @@ export default function App() {
                             <span style={{color:COLORS.accent, fontWeight:"800", letterSpacing:"2px"}}>{b.code}</span>
                           </div>
                         )}
-                        {/* ⭐ تقييم الحجز بعد انتهاء موعده — زر واحد واضح */}
-                        {canRate(b) && (
-                          <div style={{marginTop:"10px", background:"#FFD70012", border:"1px solid #FFD70033", borderRadius:"12px", padding:"12px"}}>
-                            <div style={{fontSize:"12px", color:"#FFD700", fontWeight:"700", marginBottom:"8px"}}>{L("rateTitle")}</div>
-                            <button onClick={() => { setRateBooking(b); setRateStars(0); setRateText(""); }} style={{width:"100%", padding:"10px", background:"linear-gradient(135deg,#FFD700,#FF9500)", border:"none", borderRadius:"10px", fontWeight:"800", fontSize:"13px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{L("rateNow")}</button>
-                          </div>
-                        )}
                         {myRatingOf(b.id) && (
                           <div style={{marginTop:"8px", fontSize:"12px", color:"#FFD700"}}>
                             {L("yourRating")}: {"⭐".repeat(myRatingOf(b.id).stars)}
                           </div>
                         )}
 
-                        {/* 🧭 اتجاهات الملعب في الإشعار المقبول */}
+                        {/* 🧭 اتجاهات الملعب في الحجز المقبول */}
                         {b.status==="confirmed" && hasLocation(bst) && (
                           <button onClick={() => window.open(directionsLink(bst.latitude, bst.longitude), "_blank")} style={{marginTop:"8px", display:"block", padding:"8px 14px", background:"#80D03022", color:COLORS.accent2, border:"1px solid #80D03044", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{L("directions")}</button>
                         )}
@@ -2090,18 +2100,6 @@ export default function App() {
 
       {tab === "client" && <BottomNav/>}
 
-      {showContact && (
-        <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setShowContact(false)}>
-          <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"400px", padding:"32px", textAlign:"center"}}>
-            <div style={{fontSize:"48px", marginBottom:"12px"}}>💬</div>
-            <div style={{fontSize:"20px", fontWeight:"800", marginBottom:"8px", color:COLORS.accent}}>{lang==="ar" ? "اتصل بنا" : "Contact Us"}</div>
-            <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"24px"}}>{lang==="ar" ? "تواصل معنا عبر واتساب" : "Via WhatsApp"}</div>
-            <button onClick={() => window.open(`https://wa.me/${WHATSAPP_NUM}?text=${encodeURIComponent(lang==="ar" ? "مرحبا، أريد الاستفسار عن تطبيق ملاعبي" : "Bonjour, Malaabi")}`, "_blank")} style={{width:"100%", padding:"14px", background:"#25D366", border:"none", borderRadius:"14px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"15px", color:"#fff", marginBottom:"12px"}}>📱 WhatsApp — +{WHATSAPP_NUM}</button>
-            <button onClick={() => setShowContact(false)} style={{width:"100%", padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>{lang==="ar" ? "اغلاق" : "Close"}</button>
-          </div>
-        </div>
-      )}
-
       {editStadium && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setEditStadium(null)}>
           <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"520px", maxHeight:"90vh", overflow:"auto", padding:"24px"}}>
@@ -2301,6 +2299,33 @@ export default function App() {
         </div>
       )}
 
+      {/* 🔔 نافذة إشعارات التقييم — منفصلة عن الحجوزات، تُظهر فقط ما يستحق تقييماً */}
+      {showRateNotifs && (
+        <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:150, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setShowRateNotifs(false)}>
+          <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"420px", maxHeight:"78vh", display:"flex", flexDirection:"column"}}>
+            <div style={{padding:"20px 20px 12px", fontSize:"18px", fontWeight:"800", display:"flex", alignItems:"center", gap:"8px"}}>🔔 {lang==="ar"?"الإشعارات":lang==="fr"?"Notifications":"Notifications"}</div>
+            <div style={{overflowY:"auto", padding:"0 20px 20px"}}>
+              {myBookings.filter(b => canRate(b)).length === 0 ? (
+                <div style={{textAlign:"center", padding:"40px 10px", color:COLORS.muted}}>
+                  <div style={{fontSize:"40px", marginBottom:"10px"}}>🔔</div>
+                  <div style={{fontSize:"13px"}}>{lang==="ar"?"لا توجد إشعارات جديدة":lang==="fr"?"Aucune nouvelle notification":"No new notifications"}</div>
+                </div>
+              ) : myBookings.filter(b => canRate(b)).map((b,i) => (
+                <div key={i} style={{background:"#FFD70012", border:"1px solid #FFD70033", borderRadius:"12px", padding:"14px", marginBottom:"10px"}}>
+                  <div style={{fontWeight:"700", fontSize:"14px", marginBottom:"2px"}}>{b.stadium_name}</div>
+                  <div style={{color:COLORS.muted, fontSize:"12px", marginBottom:"10px"}}>📅 {b.date} — {b.hour}:00</div>
+                  <div style={{fontSize:"12px", color:"#FFD700", fontWeight:"700", marginBottom:"8px"}}>{L("rateTitle")}</div>
+                  <button onClick={() => { setRateBooking(b); setRateStars(0); setRateText(""); setShowRateNotifs(false); }} style={{width:"100%", padding:"10px", background:"linear-gradient(135deg,#FFD700,#FF9500)", border:"none", borderRadius:"10px", fontWeight:"800", fontSize:"13px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{L("rateNow")}</button>
+                </div>
+              ))}
+            </div>
+            <div style={{padding:"0 20px 20px"}}>
+              <button onClick={() => setShowRateNotifs(false)} style={{width:"100%", padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>{lang==="ar"?"إغلاق":lang==="fr"?"Fermer":"Close"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ⭐ نافذة التقييم */}
       {rateBooking && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.88)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setRateBooking(null)}>
@@ -2398,23 +2423,5 @@ export default function App() {
     );
   }
 
-  // ⚽ طبقة شعار متلاشية فوق الصفحة الجاهزة أصلاً خلفها — بلا أي قفزة موضع أو حجم
-  return (
-    <>
-      {mainContent}
-      {splash && (
-        <div style={{position:"fixed", inset:0, zIndex:9999, background:"#0B0E08", opacity: splashFading ? 0 : 1, transition:"opacity 500ms ease", pointerEvents: splashFading ? "none" : "auto"}}>
-          <div style={{position:"absolute", top:"50%", left:"50%", transform:"translate(-50%, -50%)"}}>
-            <Logo size={84} glow={0.24}/>
-          </div>
-          <div style={{position:"absolute", top:"calc(50% + 62px)", left:"50%", transform:"translateX(-50%)", textAlign:"center", whiteSpace:"nowrap"}}>
-            <div style={{fontSize:"42px", fontWeight:"900", letterSpacing:"3px", marginBottom:"8px", userSelect:"none", WebkitUserSelect:"none"}}>
-              <span style={{color:"#ffffff"}}>MALA</span><span style={{color:"#80D030"}}>ABI</span>
-            </div>
-            <div style={{color:"#80D030", fontSize:"14px", userSelect:"none", WebkitUserSelect:"none"}}>⚽ احجز ملعبك بسهولة</div>
-          </div>
-        </div>
-      )}
-    </>
-  );
+  return mainContent;
 }
