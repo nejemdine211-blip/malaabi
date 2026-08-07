@@ -17,7 +17,7 @@ const today = new Date().toISOString().split("T")[0];
 const WHATSAPP_NUM = "21654542791";
 
 const COLORS = {
-  bg: "#070B14", card: "#0D1424", border: "#1A2540",
+  bg: "#0B0E08", card: "#0D1424", border: "#1A2540",
   accent: "#80D030", accent2: "#80D030", text: "#ffffff", muted: "#8892A4",
 };
 
@@ -304,7 +304,6 @@ export default function App() {
   const t = translations[lang];
   const L = (k) => TXT[k][lang];
   const isRTL = lang === "ar";
-  const [splash, setSplash] = useState(true);
   const [showContact, setShowContact] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [bottomTab, setBottomTab] = useState("stadiums");
@@ -526,7 +525,6 @@ export default function App() {
   };
 
   useEffect(() => {
-    setTimeout(() => setSplash(false), 2500);
     // 🛟 قراءة آمنة — لو كانت القيمة تالفة نمسحها بدل أن ينهار التطبيق
     const readSaved = (k) => {
       try {
@@ -590,18 +588,6 @@ export default function App() {
       }).subscribe();
     return () => supabase.removeChannel(ch);
   }, [user, lang]);
-
-  if (splash) return (
-    <div style={{minHeight:"100vh", background:"#0B0E08", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Arial,sans-serif"}}>
-      <div style={{textAlign:"center"}}>
-        <div style={{marginBottom:"14px"}}><Logo size={96} glow={0.24}/></div>
-        <div style={{fontSize:"48px", fontWeight:"900", letterSpacing:"3px", marginBottom:"8px", userSelect:"none", WebkitUserSelect:"none", MozUserSelect:"none", msUserSelect:"none"}}>
-          <span style={{color:"#ffffff"}}>MALA</span><span style={{color:"#80D030"}}>ABI</span>
-        </div>
-        <div style={{color:"#80D030", fontSize:"14px", userSelect:"none", WebkitUserSelect:"none"}}>⚽ احجز ملعبك بسهولة</div>
-      </div>
-    </div>
-  );
 
   const showToast = (msg, color=COLORS.accent) => { setToast({msg, color}); setTimeout(() => setToast(null), 4000); };
 
