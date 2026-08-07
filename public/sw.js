@@ -1,12 +1,14 @@
-// ✅ Service Worker صحيح — يخزّن الملفات فعلياً عند النجاح، ويُستعمل كنسخة احتياطية عند انقطاع الشبكة فقط
-const CACHE_NAME = 'malaabi-cache-v2';
+// ✅ Service Worker آمن — يخزّن الصور فقط، ولا يتدخّل إطلاقاً في كود التطبيق (HTML/JS/CSS)
+// هذا يضمن أن كود التطبيق يُحمَّل من الشبكة دائماً طازجاً وبلا أي نسخة قديمة عالقة،
+// بينما تبقى الصور مخزَّنة لتسريع التحميل ودعم العمل دون إنترنت جزئياً.
+const CACHE_NAME = 'malaabi-cache-v3';
+const IMAGE_EXT = /\.(png|jpg|jpeg|webp|svg|gif|ico)$/i;
 
 self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  // 🧹 يحذف أي نسخة كاش قديمة من إصدار سابق تلقائياً
   event.waitUntil(
     caches.keys().then((names) =>
       Promise.all(names.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n)))
@@ -15,20 +17,23 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // 🔒 لا نتدخّل إطلاقاً في طلبات غير GET (مثل الكتابة في Supabase) — أمان وسلامة البيانات
-  if (event.request.method !== 'GET') return;
+  const req = event.request;
 
+  // 🔒 لا نلمس أي شيء غير GET، ولا أي طلب تنقّل (HTML)، ولا وحدات الجافاسكريبت — تبقى كلها طازجة من الشبكة دائماً
+  if (req.method !== 'GET') return;
+  if (req.mode === 'navigate') return;
+  if (!IMAGE_EXT.test(new URL(req.url).pathname)) return;
+
+  // 🖼 الصور فقط: شبكة أولاً، وتخزين فعلي عند النجاح، ونسخة مخزَّنة عند انقطاع الشبكة فقط
   event.respondWith(
-    fetch(event.request)
+    fetch(req)
       .then((response) => {
-        // ✅ عند نجاح الشبكة: نخزّن نسخة فعلية في الكاش (بخلاف النسخة القديمة المعطوبة)
         if (response && response.status === 200) {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
         }
         return response;
       })
-      // 📴 عند انقطاع الشبكة فقط: نستعمل النسخة المخزَّنة فعلياً كبديل حقيقي
-      .catch(() => caches.match(event.request))
+      .catch(() => caches.match(req))
   );
 });
