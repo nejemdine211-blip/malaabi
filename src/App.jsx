@@ -322,7 +322,6 @@ export default function App() {
   const [stadiums, setStadiums] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [usersCount, setUsersCount] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [filterWilaya, setFilterWilaya] = useState("الكل");
   const [searchText, setSearchText] = useState("");
   const [sortBy, setSortBy] = useState("default");
@@ -511,7 +510,6 @@ export default function App() {
   );
 
   const loadData = async () => {
-    setLoading(true);
     const [w, s, b, r, u] = await Promise.all([
       supabase.from("wilayas").select("*").order("id"),
       supabase.from("stadiums_public").select("*").order("id"),
@@ -524,7 +522,6 @@ export default function App() {
     if (b.data) setBookings(b.data);
     if (u.data?.total != null) setUsersCount(u.data.total);
     if (r.data) setRatingsMap(Object.fromEntries(r.data.map(x => [x.stadium_id, x])));
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -1678,15 +1675,6 @@ export default function App() {
           })}
         </div>
         {toast && <div style={{position:"fixed", bottom:"24px", left:"50%", transform:"translateX(-50%)", background:toast.color, color:"#fff", padding:"14px 28px", borderRadius:"16px", fontWeight:"700", zIndex:999, maxWidth:"90%", textAlign:"center"}}>{toast.msg}</div>}
-      </div>
-    );
-  } else if (loading) {
-    mainContent = (
-      <div style={{minHeight:"100vh", background:COLORS.bg, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Tajawal,sans-serif"}}>
-        <div style={{textAlign:"center"}}>
-          <div style={{fontSize:"56px", marginBottom:"16px", filter:"drop-shadow(0 0 20px #80D030)"}}>⚽</div>
-          <div style={{color:COLORS.accent, fontSize:"18px", fontWeight:"700"}}>{t.loading}</div>
-        </div>
       </div>
     );
   } else {
