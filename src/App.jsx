@@ -1284,7 +1284,7 @@ export default function App() {
     return (
       <div style={{background:COLORS.card, borderRadius:"20px", border:`1px solid ${COLORS.border}`, overflow:"hidden", boxShadow:"0 4px 20px rgba(0,0,0,0.3)", width: wide ? "250px" : "auto", flexShrink: wide ? 0 : undefined}}>
         <div style={{position:"relative"}}>
-          <div style={{position:"absolute", inset:0, background:`linear-gradient(135deg, ${s.color}44, ${COLORS.card})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"44px"}}>⚽</div>
+          <div style={{position:"absolute", inset:0, background:`linear-gradient(135deg, ${s.color}44, ${COLORS.card})`}}></div>
           <img src={stadiumImage(s)} alt={s.name} onError={e => onImgError(e, s.id || 0)} style={{width:"100%", height:"140px", objectFit:"cover", display:"block", position:"relative"}}/>
           <div style={{position:"absolute", inset:0, background:`linear-gradient(to bottom, transparent 50%, ${COLORS.card} 100%)`}}></div>
           {/* ❤️ زر المفضلة */}
