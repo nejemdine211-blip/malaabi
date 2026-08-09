@@ -6,14 +6,23 @@
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "theme_color": "#0B0E08",
-  "background_color": "#0B0E08",
+  "theme_color": "#17223D",
+  "background_color": "#17223D",
   "icons": [
     {
       "src": "/icon.png",
-      "sizes": "1024x1024",
+      "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot1.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "الصفحة الرئيسية لتطبيق ملاعبي"
     }
   ]
 }
