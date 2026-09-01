@@ -58,14 +58,14 @@
   }
 </script>
   <body style="background:#0D0D0D;margin:0">
-    <div id="boot" style="position:fixed;inset:0;background:#0D0D0D url(/boot-splash.png) center/contain no-repeat;z-index:99999;"></div>
+    <div id="boot" style="position:fixed;inset:0;background:#0D0D0D url(/icon.png) center center/34vw auto no-repeat;z-index:99999;"></div>
 <div id="root" style="background:#0D0D0D;min-height:100vh;position:fixed;top:0;left:0;right:0;bottom:0;"></div>
 <script>
 window.addEventListener('load',function(){
   setTimeout(function(){
     var b=document.getElementById('boot');
     if(b){b.style.transition='opacity .3s';b.style.opacity='0';setTimeout(function(){b.remove()},350)}
-  },500);
+  },120);
 });
 </script>
     <script type="module" src="/src/main.jsx"></script>
