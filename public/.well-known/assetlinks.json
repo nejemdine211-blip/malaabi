@@ -1,9 +1,11 @@
 [{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "org.malaabi.twa",
-        "sha256_cert_fingerprints": ["02:F7:2C:03:96:47:34:C3:D5:B0:F1:EB:FB:5F:FD:D3:71:70:97:95:41:F0:E0:B1:4F:B2:CF:D5:8C:56:63:EC"]
-      }
-    }]
- 
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "org.malaabi.twa",
+    "sha256_cert_fingerprints": [
+      "02:F7:2C:03:96:47:34:C3:D5:B0:F1:EB:FB:5F:FD:D3:71:70:97:95:41:F0:E0:B1:4F:B2:CF:D5:8C:56:63:EC",
+      "2E:82:80:70:26:44:9D:37:1D:27:4E:63:DB:91:2F:73:6F:FD:08:CF:2E:74:84:34:B7:87:C8:87:5A:21:66:8D"
+    ]
+  }
+}]
