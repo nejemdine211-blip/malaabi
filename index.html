@@ -1,18 +1,18 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#0B0E08" />
-    <title>ملاعبي</title>
+    <meta name="theme-color" content="#0D0D0D" />
+    <title>Ù…Ù„Ø§Ø¹Ø¨ÙŠ</title>
     <link rel="manifest" href="/manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="ملاعبي">
+<meta name="apple-mobile-web-app-title" content="Ù…Ù„Ø§Ø¹Ø¨ÙŠ">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-<!-- 📱 شاشات إقلاع آيفون — تُعرض بواسطة iOS نفسه قبل تحميل الصفحة -->
+<!-- ðŸ“± Ø´Ø§Ø´Ø§Øª Ø¥Ù‚Ù„Ø§Ø¹ Ø¢ÙŠÙÙˆÙ† â€” ØªÙØ¹Ø±Ø¶ Ø¨ÙˆØ§Ø³Ø·Ø© iOS Ù†ÙØ³Ù‡ Ù‚Ø¨Ù„ ØªØ­Ù…ÙŠÙ„ Ø§Ù„ØµÙØ­Ø© -->
 <link rel="apple-touch-startup-image" href="/apple-splash/splash_1170x2532.png"
   media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)">
 <link rel="apple-touch-startup-image" href="/apple-splash/splash_1284x2778.png"
@@ -28,7 +28,7 @@
 
 <style>
   html, body {
-    background: #0B0E08;
+    background: #0D0D0D;
     margin: 0;
     padding: 0;
     width: 100%;
@@ -42,14 +42,14 @@
     box-sizing: border-box;
   }
   #root {
-    background: #0B0E08;
+    background: #0D0D0D;
     min-height: 100vh;
     overscroll-behavior-y: contain;
   }
 </style>
   </head>
   <script>
-  // ✅ نُسجّل Service Worker الصحيح — ضروري لتحويل الموقع لتطبيق (معيار PWA أساسي)
+  // âœ… Ù†ÙØ³Ø¬Ù‘Ù„ Service Worker Ø§Ù„ØµØ­ÙŠØ­ â€” Ø¶Ø±ÙˆØ±ÙŠ Ù„ØªØ­ÙˆÙŠÙ„ Ø§Ù„Ù…ÙˆÙ‚Ø¹ Ù„ØªØ·Ø¨ÙŠÙ‚ (Ù…Ø¹ÙŠØ§Ø± PWA Ø£Ø³Ø§Ø³ÙŠ)
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js');
