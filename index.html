@@ -52,12 +52,16 @@
         inset: 0;
         background: #0D0D0D;
         z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
+      #boot img { width: 84px; height: 84px; object-fit: contain; }
     </style>
   </head>
 
   <body style="background:#0D0D0D;margin:0">
-    <div id="boot"></div>
+    <div id="boot"><img src="/logo.png" alt="" /></div>
     <div id="root" style="background:#0D0D0D;min-height:100vh;position:fixed;top:0;left:0;right:0;bottom:0;"></div>
 
     <script type="module" src="/src/main.jsx"></script>
