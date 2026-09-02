@@ -666,7 +666,10 @@ Deno.serve(async (req) => {
         await db.from("stadiums").delete().in("id", ids);
       }
 
-      const { error } = await db.from("wilayas").delete().eq("name", name);
+      const { data: wrows } = await db.from("wilayas").select("id, name");
+      const target = (wrows ?? []).find((w) => String(w.name).trim() === name);
+      if (!target) return reply({ error: "not_found" }, 404);
+      const { error } = await db.from("wilayas").delete().eq("id", target.id);
       if (error) return reply({ error: "delete_failed" }, 500);
 
       return reply({ ok: true, deletedStadiums: ids.length });
