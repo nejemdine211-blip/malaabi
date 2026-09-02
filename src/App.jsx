@@ -537,7 +537,7 @@ export default function App() {
   const [blockHoursSel, setBlockHoursSel] = useState([]);// 🚫 الساعات المختارة
   const [cart, setCart] = useState([]);                  // 🛒 سلة المواعيد
   const [showPass, setShowPass] = useState({});          // 👁 إظهار كلمات السر
-  const [sessionPass, setSessionPass] = useState(() => sessionStorage.getItem("mb_sp") || "");   // 🔒 تُمحى بإغلاق التبويب
+  const [sessionPass, setSessionPass] = useState(() => localStorage.getItem("mb_sp") || "");   // 🔒 تُمحى بإغلاق التبويب
   const [myBookingsList, setMyBookingsList] = useState([]);   // 🔒 حجوزات الزبون الكاملة
   const [favorites, setFavorites] = useState([]);             // ⭐ أرقام الملاعب المفضلة للزبون
 
@@ -590,7 +590,7 @@ export default function App() {
       <button onClick={() => setShowLangMenu(!showLangMenu)} style={{padding:"6px 12px", borderRadius:"8px", border:`1px solid ${COLORS.border}`, cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"12px", background:COLORS.card, color:COLORS.accent}}>{langLabel}</button>
       {showLangMenu && (
         <div style={{position:"absolute", top:"110%", left:0, background:COLORS.card, border:`1px solid ${COLORS.border}`, borderRadius:"10px", overflow:"hidden", zIndex:200, minWidth:"80px"}}>
-          {[["ar","🇲🇷 ع"],["fr","🇫🇷 FR"],["en","🏴 EN"]].map(([l, label]) => (
+          {[["ar","ع"],["fr","FR"],["en","EN"]].map(([l, label]) => (
             <button key={l} onClick={() => { changeLang(l); setShowLangMenu(false); }} style={{display:"block", width:"100%", padding:"8px 16px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"12px", background: lang===l?`${COLORS.accent}22`:COLORS.card, color: lang===l?COLORS.accent:COLORS.muted, textAlign:"right"}}>{label}</button>
           ))}
         </div>
@@ -628,7 +628,7 @@ export default function App() {
     if (saved) {
       setUser(saved); setScreen("app");
       // 🔒 نعيد جلب حجوزاته إن كانت كلمة السر ما زالت في جلسة التبويب
-      const sp = sessionStorage.getItem("mb_sp");
+      const sp = localStorage.getItem("mb_sp");
       if (sp) {
         stadiumApi("client-bookings", { payload: { phone: saved.phone, password: sp } })
           .then(r => { if (r.bookings) setMyBookingsList(r.bookings); });
@@ -765,7 +765,7 @@ export default function App() {
     setUser(data);
     localStorage.setItem("malaabi_user", JSON.stringify(data));
     setScreen("app");
-    setSessionPass(loginPass); sessionStorage.setItem("mb_sp", loginPass);
+    setSessionPass(loginPass); localStorage.setItem("mb_sp", loginPass);
     loadMyBookings(data.phone, loginPass); loadMyRatings(data.phone, loginPass); loadFavorites(data.phone, loginPass);
     showToast(t.welcome + " " + data.name);
   };
@@ -785,7 +785,7 @@ export default function App() {
     setUser(res.user);
     localStorage.setItem("malaabi_user", JSON.stringify(res.user));
     setScreen("app"); setUsersCount(p => p + 1);
-    setSessionPass(regPass); sessionStorage.setItem("mb_sp", regPass);
+    setSessionPass(regPass); localStorage.setItem("mb_sp", regPass);
     showToast(t.accountCreated);
   };
 
@@ -896,7 +896,7 @@ export default function App() {
     localStorage.removeItem("malaabi_user");
     localStorage.removeItem("malaabi_owner");
     setUser(null); setOwner(null);
-    setSessionPass(""); sessionStorage.removeItem("mb_sp"); setMyBookingsList([]); setAdminPass(""); setMyRatings([]); setOwnerRatings([]); setFavorites([]);
+    setSessionPass(""); localStorage.removeItem("mb_sp"); setMyBookingsList([]); setAdminPass(""); setMyRatings([]); setOwnerRatings([]); setFavorites([]);
     setScreen("login"); setTab("client"); setBottomTab("stadiums");
   };
 
