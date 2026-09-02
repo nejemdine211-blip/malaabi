@@ -70,6 +70,7 @@
       function hideBoot() {
         var r = document.getElementById('root');
         if (!r || r.children.length === 0) { return setTimeout(hideBoot, 60); }
+        if (!window.__bootDelay) { window.__bootDelay = 1; return setTimeout(hideBoot, 250); }
         var b = document.getElementById('boot');
         if (b) {
           b.style.transition = 'opacity .5s';
