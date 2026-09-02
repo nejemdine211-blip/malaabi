@@ -58,6 +58,12 @@
 
   <body style="background:#0D0D0D;margin:0">
     <div id="boot"></div>
+    <script>
+      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        var b = document.getElementById("boot");
+        if (b) b.style.display = "none";
+      }
+    </script>
     <div id="root" style="background:#0D0D0D;min-height:100vh;position:fixed;top:0;left:0;right:0;bottom:0;"></div>
 
     <script type="module" src="/src/main.jsx"></script>
