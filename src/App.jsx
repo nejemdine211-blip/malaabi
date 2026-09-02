@@ -371,7 +371,7 @@ function Logo({ size = 84, glow = 0.22, margin = "0 auto" }) {
       {glow > 0 && (
         <div style={{position:"absolute", inset:`-${Math.round(size*0.35)}px`, background:`radial-gradient(circle, #80D030${Math.round(glow*255).toString(16).padStart(2,"0")} 0%, transparent 68%)`, pointerEvents:"none"}}/>
       )}
-      <div role="img" aria-label="malaabi" {...noCopyImgProps} style={{position:"relative", width:"100%", height:"100%", backgroundImage:"url(/logo.png)", backgroundSize:"contain", backgroundRepeat:"no-repeat", backgroundPosition:"center", ...noCopyStyle}}/>
+      <div role="img" aria-label="malaabi" {...noCopyImgProps} style={{position:"relative", width:"100%", height:"100%", backgroundImage:"url(/logo.png?v=2)", backgroundSize:"contain", backgroundRepeat:"no-repeat", backgroundPosition:"center", ...noCopyStyle}}/>
     </div>
   );
 }
