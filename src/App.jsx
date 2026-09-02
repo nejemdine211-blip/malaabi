@@ -1384,7 +1384,7 @@ export default function App() {
         <div style={{position:"fixed", top:"16px", left:"16px", zIndex:999}}><LangButton/></div>
         <div style={{width:"100%", maxWidth:"400px"}}>
           <div style={{textAlign:"center", marginBottom:"32px"}}>
-            <div style={{marginBottom:"8px"}}><Logo size={84} glow={0.24}/></div>
+            <div style={{marginTop:"-18px", marginBottom:"8px"}}><Logo size={84} glow={0.24}/></div>
             <div><BrandName text={t.appName}/></div>
             <div style={{color:COLORS.muted, marginTop:"8px", fontSize:"15px"}}>{t.appSlogan}</div>
           </div>
