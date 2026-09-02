@@ -59,10 +59,7 @@
   <body style="background:#0D0D0D;margin:0">
     <div id="boot"></div>
     <script>
-      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-        var b = document.getElementById("boot");
-        if (b) b.style.display = "none";
-      }
+      // تُترك الطبقة في iOS مع تلاش ناعم
     </script>
     <div id="root" style="background:#0D0D0D;min-height:100vh;position:fixed;top:0;left:0;right:0;bottom:0;"></div>
 
@@ -73,7 +70,7 @@
       window.addEventListener('load', function () {
         var b = document.getElementById('boot');
         if (b) {
-          b.style.transition = 'opacity .25s';
+          b.style.transition = 'opacity .5s';
           b.style.opacity = '0';
           setTimeout(function () { b.remove(); }, 300);
         }
