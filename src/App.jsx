@@ -1,4 +1,4 @@
-import { useState, useEffect, Fragment } from "react";
+﻿import { useState, useEffect, Fragment } from "react";
 import { supabase } from "./supabase";
 import { translations } from "./translations";
 
@@ -13,7 +13,7 @@ const PAYMENT_APPS = [
 
 const ALL_HOURS = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23];
 const today = new Date().toISOString().split("T")[0];
-// ⚠️ رقم التواصل — غيّره إذا أردت رقماً موريتانياً (222...)
+// âš ï¸ Ø±Ù‚Ù… Ø§Ù„ØªÙˆØ§ØµÙ„ â€” ØºÙŠÙ‘Ø±Ù‡ Ø¥Ø°Ø§ Ø£Ø±Ø¯Øª Ø±Ù‚Ù…Ø§Ù‹ Ù…ÙˆØ±ÙŠØªØ§Ù†ÙŠØ§Ù‹ (222...)
 const WHATSAPP_NUM = "21654542791";
 
 const COLORS = {
@@ -34,16 +34,16 @@ const STADIUM_IMAGES = [
   "https://images.unsplash.com/photo-1553778263-73a83bab9b0c?w=400&h=200&fit=crop",
 ];
 
-// 🔐 استدعاء دالة المصادقة الخادمية — جدول users مقفل أمام المتصفح
+// ðŸ” Ø§Ø³ØªØ¯Ø¹Ø§Ø¡ Ø¯Ø§Ù„Ø© Ø§Ù„Ù…ØµØ§Ø¯Ù‚Ø© Ø§Ù„Ø®Ø§Ø¯Ù…ÙŠØ© â€” Ø¬Ø¯ÙˆÙ„ users Ù…Ù‚ÙÙ„ Ø£Ù…Ø§Ù… Ø§Ù„Ù…ØªØµÙØ­
 const authApi = async (action, payload = {}) => {
   try {
     const { data, error } = await supabase.functions.invoke("auth-api", {
       body: { action, ...payload },
     });
     if (error) {
-      // نحاول قراءة رسالة الخطأ القادمة من الدالة
+      // Ù†Ø­Ø§ÙˆÙ„ Ù‚Ø±Ø§Ø¡Ø© Ø±Ø³Ø§Ù„Ø© Ø§Ù„Ø®Ø·Ø£ Ø§Ù„Ù‚Ø§Ø¯Ù…Ø© Ù…Ù† Ø§Ù„Ø¯Ø§Ù„Ø©
       let code = "network";
-      try { code = (await error.context?.json())?.error || "network"; } catch (_e) { /* تجاهل */ }
+      try { code = (await error.context?.json())?.error || "network"; } catch (_e) { /* ØªØ¬Ø§Ù‡Ù„ */ }
       return { error: code };
     }
     return data ?? { error: "network" };
@@ -52,7 +52,7 @@ const authApi = async (action, payload = {}) => {
   }
 };
 
-// 🏟 استدعاء دالة الملاعب الخادمية — أكواد المالكين والمستحقات لا تمر بالمتصفح
+// ðŸŸ Ø§Ø³ØªØ¯Ø¹Ø§Ø¡ Ø¯Ø§Ù„Ø© Ø§Ù„Ù…Ù„Ø§Ø¹Ø¨ Ø§Ù„Ø®Ø§Ø¯Ù…ÙŠØ© â€” Ø£ÙƒÙˆØ§Ø¯ Ø§Ù„Ù…Ø§Ù„ÙƒÙŠÙ† ÙˆØ§Ù„Ù…Ø³ØªØ­Ù‚Ø§Øª Ù„Ø§ ØªÙ…Ø± Ø¨Ø§Ù„Ù…ØªØµÙØ­
 const stadiumApi = async (action, payload = {}) => {
   try {
     const { data, error } = await supabase.functions.invoke("stadium-api", {
@@ -60,7 +60,7 @@ const stadiumApi = async (action, payload = {}) => {
     });
     if (error) {
       let code = "network";
-      try { code = (await error.context?.json())?.error || "network"; } catch (_e) { /* تجاهل */ }
+      try { code = (await error.context?.json())?.error || "network"; } catch (_e) { /* ØªØ¬Ø§Ù‡Ù„ */ }
       return { error: code };
     }
     return data ?? { error: "network" };
@@ -69,7 +69,7 @@ const stadiumApi = async (action, payload = {}) => {
   }
 };
 
-// 🖼 صور احتياطية من مصدر مختلف (تُستعمل إذا فشل تحميل الصورة الأصلية)
+// ðŸ–¼ ØµÙˆØ± Ø§Ø­ØªÙŠØ§Ø·ÙŠØ© Ù…Ù† Ù…ØµØ¯Ø± Ù…Ø®ØªÙ„Ù (ØªÙØ³ØªØ¹Ù…Ù„ Ø¥Ø°Ø§ ÙØ´Ù„ ØªØ­Ù…ÙŠÙ„ Ø§Ù„ØµÙˆØ±Ø© Ø§Ù„Ø£ØµÙ„ÙŠØ©)
 const FALLBACK_IMAGES = [
   "https://images.pexels.com/photos/274506/pexels-photo-274506.jpeg?auto=compress&cs=tinysrgb&w=400",
   "https://images.pexels.com/photos/47730/the-ball-stadion-football-the-pitch-47730.jpeg?auto=compress&cs=tinysrgb&w=400",
@@ -77,7 +77,7 @@ const FALLBACK_IMAGES = [
   "https://images.pexels.com/photos/399187/pexels-photo-399187.jpeg?auto=compress&cs=tinysrgb&w=400",
 ];
 
-// 🎲 اختيار صورة أقل استعمالاً حتى لا تتكرر الصور بين الملاعب
+// ðŸŽ² Ø§Ø®ØªÙŠØ§Ø± ØµÙˆØ±Ø© Ø£Ù‚Ù„ Ø§Ø³ØªØ¹Ù…Ø§Ù„Ø§Ù‹ Ø­ØªÙ‰ Ù„Ø§ ØªØªÙƒØ±Ø± Ø§Ù„ØµÙˆØ± Ø¨ÙŠÙ† Ø§Ù„Ù…Ù„Ø§Ø¹Ø¨
 const pickImage = (existing = []) => {
   const counts = STADIUM_IMAGES.map(u => existing.filter(s => s.image === u).length);
   const min = Math.min(...counts);
@@ -85,10 +85,10 @@ const pickImage = (existing = []) => {
   return pool[Math.floor(Math.random() * pool.length)];
 };
 
-// 🖼 صورة الملعب: المخزّنة، وإلا واحدة ثابتة حسب رقمه
+// ðŸ–¼ ØµÙˆØ±Ø© Ø§Ù„Ù…Ù„Ø¹Ø¨: Ø§Ù„Ù…Ø®Ø²Ù‘Ù†Ø©ØŒ ÙˆØ¥Ù„Ø§ ÙˆØ§Ø­Ø¯Ø© Ø«Ø§Ø¨ØªØ© Ø­Ø³Ø¨ Ø±Ù‚Ù…Ù‡
 const stadiumImage = (s) => s.image || STADIUM_IMAGES[(s.id || 0) % STADIUM_IMAGES.length];
 
-// 🛟 إذا فشل تحميل الصورة، نجرب البدائل ثم نخفيها ليظهر التدرج اللوني
+// ðŸ›Ÿ Ø¥Ø°Ø§ ÙØ´Ù„ ØªØ­Ù…ÙŠÙ„ Ø§Ù„ØµÙˆØ±Ø©ØŒ Ù†Ø¬Ø±Ø¨ Ø§Ù„Ø¨Ø¯Ø§Ø¦Ù„ Ø«Ù… Ù†Ø®ÙÙŠÙ‡Ø§ Ù„ÙŠØ¸Ù‡Ø± Ø§Ù„ØªØ¯Ø±Ø¬ Ø§Ù„Ù„ÙˆÙ†ÙŠ
 const onImgError = (e, seed = 0) => {
   const tried = parseInt(e.target.dataset.try || "0", 10);
   if (tried < FALLBACK_IMAGES.length) {
@@ -99,17 +99,17 @@ const onImgError = (e, seed = 0) => {
   }
 };
 
-// 🔐 الأسئلة السرية لاستعادة كلمة السر
+// ðŸ” Ø§Ù„Ø£Ø³Ø¦Ù„Ø© Ø§Ù„Ø³Ø±ÙŠØ© Ù„Ø§Ø³ØªØ¹Ø§Ø¯Ø© ÙƒÙ„Ù…Ø© Ø§Ù„Ø³Ø±
 const SECURITY_QUESTIONS = [
-  { id:"q1", ar:"ما اسم الحي الذي نشأت فيه؟", fr:"Dans quel quartier avez-vous grandi ?", en:"Which neighborhood did you grow up in?" },
-  { id:"q2", ar:"ما اسم أول ملعب لعبت فيه؟", fr:"Nom du premier terrain où vous avez joué ?", en:"Name of the first field you played on?" },
-  { id:"q3", ar:"ما اسم فريقك المفضل؟", fr:"Quelle est votre équipe préférée ?", en:"What is your favorite team?" },
-  { id:"q4", ar:"ما اسم أستاذك المفضل؟", fr:"Nom de votre professeur préféré ?", en:"Your favorite teacher's name?" },
-  { id:"q5", ar:"ما اسم صديق طفولتك؟", fr:"Nom de votre ami d'enfance ?", en:"Your childhood friend's name?" },
+  { id:"q1", ar:"Ù…Ø§ Ø§Ø³Ù… Ø§Ù„Ø­ÙŠ Ø§Ù„Ø°ÙŠ Ù†Ø´Ø£Øª ÙÙŠÙ‡ØŸ", fr:"Dans quel quartier avez-vous grandi ?", en:"Which neighborhood did you grow up in?" },
+  { id:"q2", ar:"Ù…Ø§ Ø§Ø³Ù… Ø£ÙˆÙ„ Ù…Ù„Ø¹Ø¨ Ù„Ø¹Ø¨Øª ÙÙŠÙ‡ØŸ", fr:"Nom du premier terrain oÃ¹ vous avez jouÃ© ?", en:"Name of the first field you played on?" },
+  { id:"q3", ar:"Ù…Ø§ Ø§Ø³Ù… ÙØ±ÙŠÙ‚Ùƒ Ø§Ù„Ù…ÙØ¶Ù„ØŸ", fr:"Quelle est votre Ã©quipe prÃ©fÃ©rÃ©e ?", en:"What is your favorite team?" },
+  { id:"q4", ar:"Ù…Ø§ Ø§Ø³Ù… Ø£Ø³ØªØ§Ø°Ùƒ Ø§Ù„Ù…ÙØ¶Ù„ØŸ", fr:"Nom de votre professeur prÃ©fÃ©rÃ© ?", en:"Your favorite teacher's name?" },
+  { id:"q5", ar:"Ù…Ø§ Ø§Ø³Ù… ØµØ¯ÙŠÙ‚ Ø·ÙÙˆÙ„ØªÙƒØŸ", fr:"Nom de votre ami d'enfance ?", en:"Your childhood friend's name?" },
 ];
 const qText = (id, lang) => SECURITY_QUESTIONS.find(q => q.id === id)?.[lang] || "";
 
-// 📞 أرقام الهاتف الموريتانية: 8 أرقام تبدأ بـ 2 أو 3 أو 4
+// ðŸ“ž Ø£Ø±Ù‚Ø§Ù… Ø§Ù„Ù‡Ø§ØªÙ Ø§Ù„Ù…ÙˆØ±ÙŠØªØ§Ù†ÙŠØ©: 8 Ø£Ø±Ù‚Ø§Ù… ØªØ¨Ø¯Ø£ Ø¨Ù€ 2 Ø£Ùˆ 3 Ø£Ùˆ 4
 const PHONE_PREFIXES = ["2","3","4"];
 const cleanPhone = (v) => {
   let d = v.replace(/\D/g, "");
@@ -118,12 +118,12 @@ const cleanPhone = (v) => {
 };
 const isValidPhone = (p) => /^[234]\d{7}$/.test(p);
 
-// 📍 روابط الخرائط
+// ðŸ“ Ø±ÙˆØ§Ø¨Ø· Ø§Ù„Ø®Ø±Ø§Ø¦Ø·
 const mapsLink = (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`;
 const directionsLink = (lat, lng) => `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 const hasLocation = (s) => s && s.latitude != null && s.longitude != null;
 
-// 📏 حساب المسافة بالكيلومتر بين نقطتين (صيغة Haversine)
+// ðŸ“ Ø­Ø³Ø§Ø¨ Ø§Ù„Ù…Ø³Ø§ÙØ© Ø¨Ø§Ù„ÙƒÙŠÙ„ÙˆÙ…ØªØ± Ø¨ÙŠÙ† Ù†Ù‚Ø·ØªÙŠÙ† (ØµÙŠØºØ© Haversine)
 const distanceKm = (lat1, lng1, lat2, lng2) => {
   const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -133,170 +133,170 @@ const distanceKm = (lat1, lng1, lat2, lng2) => {
 };
 
 const aboutText = {
-  ar: "ملاعبي هو أول تطبيق موريتاني متخصص في حجز ملاعب كرة القدم إلكترونياً، يجمع بين الزبائن وأصحاب الملاعب في مكان واحد بطريقة سريعة وآمنة وبلا تعقيد.\n\nتصفّح الملاعب القريبة منك، اطّلع على الأسعار والمواعيد المتاحة لحظياً، واحجز موعدك في دقائق معدودة. ادفع بسهولة عبر تطبيقات الدفع المحلية، واحفظ ملاعبك المفضّلة للرجوع إليها بسرعة عند الحاجة. تصلك إشعارات فورية بحالة حجزك، وتبقى كل تفاصيل ملاعبك وحجوزاتك في مكان واحد، بلا مكالمات هاتفية وبلا انتظار.",
-  fr: "Malaabi est la première application mauritanienne dédiée à la réservation de terrains de football en ligne, réunissant clients et propriétaires de terrains en un seul endroit, de façon rapide, sécurisée et sans complications.\n\nParcourez les terrains proches de vous, consultez les prix et les créneaux disponibles en temps réel, et réservez en quelques minutes seulement. Payez facilement via les applications de paiement locales, et enregistrez vos terrains favoris pour les retrouver rapidement. Recevez des notifications instantanées sur l'état de votre réservation, et gardez tous les détails de vos terrains et réservations au même endroit, sans appels téléphoniques ni attente.",
-  en: "Malaabi is Mauritania's first app dedicated to booking football fields online, bringing clients and field owners together in one place — quickly, securely, and without hassle.\n\nBrowse fields near you, check live prices and available time slots, and book in just a few minutes. Pay easily through local payment apps, and save your favorite fields for quick access whenever you need them. Get instant notifications on your booking status, and keep all your field and booking details in one place — no phone calls, no waiting.",
+  ar: "Ù…Ù„Ø§Ø¹Ø¨ÙŠ Ù‡Ùˆ Ø£ÙˆÙ„ ØªØ·Ø¨ÙŠÙ‚ Ù…ÙˆØ±ÙŠØªØ§Ù†ÙŠ Ù…ØªØ®ØµØµ ÙÙŠ Ø­Ø¬Ø² Ù…Ù„Ø§Ø¹Ø¨ ÙƒØ±Ø© Ø§Ù„Ù‚Ø¯Ù… Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠØ§Ù‹ØŒ ÙŠØ¬Ù…Ø¹ Ø¨ÙŠÙ† Ø§Ù„Ø²Ø¨Ø§Ø¦Ù† ÙˆØ£ØµØ­Ø§Ø¨ Ø§Ù„Ù…Ù„Ø§Ø¹Ø¨ ÙÙŠ Ù…ÙƒØ§Ù† ÙˆØ§Ø­Ø¯ Ø¨Ø·Ø±ÙŠÙ‚Ø© Ø³Ø±ÙŠØ¹Ø© ÙˆØ¢Ù…Ù†Ø© ÙˆØ¨Ù„Ø§ ØªØ¹Ù‚ÙŠØ¯.\n\nØªØµÙÙ‘Ø­ Ø§Ù„Ù…Ù„Ø§Ø¹Ø¨ Ø§Ù„Ù‚Ø±ÙŠØ¨Ø© Ù…Ù†ÙƒØŒ Ø§Ø·Ù‘Ù„Ø¹ Ø¹Ù„Ù‰ Ø§Ù„Ø£Ø³Ø¹Ø§Ø± ÙˆØ§Ù„Ù…ÙˆØ§Ø¹ÙŠØ¯ Ø§Ù„Ù…ØªØ§Ø­Ø© Ù„Ø­Ø¸ÙŠØ§Ù‹ØŒ ÙˆØ§Ø­Ø¬Ø² Ù…ÙˆØ¹Ø¯Ùƒ ÙÙŠ Ø¯Ù‚Ø§Ø¦Ù‚ Ù…Ø¹Ø¯ÙˆØ¯Ø©. Ø§Ø¯ÙØ¹ Ø¨Ø³Ù‡ÙˆÙ„Ø© Ø¹Ø¨Ø± ØªØ·Ø¨ÙŠÙ‚Ø§Øª Ø§Ù„Ø¯ÙØ¹ Ø§Ù„Ù…Ø­Ù„ÙŠØ©ØŒ ÙˆØ§Ø­ÙØ¸ Ù…Ù„Ø§Ø¹Ø¨Ùƒ Ø§Ù„Ù…ÙØ¶Ù‘Ù„Ø© Ù„Ù„Ø±Ø¬ÙˆØ¹ Ø¥Ù„ÙŠÙ‡Ø§ Ø¨Ø³Ø±Ø¹Ø© Ø¹Ù†Ø¯ Ø§Ù„Ø­Ø§Ø¬Ø©. ØªØµÙ„Ùƒ Ø¥Ø´Ø¹Ø§Ø±Ø§Øª ÙÙˆØ±ÙŠØ© Ø¨Ø­Ø§Ù„Ø© Ø­Ø¬Ø²ÙƒØŒ ÙˆØªØ¨Ù‚Ù‰ ÙƒÙ„ ØªÙØ§ØµÙŠÙ„ Ù…Ù„Ø§Ø¹Ø¨Ùƒ ÙˆØ­Ø¬ÙˆØ²Ø§ØªÙƒ ÙÙŠ Ù…ÙƒØ§Ù† ÙˆØ§Ø­Ø¯ØŒ Ø¨Ù„Ø§ Ù…ÙƒØ§Ù„Ù…Ø§Øª Ù‡Ø§ØªÙÙŠØ© ÙˆØ¨Ù„Ø§ Ø§Ù†ØªØ¸Ø§Ø±.",
+  fr: "Malaabi est la premiÃ¨re application mauritanienne dÃ©diÃ©e Ã  la rÃ©servation de terrains de football en ligne, rÃ©unissant clients et propriÃ©taires de terrains en un seul endroit, de faÃ§on rapide, sÃ©curisÃ©e et sans complications.\n\nParcourez les terrains proches de vous, consultez les prix et les crÃ©neaux disponibles en temps rÃ©el, et rÃ©servez en quelques minutes seulement. Payez facilement via les applications de paiement locales, et enregistrez vos terrains favoris pour les retrouver rapidement. Recevez des notifications instantanÃ©es sur l'Ã©tat de votre rÃ©servation, et gardez tous les dÃ©tails de vos terrains et rÃ©servations au mÃªme endroit, sans appels tÃ©lÃ©phoniques ni attente.",
+  en: "Malaabi is Mauritania's first app dedicated to booking football fields online, bringing clients and field owners together in one place â€” quickly, securely, and without hassle.\n\nBrowse fields near you, check live prices and available time slots, and book in just a few minutes. Pay easily through local payment apps, and save your favorite fields for quick access whenever you need them. Get instant notifications on your booking status, and keep all your field and booking details in one place â€” no phone calls, no waiting.",
 };
 
 const TXT = {
-  ownerLogin: { ar:"صاحب ملعب", fr:"Propriétaire", en:"Owner" },
-  ownerCode: { ar:"كود صاحب الملعب", fr:"Code propriétaire", en:"Owner code" },
-  enterCode: { ar:"ادخل الكود", fr:"Entrez le code", en:"Enter code" },
-  wrongCode: { ar:"الكود غير صحيح", fr:"Code incorrect", en:"Wrong code" },
-  suspended: { ar:"ملعبك معلق، يرجى التواصل مع الإدارة", fr:"Terrain suspendu", en:"Stadium suspended" },
-  dueAmount: { ar:"المبلغ المستحق عليك", fr:"Montant dû", en:"Amount due" },
-  commission: { ar:"نسبة التطبيق", fr:"Commission", en:"Commission" },
-  dues: { ar:"المستحقات", fr:"Dûs", en:"Dues" },
-  totalDues: { ar:"إجمالي المستحقات", fr:"Total dû", en:"Total due" },
-  resetDue: { ar:"تصفير المبلغ", fr:"Réinitialiser", en:"Reset" },
-  suspend: { ar:"تعليق", fr:"Suspendre", en:"Suspend" },
-  activate: { ar:"تفعيل", fr:"Activer", en:"Activate" },
-  handledBy: { ar:"تمت المعالجة من طرف", fr:"Traité par", en:"Handled by" },
-  owner: { ar:"صاحب الملعب", fr:"Propriétaire", en:"Owner" },
-  proof: { ar:"إثبات الدفع (صورة)", fr:"Preuve de paiement", en:"Payment proof" },
-  uploadProof: { ar:"📷 ارفع لقطة الشاشة", fr:"📷 Télécharger", en:"📷 Upload" },
-  viewProof: { ar:"📷 عرض الإثبات", fr:"📷 Voir preuve", en:"📷 View proof" },
-  proofRequired: { ar:"يرجى رفع إثبات الدفع", fr:"Preuve requise", en:"Proof required" },
-  uploading: { ar:"جاري الرفع...", fr:"Envoi...", en:"Uploading..." },
-  ownerCodeIs: { ar:"كود صاحب الملعب", fr:"Code propriétaire", en:"Owner code" },
-  active: { ar:"نشط", fr:"Actif", en:"Active" },
-  suspendedS: { ar:"معلق", fr:"Suspendu", en:"Suspended" },
-  allBookings: { ar:"كل الحجوزات", fr:"Réservations", en:"All bookings" },
-  viewOnly: { ar:"للمشاهدة فقط", fr:"Lecture seule", en:"View only" },
-  waiting: { ar:"قيد الانتظار", fr:"En attente", en:"Pending" },
-  accepted2: { ar:"تم القبول", fr:"Accepté", en:"Accepted" },
-  rejected2: { ar:"تم الرفض", fr:"Refusé", en:"Rejected" },
-  newBooking: { ar:"حجز جديد", fr:"Nouvelle réservation", en:"New booking" },
-  bookingAccepted: { ar:"تم قبول حجزك", fr:"Réservation confirmée", en:"Booking confirmed" },
-  bookingRejected: { ar:"تم رفض حجزك", fr:"Réservation refusée", en:"Booking rejected" },
-  // 📍 نصوص الموقع
-  location: { ar:"موقع الملعب", fr:"Localisation du terrain", en:"Field location" },
-  myLocation: { ar:"📍 موقعي الحالي", fr:"📍 Ma position", en:"📍 My location" },
-  checkLocation: { ar:"🗺 تحقق من الموقع", fr:"🗺 Vérifier", en:"🗺 Check on map" },
-  locating: { ar:"📍 جاري تحديد الموقع...", fr:"📍 Localisation...", en:"📍 Locating..." },
-  locationSet: { ar:"✅ تم تحديد الموقع", fr:"✅ Position définie", en:"✅ Location set" },
-  locationFailed: { ar:"تعذر تحديد الموقع", fr:"Échec de localisation", en:"Location failed" },
-  locationDenied: { ar:"رفضت إذن الموقع — فعّله من إعدادات الجهاز", fr:"Permission refusée — activez la localisation dans les réglages", en:"Permission denied — enable location in device settings" },
-  locationTimeout: { ar:"انتهت المهلة — جرّب في مكان مفتوح", fr:"Délai dépassé — essayez en extérieur", en:"Timed out — try in an open area" },
-  locationUnavailable: { ar:"تعذر تحديد موقعك الآن، حاول مجدداً", fr:"Position indisponible, réessayez", en:"Position unavailable, try again" },
-  noGeo: { ar:"المتصفح لا يدعم تحديد الموقع", fr:"Géolocalisation non supportée", en:"Geolocation not supported" },
-  directions: { ar:"📍 الموقع", fr:"📍 Localisation", en:"📍 Location" },
-  nearestBtn: { ar:"🎯 الأقرب لي", fr:"🎯 Le plus proche", en:"🎯 Nearest to me" },
-  showAllBtn: { ar:"عرض الكل", fr:"Tout afficher", en:"Show all" },
-  noNearby: { ar:"لا توجد ملاعب بمواقع محددة قريبة منك", fr:"Aucun terrain géolocalisé", en:"No located fields nearby" },
-  showOnMap: { ar:"📍 عرض على الخريطة", fr:"📍 Voir sur la carte", en:"📍 View on map" },
-  noLocation: { ar:"لم يحدد الموقع بعد", fr:"Position non définie", en:"No location yet" },
-  sortNearest: { ar:"الأقرب إليّ", fr:"Le plus proche", en:"Nearest to me" },
-  kmAway: { ar:"كم منك", fr:"km de vous", en:"km away" },
-  enableLocation: { ar:"فعّل موقعك لعرض المسافة", fr:"Activez votre position", en:"Enable location for distance" },
-  // 🔑 شاشة الدخول
-  forgotPass: { ar:"نسيت كلمة السر؟", fr:"Mot de passe oublié ?", en:"Forgot password?" },
-  createNewAccount: { ar:"إنشاء حساب جديد", fr:"Créer un nouveau compte", en:"Create new account" },
-  haveAccount: { ar:"لديك حساب؟ تسجيل الدخول", fr:"Déjà un compte ? Se connecter", en:"Have an account? Log in" },
-  ownerEntry: { ar:"🏟 دخول أصحاب الملاعب", fr:"🏟 Espace propriétaires", en:"🏟 Field owners" },
-  backToLogin: { ar:"← رجوع لتسجيل الدخول", fr:"← Retour à la connexion", en:"← Back to log in" },
-  forgotTitle: { ar:"استعادة كلمة السر", fr:"Récupérer le mot de passe", en:"Recover password" },
-  forgotStep1: { ar:"أدخل رقم هاتفك المسجل", fr:"Entrez votre numéro enregistré", en:"Enter your registered phone" },
-  next2: { ar:"التالي", fr:"Suivant", en:"Next" },
-  phoneNotFound: { ar:"لا يوجد حساب بهذا الرقم", fr:"Aucun compte avec ce numéro", en:"No account with this number" },
-  noQuestionSet: { ar:"هذا الحساب لم يحدد سؤالاً سرياً. تواصل معنا عبر واتساب.", fr:"Aucune question secrète définie. Contactez-nous.", en:"No security question set. Contact us." },
-  yourAnswer: { ar:"جوابك", fr:"Votre réponse", en:"Your answer" },
-  wrongAnswer: { ar:"الجواب غير صحيح", fr:"Réponse incorrecte", en:"Wrong answer" },
-  verify: { ar:"تحقق", fr:"Vérifier", en:"Verify" },
-  newPass: { ar:"كلمة السر الجديدة (4 أرقام)", fr:"Nouveau mot de passe (4 chiffres)", en:"New password (4 digits)" },
-  confirmPass: { ar:"تأكيد كلمة السر", fr:"Confirmer le mot de passe", en:"Confirm password" },
-  passMismatch: { ar:"كلمتا السر غير متطابقتين", fr:"Les mots de passe ne correspondent pas", en:"Passwords don't match" },
-  savePass: { ar:"حفظ كلمة السر", fr:"Enregistrer", en:"Save password" },
-  passChanged: { ar:"✅ تم تغيير كلمة السر، يمكنك الدخول الآن", fr:"✅ Mot de passe modifié", en:"✅ Password changed" },
-  securityQ: { ar:"السؤال السري", fr:"Question secrète", en:"Security question" },
-  chooseQ: { ar:"اختر سؤالاً", fr:"Choisissez une question", en:"Choose a question" },
-  answerHint: { ar:"احفظ جوابك جيداً — ستحتاجه إذا نسيت كلمة السر", fr:"Retenez bien votre réponse", en:"Remember your answer well" },
-  setupQTitle: { ar:"احمِ حسابك", fr:"Protégez votre compte", en:"Protect your account" },
-  setupQDesc: { ar:"حدد سؤالاً سرياً حتى تتمكن من استعادة حسابك بنفسك إذا نسيت كلمة السر.", fr:"Définissez une question secrète pour récupérer votre compte.", en:"Set a security question so you can recover your account yourself." },
-  saveQ: { ar:"حفظ السؤال", fr:"Enregistrer", en:"Save question" },
-  later: { ar:"لاحقاً", fr:"Plus tard", en:"Later" },
-  qSaved: { ar:"✅ تم حفظ السؤال السري", fr:"✅ Question enregistrée", en:"✅ Question saved" },
-  uploadImage: { ar:"📷 اختر صورة من ملفاتك", fr:"📷 Choisir une image", en:"📷 Choose an image" },
-  imageUploaded: { ar:"✅ تم رفع الصورة", fr:"✅ Image envoyée", en:"✅ Image uploaded" },
-  removeImage: { ar:"🗑 حذف الصورة", fr:"🗑 Supprimer l\'image", en:"🗑 Remove image" },
-  imageTooBig: { ar:"الصورة كبيرة جداً (الحد 5 ميغا)", fr:"Image trop volumineuse (max 5 Mo)", en:"Image too large (max 5MB)" },
-  uploadFailed: { ar:"فشل رفع الصورة", fr:"Échec de l\'envoi", en:"Upload failed" },
-  orPasteLink: { ar:"أو الصق رابط صورة", fr:"Ou collez un lien", en:"Or paste an image link" },
-  imageUrl: { ar:"رابط صورة الملعب (اختياري)", fr:"Lien de l\'image (optionnel)", en:"Image URL (optional)" },
-  imageHint: { ar:"اتركه فارغاً لاختيار صورة تلقائياً", fr:"Laissez vide pour une image automatique", en:"Leave empty for an automatic image" },
-  adminTitle: { ar:"لوحة التحكم", fr:"Panneau d\'administration", en:"Admin panel" },
-  adminPassLabel: { ar:"كلمة السر", fr:"Mot de passe", en:"Password" },
-  adminEnter: { ar:"دخول", fr:"Entrer", en:"Enter" },
-  wrongPass: { ar:"كلمة السر خاطئة", fr:"Mot de passe incorrect", en:"Wrong password" },
-  commanderWelcome: { ar:"مرحباً بك أيها القائد 👑", fr:"Bienvenue Commandant 👑", en:"Welcome Commander 👑" },
-  checking: { ar:"جاري التحقق...", fr:"Vérification...", en:"Checking..." },
-  pickSlots: { ar:"اختر مواعيدك", fr:"Choisissez vos créneaux", en:"Pick your slots" },
-  myCart: { ar:"مواعيدك", fr:"Vos créneaux", en:"Your slots" },
-  cartEmpty: { ar:"لم تختر أي موعد بعد", fr:"Aucun créneau choisi", en:"No slots picked yet" },
-  maxSlots: { ar:"الحد الأقصى 70 موعداً", fr:"Maximum 70 créneaux", en:"Max 70 slots" },
-  copied: { ar:"✅ تم نسخ الرقم", fr:"✅ Numéro copié", en:"✅ Number copied" },
-  copyNum: { ar:"نسخ", fr:"Copier", en:"Copy" },
-  blockHours: { ar:"🚫 إغلاق مواعيد", fr:"🚫 Fermer des créneaux", en:"🚫 Block slots" },
-  pickDate: { ar:"اختر التاريخ", fr:"Choisissez la date", en:"Pick a date" },
-  pickHours: { ar:"اختر الساعات المراد إغلاقها", fr:"Choisissez les heures", en:"Pick hours to block" },
-  saveBlock: { ar:"إغلاق المواعيد المحددة", fr:"Fermer les créneaux", en:"Block selected" },
-  blockedList: { ar:"المواعيد المغلقة", fr:"Créneaux fermés", en:"Blocked slots" },
-  noBlocked: { ar:"لا توجد مواعيد مغلقة", fr:"Aucun créneau fermé", en:"No blocked slots" },
-  blockDone: { ar:"🚫 تم إغلاق المواعيد", fr:"🚫 Créneaux fermés", en:"🚫 Slots blocked" },
-  unblockDone: { ar:"✅ تم فتح الموعد", fr:"✅ Créneau rouvert", en:"✅ Slot reopened" },
-  allTaken: { ar:"كل الساعات المحددة محجوزة", fr:"Toutes ces heures sont réservées", en:"All selected hours are booked" },
-  bookedHour: { ar:"محجوز", fr:"Réservé", en:"Booked" },
-  repeat: { ar:"🔁 كرّر أسبوعياً", fr:"🔁 Répéter chaque semaine", en:"🔁 Repeat weekly" },
-  weeks: { ar:"أسابيع", fr:"semaines", en:"weeks" },
-  totalAmount: { ar:"المبلغ الإجمالي", fr:"Montant total", en:"Total amount" },
-  sessions: { ar:"مواعيد", fr:"créneaux", en:"sessions" },
-  slotBusy: { ar:"محجوز", fr:"occupé", en:"busy" },
-  noSlotsLeft: { ar:"كل المواعيد محجوزة — اختر وقتاً آخر", fr:"Tous occupés — choisissez un autre horaire", en:"All busy — pick another time" },
-  groupBooking: { ar:"حجز متكرر", fr:"Réservation récurrente", en:"Recurring booking" },
-  acceptAll: { ar:"قبول الكل", fr:"Tout accepter", en:"Accept all" },
-  rejectAll: { ar:"رفض الكل", fr:"Tout refuser", en:"Reject all" },
-  rateTitle: { ar:"كيف كانت تجربتك؟", fr:"Comment était votre expérience ?", en:"How was your experience?" },
-  rateSend: { ar:"إرسال التقييم", fr:"Envoyer l\'avis", en:"Send rating" },
-  rateComment: { ar:"تعليق (اختياري)", fr:"Commentaire (optionnel)", en:"Comment (optional)" },
-  rateThanks: { ar:"⭐ شكراً لتقييم الملعب", fr:"⭐ Merci d\'avoir évalué le terrain", en:"⭐ Thanks for rating the field" },
-  yourRating: { ar:"تقييمك", fr:"Votre note", en:"Your rating" },
-  rateTooEarly: { ar:"لم ينته موعد الحجز بعد", fr:"La réservation n\'est pas terminée", en:"Booking not finished yet" },
-  alreadyRated: { ar:"قيّمت هذا الحجز مسبقاً", fr:"Déjà évalué", en:"Already rated" },
-  pickStars: { ar:"اختر عدد النجوم", fr:"Choisissez les étoiles", en:"Pick stars" },
-  ratings: { ar:"التقييمات", fr:"Avis", en:"Ratings" },
-  noRatings: { ar:"لا توجد تقييمات بعد", fr:"Aucun avis", en:"No ratings yet" },
-  sortRating: { ar:"الأعلى تقييماً", fr:"Mieux notés", en:"Top rated" },
-  delWilaya: { ar:"حذف الولاية", fr:"Supprimer la wilaya", en:"Delete wilaya" },
-  wilayaEmpty: { ar:"حذف الولاية نهائياً؟", fr:"Supprimer définitivement ?", en:"Delete permanently?" },
-  wilayaHasStadiums: { ar:"ملاعب — سيُحذفون هم وحجوزاتهم نهائياً! متأكد؟", fr:"terrains seront supprimés avec leurs réservations ! Confirmer ?", en:"fields will be deleted with their bookings! Sure?" },
-  wilayaDeleted: { ar:"تم حذف الولاية", fr:"Wilaya supprimée", en:"Wilaya deleted" },
-  myCode: { ar:"كودي", fr:"Mon code", en:"My code" },
-  bookingCode: { ar:"كود الحجز", fr:"Code réservation", en:"Booking code" },
-  changeCode: { ar:"🔄 تغيير الكود", fr:"🔑 Changer le code", en:"🔑 Change code" },
-  newCodeIs: { ar:"كودك الجديد", fr:"Votre nouveau code", en:"Your new code" },
-  confirmChangeCode: { ar:"سيتوقف كودك الحالي عن العمل. متأكد؟", fr:"Votre code actuel cessera de fonctionner. Confirmer ?", en:"Your current code will stop working. Sure?" },
-  netError: { ar:"تعذر الاتصال بالخادم، حاول مجدداً", fr:"Connexion au serveur impossible", en:"Server connection failed" },
-  confirmIdentity: { ar:"أدخل كلمة سرك للتأكيد", fr:"Entrez votre mot de passe", en:"Enter your password to confirm" },
-  invalidPhone: { ar:"الرقم غير صحيح", fr:"Numéro invalide", en:"Invalid number" },
-  tooManyTries: { ar:"محاولات كثيرة، حاول لاحقاً", fr:"Trop de tentatives", en:"Too many attempts" },
-  // 🔒 رسائل الحجز الخادمي
-  slotTakenNow: { ar:"⚠️ أحد المواعيد حُجز للتو — اختر وقتاً آخر", fr:"⚠️ Un créneau vient d\'être pris", en:"⚠️ A slot was just taken" },
-  closedHour: { ar:"هذه الساعة خارج أوقات عمل الملعب", fr:"Heure hors service", en:"Hour outside working hours" },
-  pastDate: { ar:"لا يمكن الحجز في وقت مضى", fr:"Créneau déjà passé", en:"That time has passed" },
-  needRelogin: { ar:"يرجى تسجيل الدخول مجدداً لإتمام الحجز", fr:"Reconnectez-vous pour réserver", en:"Please log in again to book" },
-  badPayment: { ar:"هذا الملعب لا يقبل وسيلة الدفع المختارة", fr:"Moyen de paiement non accepté", en:"Payment method not accepted" },
-  rateNow: { ar:"⭐ قيّم هذا الحجز", fr:"⭐ Évaluer cette réservation", en:"⭐ Rate this booking" },
-  // ⭐ المفضلة
-  favorites: { ar:"المفضلة", fr:"Favoris", en:"Favorites" },
-  addedFav: { ar:"⭐ أُضيف للمفضلة", fr:"⭐ Ajouté aux favoris", en:"⭐ Added to favorites" },
-  removedFav: { ar:"أُزيل من المفضلة", fr:"Retiré des favoris", en:"Removed from favorites" },
-  noFavorites: { ar:"لم تُضف أي ملعب للمفضلة بعد", fr:"Aucun terrain ajouté aux favoris", en:"No favorite fields yet" },
-  noFavoritesHint: { ar:"اضغط على ♡ داخل بطاقة الملعب لإضافته هنا", fr:"Appuyez sur ♡ sur une carte pour l'ajouter ici", en:"Tap ♡ on a field card to add it here" },
-  // 👋 الترحيب الشخصي
-  findField: { ar:"أين تريد اللعب؟", fr:"Où voulez-vous jouer ?", en:"Where do you want to play?" },
+  ownerLogin: { ar:"ØµØ§Ø­Ø¨ Ù…Ù„Ø¹Ø¨", fr:"PropriÃ©taire", en:"Owner" },
+  ownerCode: { ar:"ÙƒÙˆØ¯ ØµØ§Ø­Ø¨ Ø§Ù„Ù…Ù„Ø¹Ø¨", fr:"Code propriÃ©taire", en:"Owner code" },
+  enterCode: { ar:"Ø§Ø¯Ø®Ù„ Ø§Ù„ÙƒÙˆØ¯", fr:"Entrez le code", en:"Enter code" },
+  wrongCode: { ar:"Ø§Ù„ÙƒÙˆØ¯ ØºÙŠØ± ØµØ­ÙŠØ­", fr:"Code incorrect", en:"Wrong code" },
+  suspended: { ar:"Ù…Ù„Ø¹Ø¨Ùƒ Ù…Ø¹Ù„Ù‚ØŒ ÙŠØ±Ø¬Ù‰ Ø§Ù„ØªÙˆØ§ØµÙ„ Ù…Ø¹ Ø§Ù„Ø¥Ø¯Ø§Ø±Ø©", fr:"Terrain suspendu", en:"Stadium suspended" },
+  dueAmount: { ar:"Ø§Ù„Ù…Ø¨Ù„Øº Ø§Ù„Ù…Ø³ØªØ­Ù‚ Ø¹Ù„ÙŠÙƒ", fr:"Montant dÃ»", en:"Amount due" },
+  commission: { ar:"Ù†Ø³Ø¨Ø© Ø§Ù„ØªØ·Ø¨ÙŠÙ‚", fr:"Commission", en:"Commission" },
+  dues: { ar:"Ø§Ù„Ù…Ø³ØªØ­Ù‚Ø§Øª", fr:"DÃ»s", en:"Dues" },
+  totalDues: { ar:"Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù…Ø³ØªØ­Ù‚Ø§Øª", fr:"Total dÃ»", en:"Total due" },
+  resetDue: { ar:"ØªØµÙÙŠØ± Ø§Ù„Ù…Ø¨Ù„Øº", fr:"RÃ©initialiser", en:"Reset" },
+  suspend: { ar:"ØªØ¹Ù„ÙŠÙ‚", fr:"Suspendre", en:"Suspend" },
+  activate: { ar:"ØªÙØ¹ÙŠÙ„", fr:"Activer", en:"Activate" },
+  handledBy: { ar:"ØªÙ…Øª Ø§Ù„Ù…Ø¹Ø§Ù„Ø¬Ø© Ù…Ù† Ø·Ø±Ù", fr:"TraitÃ© par", en:"Handled by" },
+  owner: { ar:"ØµØ§Ø­Ø¨ Ø§Ù„Ù…Ù„Ø¹Ø¨", fr:"PropriÃ©taire", en:"Owner" },
+  proof: { ar:"Ø¥Ø«Ø¨Ø§Øª Ø§Ù„Ø¯ÙØ¹ (ØµÙˆØ±Ø©)", fr:"Preuve de paiement", en:"Payment proof" },
+  uploadProof: { ar:"ðŸ“· Ø§Ø±ÙØ¹ Ù„Ù‚Ø·Ø© Ø§Ù„Ø´Ø§Ø´Ø©", fr:"ðŸ“· TÃ©lÃ©charger", en:"ðŸ“· Upload" },
+  viewProof: { ar:"ðŸ“· Ø¹Ø±Ø¶ Ø§Ù„Ø¥Ø«Ø¨Ø§Øª", fr:"ðŸ“· Voir preuve", en:"ðŸ“· View proof" },
+  proofRequired: { ar:"ÙŠØ±Ø¬Ù‰ Ø±ÙØ¹ Ø¥Ø«Ø¨Ø§Øª Ø§Ù„Ø¯ÙØ¹", fr:"Preuve requise", en:"Proof required" },
+  uploading: { ar:"Ø¬Ø§Ø±ÙŠ Ø§Ù„Ø±ÙØ¹...", fr:"Envoi...", en:"Uploading..." },
+  ownerCodeIs: { ar:"ÙƒÙˆØ¯ ØµØ§Ø­Ø¨ Ø§Ù„Ù…Ù„Ø¹Ø¨", fr:"Code propriÃ©taire", en:"Owner code" },
+  active: { ar:"Ù†Ø´Ø·", fr:"Actif", en:"Active" },
+  suspendedS: { ar:"Ù…Ø¹Ù„Ù‚", fr:"Suspendu", en:"Suspended" },
+  allBookings: { ar:"ÙƒÙ„ Ø§Ù„Ø­Ø¬ÙˆØ²Ø§Øª", fr:"RÃ©servations", en:"All bookings" },
+  viewOnly: { ar:"Ù„Ù„Ù…Ø´Ø§Ù‡Ø¯Ø© ÙÙ‚Ø·", fr:"Lecture seule", en:"View only" },
+  waiting: { ar:"Ù‚ÙŠØ¯ Ø§Ù„Ø§Ù†ØªØ¸Ø§Ø±", fr:"En attente", en:"Pending" },
+  accepted2: { ar:"ØªÙ… Ø§Ù„Ù‚Ø¨ÙˆÙ„", fr:"AcceptÃ©", en:"Accepted" },
+  rejected2: { ar:"ØªÙ… Ø§Ù„Ø±ÙØ¶", fr:"RefusÃ©", en:"Rejected" },
+  newBooking: { ar:"Ø­Ø¬Ø² Ø¬Ø¯ÙŠØ¯", fr:"Nouvelle rÃ©servation", en:"New booking" },
+  bookingAccepted: { ar:"ØªÙ… Ù‚Ø¨ÙˆÙ„ Ø­Ø¬Ø²Ùƒ", fr:"RÃ©servation confirmÃ©e", en:"Booking confirmed" },
+  bookingRejected: { ar:"ØªÙ… Ø±ÙØ¶ Ø­Ø¬Ø²Ùƒ", fr:"RÃ©servation refusÃ©e", en:"Booking rejected" },
+  // ðŸ“ Ù†ØµÙˆØµ Ø§Ù„Ù…ÙˆÙ‚Ø¹
+  location: { ar:"Ù…ÙˆÙ‚Ø¹ Ø§Ù„Ù…Ù„Ø¹Ø¨", fr:"Localisation du terrain", en:"Field location" },
+  myLocation: { ar:"ðŸ“ Ù…ÙˆÙ‚Ø¹ÙŠ Ø§Ù„Ø­Ø§Ù„ÙŠ", fr:"ðŸ“ Ma position", en:"ðŸ“ My location" },
+  checkLocation: { ar:"ðŸ—º ØªØ­Ù‚Ù‚ Ù…Ù† Ø§Ù„Ù…ÙˆÙ‚Ø¹", fr:"ðŸ—º VÃ©rifier", en:"ðŸ—º Check on map" },
+  locating: { ar:"ðŸ“ Ø¬Ø§Ø±ÙŠ ØªØ­Ø¯ÙŠØ¯ Ø§Ù„Ù…ÙˆÙ‚Ø¹...", fr:"ðŸ“ Localisation...", en:"ðŸ“ Locating..." },
+  locationSet: { ar:"âœ… ØªÙ… ØªØ­Ø¯ÙŠØ¯ Ø§Ù„Ù…ÙˆÙ‚Ø¹", fr:"âœ… Position dÃ©finie", en:"âœ… Location set" },
+  locationFailed: { ar:"ØªØ¹Ø°Ø± ØªØ­Ø¯ÙŠØ¯ Ø§Ù„Ù…ÙˆÙ‚Ø¹", fr:"Ã‰chec de localisation", en:"Location failed" },
+  locationDenied: { ar:"Ø±ÙØ¶Øª Ø¥Ø°Ù† Ø§Ù„Ù…ÙˆÙ‚Ø¹ â€” ÙØ¹Ù‘Ù„Ù‡ Ù…Ù† Ø¥Ø¹Ø¯Ø§Ø¯Ø§Øª Ø§Ù„Ø¬Ù‡Ø§Ø²", fr:"Permission refusÃ©e â€” activez la localisation dans les rÃ©glages", en:"Permission denied â€” enable location in device settings" },
+  locationTimeout: { ar:"Ø§Ù†ØªÙ‡Øª Ø§Ù„Ù…Ù‡Ù„Ø© â€” Ø¬Ø±Ù‘Ø¨ ÙÙŠ Ù…ÙƒØ§Ù† Ù…ÙØªÙˆØ­", fr:"DÃ©lai dÃ©passÃ© â€” essayez en extÃ©rieur", en:"Timed out â€” try in an open area" },
+  locationUnavailable: { ar:"ØªØ¹Ø°Ø± ØªØ­Ø¯ÙŠØ¯ Ù…ÙˆÙ‚Ø¹Ùƒ Ø§Ù„Ø¢Ù†ØŒ Ø­Ø§ÙˆÙ„ Ù…Ø¬Ø¯Ø¯Ø§Ù‹", fr:"Position indisponible, rÃ©essayez", en:"Position unavailable, try again" },
+  noGeo: { ar:"Ø§Ù„Ù…ØªØµÙØ­ Ù„Ø§ ÙŠØ¯Ø¹Ù… ØªØ­Ø¯ÙŠØ¯ Ø§Ù„Ù…ÙˆÙ‚Ø¹", fr:"GÃ©olocalisation non supportÃ©e", en:"Geolocation not supported" },
+  directions: { ar:"ðŸ“ Ø§Ù„Ù…ÙˆÙ‚Ø¹", fr:"ðŸ“ Localisation", en:"ðŸ“ Location" },
+  nearestBtn: { ar:"ðŸŽ¯ Ø§Ù„Ø£Ù‚Ø±Ø¨ Ù„ÙŠ", fr:"ðŸŽ¯ Le plus proche", en:"ðŸŽ¯ Nearest to me" },
+  showAllBtn: { ar:"Ø¹Ø±Ø¶ Ø§Ù„ÙƒÙ„", fr:"Tout afficher", en:"Show all" },
+  noNearby: { ar:"Ù„Ø§ ØªÙˆØ¬Ø¯ Ù…Ù„Ø§Ø¹Ø¨ Ø¨Ù…ÙˆØ§Ù‚Ø¹ Ù…Ø­Ø¯Ø¯Ø© Ù‚Ø±ÙŠØ¨Ø© Ù…Ù†Ùƒ", fr:"Aucun terrain gÃ©olocalisÃ©", en:"No located fields nearby" },
+  showOnMap: { ar:"ðŸ“ Ø¹Ø±Ø¶ Ø¹Ù„Ù‰ Ø§Ù„Ø®Ø±ÙŠØ·Ø©", fr:"ðŸ“ Voir sur la carte", en:"ðŸ“ View on map" },
+  noLocation: { ar:"Ù„Ù… ÙŠØ­Ø¯Ø¯ Ø§Ù„Ù…ÙˆÙ‚Ø¹ Ø¨Ø¹Ø¯", fr:"Position non dÃ©finie", en:"No location yet" },
+  sortNearest: { ar:"Ø§Ù„Ø£Ù‚Ø±Ø¨ Ø¥Ù„ÙŠÙ‘", fr:"Le plus proche", en:"Nearest to me" },
+  kmAway: { ar:"ÙƒÙ… Ù…Ù†Ùƒ", fr:"km de vous", en:"km away" },
+  enableLocation: { ar:"ÙØ¹Ù‘Ù„ Ù…ÙˆÙ‚Ø¹Ùƒ Ù„Ø¹Ø±Ø¶ Ø§Ù„Ù…Ø³Ø§ÙØ©", fr:"Activez votre position", en:"Enable location for distance" },
+  // ðŸ”‘ Ø´Ø§Ø´Ø© Ø§Ù„Ø¯Ø®ÙˆÙ„
+  forgotPass: { ar:"Ù†Ø³ÙŠØª ÙƒÙ„Ù…Ø© Ø§Ù„Ø³Ø±ØŸ", fr:"Mot de passe oubliÃ© ?", en:"Forgot password?" },
+  createNewAccount: { ar:"Ø¥Ù†Ø´Ø§Ø¡ Ø­Ø³Ø§Ø¨ Ø¬Ø¯ÙŠØ¯", fr:"CrÃ©er un nouveau compte", en:"Create new account" },
+  haveAccount: { ar:"Ù„Ø¯ÙŠÙƒ Ø­Ø³Ø§Ø¨ØŸ ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„", fr:"DÃ©jÃ  un compte ? Se connecter", en:"Have an account? Log in" },
+  ownerEntry: { ar:"ðŸŸ Ø¯Ø®ÙˆÙ„ Ø£ØµØ­Ø§Ø¨ Ø§Ù„Ù…Ù„Ø§Ø¹Ø¨", fr:"ðŸŸ Espace propriÃ©taires", en:"ðŸŸ Field owners" },
+  backToLogin: { ar:"â† Ø±Ø¬ÙˆØ¹ Ù„ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„", fr:"â† Retour Ã  la connexion", en:"â† Back to log in" },
+  forgotTitle: { ar:"Ø§Ø³ØªØ¹Ø§Ø¯Ø© ÙƒÙ„Ù…Ø© Ø§Ù„Ø³Ø±", fr:"RÃ©cupÃ©rer le mot de passe", en:"Recover password" },
+  forgotStep1: { ar:"Ø£Ø¯Ø®Ù„ Ø±Ù‚Ù… Ù‡Ø§ØªÙÙƒ Ø§Ù„Ù…Ø³Ø¬Ù„", fr:"Entrez votre numÃ©ro enregistrÃ©", en:"Enter your registered phone" },
+  next2: { ar:"Ø§Ù„ØªØ§Ù„ÙŠ", fr:"Suivant", en:"Next" },
+  phoneNotFound: { ar:"Ù„Ø§ ÙŠÙˆØ¬Ø¯ Ø­Ø³Ø§Ø¨ Ø¨Ù‡Ø°Ø§ Ø§Ù„Ø±Ù‚Ù…", fr:"Aucun compte avec ce numÃ©ro", en:"No account with this number" },
+  noQuestionSet: { ar:"Ù‡Ø°Ø§ Ø§Ù„Ø­Ø³Ø§Ø¨ Ù„Ù… ÙŠØ­Ø¯Ø¯ Ø³Ø¤Ø§Ù„Ø§Ù‹ Ø³Ø±ÙŠØ§Ù‹. ØªÙˆØ§ØµÙ„ Ù…Ø¹Ù†Ø§ Ø¹Ø¨Ø± ÙˆØ§ØªØ³Ø§Ø¨.", fr:"Aucune question secrÃ¨te dÃ©finie. Contactez-nous.", en:"No security question set. Contact us." },
+  yourAnswer: { ar:"Ø¬ÙˆØ§Ø¨Ùƒ", fr:"Votre rÃ©ponse", en:"Your answer" },
+  wrongAnswer: { ar:"Ø§Ù„Ø¬ÙˆØ§Ø¨ ØºÙŠØ± ØµØ­ÙŠØ­", fr:"RÃ©ponse incorrecte", en:"Wrong answer" },
+  verify: { ar:"ØªØ­Ù‚Ù‚", fr:"VÃ©rifier", en:"Verify" },
+  newPass: { ar:"ÙƒÙ„Ù…Ø© Ø§Ù„Ø³Ø± Ø§Ù„Ø¬Ø¯ÙŠØ¯Ø© (4 Ø£Ø±Ù‚Ø§Ù…)", fr:"Nouveau mot de passe (4 chiffres)", en:"New password (4 digits)" },
+  confirmPass: { ar:"ØªØ£ÙƒÙŠØ¯ ÙƒÙ„Ù…Ø© Ø§Ù„Ø³Ø±", fr:"Confirmer le mot de passe", en:"Confirm password" },
+  passMismatch: { ar:"ÙƒÙ„Ù…ØªØ§ Ø§Ù„Ø³Ø± ØºÙŠØ± Ù…ØªØ·Ø§Ø¨Ù‚ØªÙŠÙ†", fr:"Les mots de passe ne correspondent pas", en:"Passwords don't match" },
+  savePass: { ar:"Ø­ÙØ¸ ÙƒÙ„Ù…Ø© Ø§Ù„Ø³Ø±", fr:"Enregistrer", en:"Save password" },
+  passChanged: { ar:"âœ… ØªÙ… ØªØºÙŠÙŠØ± ÙƒÙ„Ù…Ø© Ø§Ù„Ø³Ø±ØŒ ÙŠÙ…ÙƒÙ†Ùƒ Ø§Ù„Ø¯Ø®ÙˆÙ„ Ø§Ù„Ø¢Ù†", fr:"âœ… Mot de passe modifiÃ©", en:"âœ… Password changed" },
+  securityQ: { ar:"Ø§Ù„Ø³Ø¤Ø§Ù„ Ø§Ù„Ø³Ø±ÙŠ", fr:"Question secrÃ¨te", en:"Security question" },
+  chooseQ: { ar:"Ø§Ø®ØªØ± Ø³Ø¤Ø§Ù„Ø§Ù‹", fr:"Choisissez une question", en:"Choose a question" },
+  answerHint: { ar:"Ø§Ø­ÙØ¸ Ø¬ÙˆØ§Ø¨Ùƒ Ø¬ÙŠØ¯Ø§Ù‹ â€” Ø³ØªØ­ØªØ§Ø¬Ù‡ Ø¥Ø°Ø§ Ù†Ø³ÙŠØª ÙƒÙ„Ù…Ø© Ø§Ù„Ø³Ø±", fr:"Retenez bien votre rÃ©ponse", en:"Remember your answer well" },
+  setupQTitle: { ar:"Ø§Ø­Ù…Ù Ø­Ø³Ø§Ø¨Ùƒ", fr:"ProtÃ©gez votre compte", en:"Protect your account" },
+  setupQDesc: { ar:"Ø­Ø¯Ø¯ Ø³Ø¤Ø§Ù„Ø§Ù‹ Ø³Ø±ÙŠØ§Ù‹ Ø­ØªÙ‰ ØªØªÙ…ÙƒÙ† Ù…Ù† Ø§Ø³ØªØ¹Ø§Ø¯Ø© Ø­Ø³Ø§Ø¨Ùƒ Ø¨Ù†ÙØ³Ùƒ Ø¥Ø°Ø§ Ù†Ø³ÙŠØª ÙƒÙ„Ù…Ø© Ø§Ù„Ø³Ø±.", fr:"DÃ©finissez une question secrÃ¨te pour rÃ©cupÃ©rer votre compte.", en:"Set a security question so you can recover your account yourself." },
+  saveQ: { ar:"Ø­ÙØ¸ Ø§Ù„Ø³Ø¤Ø§Ù„", fr:"Enregistrer", en:"Save question" },
+  later: { ar:"Ù„Ø§Ø­Ù‚Ø§Ù‹", fr:"Plus tard", en:"Later" },
+  qSaved: { ar:"âœ… ØªÙ… Ø­ÙØ¸ Ø§Ù„Ø³Ø¤Ø§Ù„ Ø§Ù„Ø³Ø±ÙŠ", fr:"âœ… Question enregistrÃ©e", en:"âœ… Question saved" },
+  uploadImage: { ar:"ðŸ“· Ø§Ø®ØªØ± ØµÙˆØ±Ø© Ù…Ù† Ù…Ù„ÙØ§ØªÙƒ", fr:"ðŸ“· Choisir une image", en:"ðŸ“· Choose an image" },
+  imageUploaded: { ar:"âœ… ØªÙ… Ø±ÙØ¹ Ø§Ù„ØµÙˆØ±Ø©", fr:"âœ… Image envoyÃ©e", en:"âœ… Image uploaded" },
+  removeImage: { ar:"ðŸ—‘ Ø­Ø°Ù Ø§Ù„ØµÙˆØ±Ø©", fr:"ðŸ—‘ Supprimer l\'image", en:"ðŸ—‘ Remove image" },
+  imageTooBig: { ar:"Ø§Ù„ØµÙˆØ±Ø© ÙƒØ¨ÙŠØ±Ø© Ø¬Ø¯Ø§Ù‹ (Ø§Ù„Ø­Ø¯ 5 Ù…ÙŠØºØ§)", fr:"Image trop volumineuse (max 5 Mo)", en:"Image too large (max 5MB)" },
+  uploadFailed: { ar:"ÙØ´Ù„ Ø±ÙØ¹ Ø§Ù„ØµÙˆØ±Ø©", fr:"Ã‰chec de l\'envoi", en:"Upload failed" },
+  orPasteLink: { ar:"Ø£Ùˆ Ø§Ù„ØµÙ‚ Ø±Ø§Ø¨Ø· ØµÙˆØ±Ø©", fr:"Ou collez un lien", en:"Or paste an image link" },
+  imageUrl: { ar:"Ø±Ø§Ø¨Ø· ØµÙˆØ±Ø© Ø§Ù„Ù…Ù„Ø¹Ø¨ (Ø§Ø®ØªÙŠØ§Ø±ÙŠ)", fr:"Lien de l\'image (optionnel)", en:"Image URL (optional)" },
+  imageHint: { ar:"Ø§ØªØ±ÙƒÙ‡ ÙØ§Ø±ØºØ§Ù‹ Ù„Ø§Ø®ØªÙŠØ§Ø± ØµÙˆØ±Ø© ØªÙ„Ù‚Ø§Ø¦ÙŠØ§Ù‹", fr:"Laissez vide pour une image automatique", en:"Leave empty for an automatic image" },
+  adminTitle: { ar:"Ù„ÙˆØ­Ø© Ø§Ù„ØªØ­ÙƒÙ…", fr:"Panneau d\'administration", en:"Admin panel" },
+  adminPassLabel: { ar:"ÙƒÙ„Ù…Ø© Ø§Ù„Ø³Ø±", fr:"Mot de passe", en:"Password" },
+  adminEnter: { ar:"Ø¯Ø®ÙˆÙ„", fr:"Entrer", en:"Enter" },
+  wrongPass: { ar:"ÙƒÙ„Ù…Ø© Ø§Ù„Ø³Ø± Ø®Ø§Ø·Ø¦Ø©", fr:"Mot de passe incorrect", en:"Wrong password" },
+  commanderWelcome: { ar:"Ù…Ø±Ø­Ø¨Ø§Ù‹ Ø¨Ùƒ Ø£ÙŠÙ‡Ø§ Ø§Ù„Ù‚Ø§Ø¦Ø¯ ðŸ‘‘", fr:"Bienvenue Commandant ðŸ‘‘", en:"Welcome Commander ðŸ‘‘" },
+  checking: { ar:"Ø¬Ø§Ø±ÙŠ Ø§Ù„ØªØ­Ù‚Ù‚...", fr:"VÃ©rification...", en:"Checking..." },
+  pickSlots: { ar:"Ø§Ø®ØªØ± Ù…ÙˆØ§Ø¹ÙŠØ¯Ùƒ", fr:"Choisissez vos crÃ©neaux", en:"Pick your slots" },
+  myCart: { ar:"Ù…ÙˆØ§Ø¹ÙŠØ¯Ùƒ", fr:"Vos crÃ©neaux", en:"Your slots" },
+  cartEmpty: { ar:"Ù„Ù… ØªØ®ØªØ± Ø£ÙŠ Ù…ÙˆØ¹Ø¯ Ø¨Ø¹Ø¯", fr:"Aucun crÃ©neau choisi", en:"No slots picked yet" },
+  maxSlots: { ar:"Ø§Ù„Ø­Ø¯ Ø§Ù„Ø£Ù‚ØµÙ‰ 70 Ù…ÙˆØ¹Ø¯Ø§Ù‹", fr:"Maximum 70 crÃ©neaux", en:"Max 70 slots" },
+  copied: { ar:"âœ… ØªÙ… Ù†Ø³Ø® Ø§Ù„Ø±Ù‚Ù…", fr:"âœ… NumÃ©ro copiÃ©", en:"âœ… Number copied" },
+  copyNum: { ar:"Ù†Ø³Ø®", fr:"Copier", en:"Copy" },
+  blockHours: { ar:"ðŸš« Ø¥ØºÙ„Ø§Ù‚ Ù…ÙˆØ§Ø¹ÙŠØ¯", fr:"ðŸš« Fermer des crÃ©neaux", en:"ðŸš« Block slots" },
+  pickDate: { ar:"Ø§Ø®ØªØ± Ø§Ù„ØªØ§Ø±ÙŠØ®", fr:"Choisissez la date", en:"Pick a date" },
+  pickHours: { ar:"Ø§Ø®ØªØ± Ø§Ù„Ø³Ø§Ø¹Ø§Øª Ø§Ù„Ù…Ø±Ø§Ø¯ Ø¥ØºÙ„Ø§Ù‚Ù‡Ø§", fr:"Choisissez les heures", en:"Pick hours to block" },
+  saveBlock: { ar:"Ø¥ØºÙ„Ø§Ù‚ Ø§Ù„Ù…ÙˆØ§Ø¹ÙŠØ¯ Ø§Ù„Ù…Ø­Ø¯Ø¯Ø©", fr:"Fermer les crÃ©neaux", en:"Block selected" },
+  blockedList: { ar:"Ø§Ù„Ù…ÙˆØ§Ø¹ÙŠØ¯ Ø§Ù„Ù…ØºÙ„Ù‚Ø©", fr:"CrÃ©neaux fermÃ©s", en:"Blocked slots" },
+  noBlocked: { ar:"Ù„Ø§ ØªÙˆØ¬Ø¯ Ù…ÙˆØ§Ø¹ÙŠØ¯ Ù…ØºÙ„Ù‚Ø©", fr:"Aucun crÃ©neau fermÃ©", en:"No blocked slots" },
+  blockDone: { ar:"ðŸš« ØªÙ… Ø¥ØºÙ„Ø§Ù‚ Ø§Ù„Ù…ÙˆØ§Ø¹ÙŠØ¯", fr:"ðŸš« CrÃ©neaux fermÃ©s", en:"ðŸš« Slots blocked" },
+  unblockDone: { ar:"âœ… ØªÙ… ÙØªØ­ Ø§Ù„Ù…ÙˆØ¹Ø¯", fr:"âœ… CrÃ©neau rouvert", en:"âœ… Slot reopened" },
+  allTaken: { ar:"ÙƒÙ„ Ø§Ù„Ø³Ø§Ø¹Ø§Øª Ø§Ù„Ù…Ø­Ø¯Ø¯Ø© Ù…Ø­Ø¬ÙˆØ²Ø©", fr:"Toutes ces heures sont rÃ©servÃ©es", en:"All selected hours are booked" },
+  bookedHour: { ar:"Ù…Ø­Ø¬ÙˆØ²", fr:"RÃ©servÃ©", en:"Booked" },
+  repeat: { ar:"ðŸ” ÙƒØ±Ù‘Ø± Ø£Ø³Ø¨ÙˆØ¹ÙŠØ§Ù‹", fr:"ðŸ” RÃ©pÃ©ter chaque semaine", en:"ðŸ” Repeat weekly" },
+  weeks: { ar:"Ø£Ø³Ø§Ø¨ÙŠØ¹", fr:"semaines", en:"weeks" },
+  totalAmount: { ar:"Ø§Ù„Ù…Ø¨Ù„Øº Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ", fr:"Montant total", en:"Total amount" },
+  sessions: { ar:"Ù…ÙˆØ§Ø¹ÙŠØ¯", fr:"crÃ©neaux", en:"sessions" },
+  slotBusy: { ar:"Ù…Ø­Ø¬ÙˆØ²", fr:"occupÃ©", en:"busy" },
+  noSlotsLeft: { ar:"ÙƒÙ„ Ø§Ù„Ù…ÙˆØ§Ø¹ÙŠØ¯ Ù…Ø­Ø¬ÙˆØ²Ø© â€” Ø§Ø®ØªØ± ÙˆÙ‚ØªØ§Ù‹ Ø¢Ø®Ø±", fr:"Tous occupÃ©s â€” choisissez un autre horaire", en:"All busy â€” pick another time" },
+  groupBooking: { ar:"Ø­Ø¬Ø² Ù…ØªÙƒØ±Ø±", fr:"RÃ©servation rÃ©currente", en:"Recurring booking" },
+  acceptAll: { ar:"Ù‚Ø¨ÙˆÙ„ Ø§Ù„ÙƒÙ„", fr:"Tout accepter", en:"Accept all" },
+  rejectAll: { ar:"Ø±ÙØ¶ Ø§Ù„ÙƒÙ„", fr:"Tout refuser", en:"Reject all" },
+  rateTitle: { ar:"ÙƒÙŠÙ ÙƒØ§Ù†Øª ØªØ¬Ø±Ø¨ØªÙƒØŸ", fr:"Comment Ã©tait votre expÃ©rience ?", en:"How was your experience?" },
+  rateSend: { ar:"Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„ØªÙ‚ÙŠÙŠÙ…", fr:"Envoyer l\'avis", en:"Send rating" },
+  rateComment: { ar:"ØªØ¹Ù„ÙŠÙ‚ (Ø§Ø®ØªÙŠØ§Ø±ÙŠ)", fr:"Commentaire (optionnel)", en:"Comment (optional)" },
+  rateThanks: { ar:"â­ Ø´ÙƒØ±Ø§Ù‹ Ù„ØªÙ‚ÙŠÙŠÙ… Ø§Ù„Ù…Ù„Ø¹Ø¨", fr:"â­ Merci d\'avoir Ã©valuÃ© le terrain", en:"â­ Thanks for rating the field" },
+  yourRating: { ar:"ØªÙ‚ÙŠÙŠÙ…Ùƒ", fr:"Votre note", en:"Your rating" },
+  rateTooEarly: { ar:"Ù„Ù… ÙŠÙ†ØªÙ‡ Ù…ÙˆØ¹Ø¯ Ø§Ù„Ø­Ø¬Ø² Ø¨Ø¹Ø¯", fr:"La rÃ©servation n\'est pas terminÃ©e", en:"Booking not finished yet" },
+  alreadyRated: { ar:"Ù‚ÙŠÙ‘Ù…Øª Ù‡Ø°Ø§ Ø§Ù„Ø­Ø¬Ø² Ù…Ø³Ø¨Ù‚Ø§Ù‹", fr:"DÃ©jÃ  Ã©valuÃ©", en:"Already rated" },
+  pickStars: { ar:"Ø§Ø®ØªØ± Ø¹Ø¯Ø¯ Ø§Ù„Ù†Ø¬ÙˆÙ…", fr:"Choisissez les Ã©toiles", en:"Pick stars" },
+  ratings: { ar:"Ø§Ù„ØªÙ‚ÙŠÙŠÙ…Ø§Øª", fr:"Avis", en:"Ratings" },
+  noRatings: { ar:"Ù„Ø§ ØªÙˆØ¬Ø¯ ØªÙ‚ÙŠÙŠÙ…Ø§Øª Ø¨Ø¹Ø¯", fr:"Aucun avis", en:"No ratings yet" },
+  sortRating: { ar:"Ø§Ù„Ø£Ø¹Ù„Ù‰ ØªÙ‚ÙŠÙŠÙ…Ø§Ù‹", fr:"Mieux notÃ©s", en:"Top rated" },
+  delWilaya: { ar:"Ø­Ø°Ù Ø§Ù„ÙˆÙ„Ø§ÙŠØ©", fr:"Supprimer la wilaya", en:"Delete wilaya" },
+  wilayaEmpty: { ar:"Ø­Ø°Ù Ø§Ù„ÙˆÙ„Ø§ÙŠØ© Ù†Ù‡Ø§Ø¦ÙŠØ§Ù‹ØŸ", fr:"Supprimer dÃ©finitivement ?", en:"Delete permanently?" },
+  wilayaHasStadiums: { ar:"Ù…Ù„Ø§Ø¹Ø¨ â€” Ø³ÙŠÙØ­Ø°ÙÙˆÙ† Ù‡Ù… ÙˆØ­Ø¬ÙˆØ²Ø§ØªÙ‡Ù… Ù†Ù‡Ø§Ø¦ÙŠØ§Ù‹! Ù…ØªØ£ÙƒØ¯ØŸ", fr:"terrains seront supprimÃ©s avec leurs rÃ©servations ! Confirmer ?", en:"fields will be deleted with their bookings! Sure?" },
+  wilayaDeleted: { ar:"ØªÙ… Ø­Ø°Ù Ø§Ù„ÙˆÙ„Ø§ÙŠØ©", fr:"Wilaya supprimÃ©e", en:"Wilaya deleted" },
+  myCode: { ar:"ÙƒÙˆØ¯ÙŠ", fr:"Mon code", en:"My code" },
+  bookingCode: { ar:"ÙƒÙˆØ¯ Ø§Ù„Ø­Ø¬Ø²", fr:"Code rÃ©servation", en:"Booking code" },
+  changeCode: { ar:"ðŸ”„ ØªØºÙŠÙŠØ± Ø§Ù„ÙƒÙˆØ¯", fr:"ðŸ”‘ Changer le code", en:"ðŸ”‘ Change code" },
+  newCodeIs: { ar:"ÙƒÙˆØ¯Ùƒ Ø§Ù„Ø¬Ø¯ÙŠØ¯", fr:"Votre nouveau code", en:"Your new code" },
+  confirmChangeCode: { ar:"Ø³ÙŠØªÙˆÙ‚Ù ÙƒÙˆØ¯Ùƒ Ø§Ù„Ø­Ø§Ù„ÙŠ Ø¹Ù† Ø§Ù„Ø¹Ù…Ù„. Ù…ØªØ£ÙƒØ¯ØŸ", fr:"Votre code actuel cessera de fonctionner. Confirmer ?", en:"Your current code will stop working. Sure?" },
+  netError: { ar:"ØªØ¹Ø°Ø± Ø§Ù„Ø§ØªØµØ§Ù„ Ø¨Ø§Ù„Ø®Ø§Ø¯Ù…ØŒ Ø­Ø§ÙˆÙ„ Ù…Ø¬Ø¯Ø¯Ø§Ù‹", fr:"Connexion au serveur impossible", en:"Server connection failed" },
+  confirmIdentity: { ar:"Ø£Ø¯Ø®Ù„ ÙƒÙ„Ù…Ø© Ø³Ø±Ùƒ Ù„Ù„ØªØ£ÙƒÙŠØ¯", fr:"Entrez votre mot de passe", en:"Enter your password to confirm" },
+  invalidPhone: { ar:"Ø§Ù„Ø±Ù‚Ù… ØºÙŠØ± ØµØ­ÙŠØ­", fr:"NumÃ©ro invalide", en:"Invalid number" },
+  tooManyTries: { ar:"Ù…Ø­Ø§ÙˆÙ„Ø§Øª ÙƒØ«ÙŠØ±Ø©ØŒ Ø­Ø§ÙˆÙ„ Ù„Ø§Ø­Ù‚Ø§Ù‹", fr:"Trop de tentatives", en:"Too many attempts" },
+  // ðŸ”’ Ø±Ø³Ø§Ø¦Ù„ Ø§Ù„Ø­Ø¬Ø² Ø§Ù„Ø®Ø§Ø¯Ù…ÙŠ
+  slotTakenNow: { ar:"âš ï¸ Ø£Ø­Ø¯ Ø§Ù„Ù…ÙˆØ§Ø¹ÙŠØ¯ Ø­ÙØ¬Ø² Ù„Ù„ØªÙˆ â€” Ø§Ø®ØªØ± ÙˆÙ‚ØªØ§Ù‹ Ø¢Ø®Ø±", fr:"âš ï¸ Un crÃ©neau vient d\'Ãªtre pris", en:"âš ï¸ A slot was just taken" },
+  closedHour: { ar:"Ù‡Ø°Ù‡ Ø§Ù„Ø³Ø§Ø¹Ø© Ø®Ø§Ø±Ø¬ Ø£ÙˆÙ‚Ø§Øª Ø¹Ù…Ù„ Ø§Ù„Ù…Ù„Ø¹Ø¨", fr:"Heure hors service", en:"Hour outside working hours" },
+  pastDate: { ar:"Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø§Ù„Ø­Ø¬Ø² ÙÙŠ ÙˆÙ‚Øª Ù…Ø¶Ù‰", fr:"CrÃ©neau dÃ©jÃ  passÃ©", en:"That time has passed" },
+  needRelogin: { ar:"ÙŠØ±Ø¬Ù‰ ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„ Ù…Ø¬Ø¯Ø¯Ø§Ù‹ Ù„Ø¥ØªÙ…Ø§Ù… Ø§Ù„Ø­Ø¬Ø²", fr:"Reconnectez-vous pour rÃ©server", en:"Please log in again to book" },
+  badPayment: { ar:"Ù‡Ø°Ø§ Ø§Ù„Ù…Ù„Ø¹Ø¨ Ù„Ø§ ÙŠÙ‚Ø¨Ù„ ÙˆØ³ÙŠÙ„Ø© Ø§Ù„Ø¯ÙØ¹ Ø§Ù„Ù…Ø®ØªØ§Ø±Ø©", fr:"Moyen de paiement non acceptÃ©", en:"Payment method not accepted" },
+  rateNow: { ar:"â­ Ù‚ÙŠÙ‘Ù… Ù‡Ø°Ø§ Ø§Ù„Ø­Ø¬Ø²", fr:"â­ Ã‰valuer cette rÃ©servation", en:"â­ Rate this booking" },
+  // â­ Ø§Ù„Ù…ÙØ¶Ù„Ø©
+  favorites: { ar:"Ø§Ù„Ù…ÙØ¶Ù„Ø©", fr:"Favoris", en:"Favorites" },
+  addedFav: { ar:"â­ Ø£ÙØ¶ÙŠÙ Ù„Ù„Ù…ÙØ¶Ù„Ø©", fr:"â­ AjoutÃ© aux favoris", en:"â­ Added to favorites" },
+  removedFav: { ar:"Ø£ÙØ²ÙŠÙ„ Ù…Ù† Ø§Ù„Ù…ÙØ¶Ù„Ø©", fr:"RetirÃ© des favoris", en:"Removed from favorites" },
+  noFavorites: { ar:"Ù„Ù… ØªÙØ¶Ù Ø£ÙŠ Ù…Ù„Ø¹Ø¨ Ù„Ù„Ù…ÙØ¶Ù„Ø© Ø¨Ø¹Ø¯", fr:"Aucun terrain ajoutÃ© aux favoris", en:"No favorite fields yet" },
+  noFavoritesHint: { ar:"Ø§Ø¶ØºØ· Ø¹Ù„Ù‰ â™¡ Ø¯Ø§Ø®Ù„ Ø¨Ø·Ø§Ù‚Ø© Ø§Ù„Ù…Ù„Ø¹Ø¨ Ù„Ø¥Ø¶Ø§ÙØªÙ‡ Ù‡Ù†Ø§", fr:"Appuyez sur â™¡ sur une carte pour l'ajouter ici", en:"Tap â™¡ on a field card to add it here" },
+  // ðŸ‘‹ Ø§Ù„ØªØ±Ø­ÙŠØ¨ Ø§Ù„Ø´Ø®ØµÙŠ
+  findField: { ar:"Ø£ÙŠÙ† ØªØ±ÙŠØ¯ Ø§Ù„Ù„Ø¹Ø¨ØŸ", fr:"OÃ¹ voulez-vous jouer ?", en:"Where do you want to play?" },
 };
 
-// (كل الأيقونات هنا مُعرَّفة خارج App عمداً — لنفس سبب BrandName وLogo أدناه: منع إعادة التركيب عند كل ضغطة)
+// (ÙƒÙ„ Ø§Ù„Ø£ÙŠÙ‚ÙˆÙ†Ø§Øª Ù‡Ù†Ø§ Ù…ÙØ¹Ø±ÙŽÙ‘ÙØ© Ø®Ø§Ø±Ø¬ App Ø¹Ù…Ø¯Ø§Ù‹ â€” Ù„Ù†ÙØ³ Ø³Ø¨Ø¨ BrandName ÙˆLogo Ø£Ø¯Ù†Ø§Ù‡: Ù…Ù†Ø¹ Ø¥Ø¹Ø§Ø¯Ø© Ø§Ù„ØªØ±ÙƒÙŠØ¨ Ø¹Ù†Ø¯ ÙƒÙ„ Ø¶ØºØ·Ø©)
 function EyeIcon({ open }) {
   return (
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
@@ -347,11 +347,11 @@ function CalendarIcon({ active }) {
   );
 }
 
-// 🔒 خصائص تمنع حفظ/نسخ الشعار عبر الضغط المطوّل أو كليك يمين أو السحب
+// ðŸ”’ Ø®ØµØ§Ø¦Øµ ØªÙ…Ù†Ø¹ Ø­ÙØ¸/Ù†Ø³Ø® Ø§Ù„Ø´Ø¹Ø§Ø± Ø¹Ø¨Ø± Ø§Ù„Ø¶ØºØ· Ø§Ù„Ù…Ø·ÙˆÙ‘Ù„ Ø£Ùˆ ÙƒÙ„ÙŠÙƒ ÙŠÙ…ÙŠÙ† Ø£Ùˆ Ø§Ù„Ø³Ø­Ø¨
 const noCopyImgProps = { draggable: false, onContextMenu: (e) => e.preventDefault() };
 const noCopyStyle = { WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none" };
 
-// 🎨 اسم العلامة بلونين — مُعرَّف خارج App عمداً (كان يُعاد "تركيبه" عند كل ضغطة حرف، فيسبب وميض الكرة المصاحبة له)
+// ðŸŽ¨ Ø§Ø³Ù… Ø§Ù„Ø¹Ù„Ø§Ù…Ø© Ø¨Ù„ÙˆÙ†ÙŠÙ† â€” Ù…ÙØ¹Ø±ÙŽÙ‘Ù Ø®Ø§Ø±Ø¬ App Ø¹Ù…Ø¯Ø§Ù‹ (ÙƒØ§Ù† ÙŠÙØ¹Ø§Ø¯ "ØªØ±ÙƒÙŠØ¨Ù‡" Ø¹Ù†Ø¯ ÙƒÙ„ Ø¶ØºØ·Ø© Ø­Ø±ÙØŒ ÙÙŠØ³Ø¨Ø¨ ÙˆÙ…ÙŠØ¶ Ø§Ù„ÙƒØ±Ø© Ø§Ù„Ù…ØµØ§Ø­Ø¨Ø© Ù„Ù‡)
 function BrandName({ text, size = "32px" }) {
   const upper = text.toUpperCase();
   const greenLen = Math.min(3, Math.max(1, Math.floor(upper.length / 2)));
@@ -364,7 +364,7 @@ function BrandName({ text, size = "32px" }) {
   );
 }
 
-// ⚽ الشعار — مُعرَّف خارج App عمداً؛ هذا هو الإصلاح الحاسم لمشكلة "الكرة تتحرك عند كل ضغطة"
+// âš½ Ø§Ù„Ø´Ø¹Ø§Ø± â€” Ù…ÙØ¹Ø±ÙŽÙ‘Ù Ø®Ø§Ø±Ø¬ App Ø¹Ù…Ø¯Ø§Ù‹Ø› Ù‡Ø°Ø§ Ù‡Ùˆ Ø§Ù„Ø¥ØµÙ„Ø§Ø­ Ø§Ù„Ø­Ø§Ø³Ù… Ù„Ù…Ø´ÙƒÙ„Ø© "Ø§Ù„ÙƒØ±Ø© ØªØªØ­Ø±Ùƒ Ø¹Ù†Ø¯ ÙƒÙ„ Ø¶ØºØ·Ø©"
 function Logo({ size = 84, glow = 0.22, margin = "0 auto" }) {
   return (
     <div style={{position:"relative", width:size, height:size, margin}}>
@@ -376,8 +376,8 @@ function Logo({ size = 84, glow = 0.22, margin = "0 auto" }) {
   );
 }
 
-// 🏟 بطاقة ملعب — مُعرَّفة خارج App عمداً حتى لا يُعاد "تركيبها" من جديد عند كل إعادة رسم للتطبيق
-// (وهذا كان السبب في اهتزاز/اختفاء صور الملاعب وشعار "الكرة" لحظياً عند أي ضغطة في أي مكان بالتطبيق)
+// ðŸŸ Ø¨Ø·Ø§Ù‚Ø© Ù…Ù„Ø¹Ø¨ â€” Ù…ÙØ¹Ø±ÙŽÙ‘ÙØ© Ø®Ø§Ø±Ø¬ App Ø¹Ù…Ø¯Ø§Ù‹ Ø­ØªÙ‰ Ù„Ø§ ÙŠÙØ¹Ø§Ø¯ "ØªØ±ÙƒÙŠØ¨Ù‡Ø§" Ù…Ù† Ø¬Ø¯ÙŠØ¯ Ø¹Ù†Ø¯ ÙƒÙ„ Ø¥Ø¹Ø§Ø¯Ø© Ø±Ø³Ù… Ù„Ù„ØªØ·Ø¨ÙŠÙ‚
+// (ÙˆÙ‡Ø°Ø§ ÙƒØ§Ù† Ø§Ù„Ø³Ø¨Ø¨ ÙÙŠ Ø§Ù‡ØªØ²Ø§Ø²/Ø§Ø®ØªÙØ§Ø¡ ØµÙˆØ± Ø§Ù„Ù…Ù„Ø§Ø¹Ø¨ ÙˆØ´Ø¹Ø§Ø± "Ø§Ù„ÙƒØ±Ø©" Ù„Ø­Ø¸ÙŠØ§Ù‹ Ø¹Ù†Ø¯ Ø£ÙŠ Ø¶ØºØ·Ø© ÙÙŠ Ø£ÙŠ Ù…ÙƒØ§Ù† Ø¨Ø§Ù„ØªØ·Ø¨ÙŠÙ‚)
 function StadiumCardView({ s, wide, lang, t, L, bookings, myPos, favorites, user, toggleFavorite, ratingsMap, onBook }) {
   const isBooked = (sid, d, h) => bookings.some(b => b.stadium_id === sid && b.date === d && b.hour === h && b.status !== "rejected");
   const stadiumDistance = (st) => (myPos && hasLocation(st)) ? distanceKm(myPos.lat, myPos.lng, st.latitude, st.longitude) : null;
@@ -392,26 +392,26 @@ function StadiumCardView({ s, wide, lang, t, L, bookings, myPos, favorites, user
         <div style={{position:"absolute", inset:0, background:`linear-gradient(135deg, ${s.color}44, ${COLORS.card})`}}></div>
         <img src={stadiumImage(s)} alt={s.name} loading="lazy" onError={e => onImgError(e, s.id || 0)} style={{width:"100%", height:"140px", objectFit:"cover", display:"block", position:"relative"}}/>
         <div style={{position:"absolute", inset:0, background:`linear-gradient(to bottom, transparent 50%, ${COLORS.card} 100%)`}}></div>
-        {/* ❤️ زر المفضلة */}
+        {/* â¤ï¸ Ø²Ø± Ø§Ù„Ù…ÙØ¶Ù„Ø© */}
         {user && (
           <button onClick={(e) => { e.stopPropagation(); toggleFavorite(s.id); }} style={{position:"absolute", top:"10px", insetInlineEnd:"10px", width:"30px", height:"30px", borderRadius:"50%", background:"rgba(0,0,0,0.55)", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"15px", backdropFilter:"blur(4px)", zIndex:2}}>
-            {isFav ? "❤️" : "🤍"}
+            {isFav ? "â¤ï¸" : "ðŸ¤"}
           </button>
         )}
-        {/* 📍 شارة المسافة */}
+        {/* ðŸ“ Ø´Ø§Ø±Ø© Ø§Ù„Ù…Ø³Ø§ÙØ© */}
         {dist != null && (
           <div style={{position:"absolute", top:"10px", insetInlineStart:"10px", background:"rgba(0,0,0,0.65)", color:COLORS.accent, padding:"4px 10px", borderRadius:"20px", fontSize:"11px", fontWeight:"800", backdropFilter:"blur(4px)"}}>
-            📍 {dist < 1 ? Math.round(dist*1000) + " m" : dist.toFixed(1) + " " + L("kmAway")}
+            ðŸ“ {dist < 1 ? Math.round(dist*1000) + " m" : dist.toFixed(1) + " " + L("kmAway")}
           </div>
         )}
         {ratingsMap[s.id] && (
           <div style={{position:"absolute", top: user ? "48px" : "10px", insetInlineEnd:"10px", background:"rgba(0,0,0,0.65)", color:"#FFD700", padding:"4px 10px", borderRadius:"20px", fontSize:"11px", fontWeight:"800", backdropFilter:"blur(4px)"}}>
-            ⭐ {ratingsMap[s.id].avg_stars}
+            â­ {ratingsMap[s.id].avg_stars}
           </div>
         )}
         <div style={{position:"absolute", bottom:"10px", right:"12px", left:"12px"}}>
           <div style={{fontWeight:"800", fontSize:"18px", color:"#fff", textShadow:"0 2px 8px rgba(0,0,0,0.8)"}}>{s.name}</div>
-          <div style={{color:"#ffffffaa", fontSize:"12px"}}>📍 {s.wilaya} — {s.hood}</div>
+          <div style={{color:"#ffffffaa", fontSize:"12px"}}>ðŸ“ {s.wilaya} â€” {s.hood}</div>
         </div>
       </div>
       <div style={{padding:"12px 16px 16px"}}>
@@ -437,15 +437,15 @@ function StadiumCardView({ s, wide, lang, t, L, bookings, myPos, favorites, user
 }
 
 export default function App() {
-  // (noCopyImgProps وnoCopyStyle انتقلا لمستوى الوحدة أسفل الملف)
+  // (noCopyImgProps ÙˆnoCopyStyle Ø§Ù†ØªÙ‚Ù„Ø§ Ù„Ù…Ø³ØªÙˆÙ‰ Ø§Ù„ÙˆØ­Ø¯Ø© Ø£Ø³ÙÙ„ Ø§Ù„Ù…Ù„Ù)
   const [lang, setLang] = useState(() => localStorage.getItem("malaabi_lang") || "ar");
   const t = translations[lang];
   const L = (k) => TXT[k][lang];
   const isRTL = lang === "ar";
   const [showAbout, setShowAbout] = useState(false);
-  const [showRateNotifs, setShowRateNotifs] = useState(false);   // 🔔 إشعارات التقييم فقط، منفصلة عن الحجوزات
+  const [showRateNotifs, setShowRateNotifs] = useState(false);   // ðŸ”” Ø¥Ø´Ø¹Ø§Ø±Ø§Øª Ø§Ù„ØªÙ‚ÙŠÙŠÙ… ÙÙ‚Ø·ØŒ Ù…Ù†ÙØµÙ„Ø© Ø¹Ù† Ø§Ù„Ø­Ø¬ÙˆØ²Ø§Øª
   const [bottomTab, setBottomTab] = useState("stadiums");
-  // 🔔 معرّفات الحجوزات التي شاهدها الزبون بالفعل — محفوظة محلياً، تبقى حتى بعد تسجيل الخروج والدخول
+  // ðŸ”” Ù…Ø¹Ø±Ù‘ÙØ§Øª Ø§Ù„Ø­Ø¬ÙˆØ²Ø§Øª Ø§Ù„ØªÙŠ Ø´Ø§Ù‡Ø¯Ù‡Ø§ Ø§Ù„Ø²Ø¨ÙˆÙ† Ø¨Ø§Ù„ÙØ¹Ù„ â€” Ù…Ø­ÙÙˆØ¸Ø© Ù…Ø­Ù„ÙŠØ§Ù‹ØŒ ØªØ¨Ù‚Ù‰ Ø­ØªÙ‰ Ø¨Ø¹Ø¯ ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø®Ø±ÙˆØ¬ ÙˆØ§Ù„Ø¯Ø®ÙˆÙ„
   const [readNotifIds, setReadNotifIds] = useState(() => {
     try { return JSON.parse(localStorage.getItem("malaabi_read_notifs") || "[]"); }
     catch (_e) { return []; }
@@ -462,7 +462,7 @@ export default function App() {
   const [stadiums, setStadiums] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [usersCount, setUsersCount] = useState(0);
-  const [filterWilaya, setFilterWilaya] = useState("الكل");
+  const [filterWilaya, setFilterWilaya] = useState("Ø§Ù„ÙƒÙ„");
   const [searchText, setSearchText] = useState("");
   const [sortBy, setSortBy] = useState("default");
   const [selected, setSelected] = useState(null);
@@ -481,10 +481,10 @@ export default function App() {
   const [newPrice, setNewPrice] = useState("");
   const [newPayments, setNewPayments] = useState({});
   const [newOwnerPhone, setNewOwnerPhone] = useState("");
-  const [newImage, setNewImage] = useState("");    // 🖼 رابط صورة مخصص (اختياري)
-  const [uploadingImg, setUploadingImg] = useState(false);  // 🖼 حالة رفع الصورة
-  const [newLat, setNewLat] = useState("");        // 📍 الموقع
-  const [newLng, setNewLng] = useState("");        // 📍 الموقع
+  const [newImage, setNewImage] = useState("");    // ðŸ–¼ Ø±Ø§Ø¨Ø· ØµÙˆØ±Ø© Ù…Ø®ØµØµ (Ø§Ø®ØªÙŠØ§Ø±ÙŠ)
+  const [uploadingImg, setUploadingImg] = useState(false);  // ðŸ–¼ Ø­Ø§Ù„Ø© Ø±ÙØ¹ Ø§Ù„ØµÙˆØ±Ø©
+  const [newLat, setNewLat] = useState("");        // ðŸ“ Ø§Ù„Ù…ÙˆÙ‚Ø¹
+  const [newLng, setNewLng] = useState("");        // ðŸ“ Ø§Ù„Ù…ÙˆÙ‚Ø¹
   const [newWorkingHours, setNewWorkingHours] = useState([...ALL_HOURS]);
   const [loginPhone, setLoginPhone] = useState("");
   const [loginPass, setLoginPass] = useState("");
@@ -498,62 +498,62 @@ export default function App() {
   const [editHood, setEditHood] = useState("");
   const [editPrice, setEditPrice] = useState("");
   const [editOwnerPhone, setEditOwnerPhone] = useState("");
-  const [editImage, setEditImage] = useState("");  // 🖼 رابط صورة مخصص (اختياري)
-  const [editLat, setEditLat] = useState("");      // 📍 الموقع
-  const [editLng, setEditLng] = useState("");      // 📍 الموقع
+  const [editImage, setEditImage] = useState("");  // ðŸ–¼ Ø±Ø§Ø¨Ø· ØµÙˆØ±Ø© Ù…Ø®ØµØµ (Ø§Ø®ØªÙŠØ§Ø±ÙŠ)
+  const [editLat, setEditLat] = useState("");      // ðŸ“ Ø§Ù„Ù…ÙˆÙ‚Ø¹
+  const [editLng, setEditLng] = useState("");      // ðŸ“ Ø§Ù„Ù…ÙˆÙ‚Ø¹
   const [editPayments, setEditPayments] = useState({});
   const [editWorkingHours, setEditWorkingHours] = useState([...ALL_HOURS]);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [rateEdit, setRateEdit] = useState({});
-  const [myPos, setMyPos] = useState(null);        // 📍 موقع الزبون الحالي
-  const [showForgot, setShowForgot] = useState(false);   // 🔑 نافذة نسيت كلمة السر
-  const [forgotPhone, setForgotPhone] = useState("");     // 🔑 رقم الاستعادة
-  const [forgotStep, setForgotStep] = useState(1);        // 🔑 مرحلة الاستعادة
-  const [forgotUser, setForgotUser] = useState(null);     // 🔑 الحساب المستهدف
-  const [forgotAnswer, setForgotAnswer] = useState("");   // 🔑 جواب السؤال السري
-  const [forgotTries, setForgotTries] = useState(0);      // 🔑 عدد المحاولات
+  const [myPos, setMyPos] = useState(null);        // ðŸ“ Ù…ÙˆÙ‚Ø¹ Ø§Ù„Ø²Ø¨ÙˆÙ† Ø§Ù„Ø­Ø§Ù„ÙŠ
+  const [showForgot, setShowForgot] = useState(false);   // ðŸ”‘ Ù†Ø§ÙØ°Ø© Ù†Ø³ÙŠØª ÙƒÙ„Ù…Ø© Ø§Ù„Ø³Ø±
+  const [forgotPhone, setForgotPhone] = useState("");     // ðŸ”‘ Ø±Ù‚Ù… Ø§Ù„Ø§Ø³ØªØ¹Ø§Ø¯Ø©
+  const [forgotStep, setForgotStep] = useState(1);        // ðŸ”‘ Ù…Ø±Ø­Ù„Ø© Ø§Ù„Ø§Ø³ØªØ¹Ø§Ø¯Ø©
+  const [forgotUser, setForgotUser] = useState(null);     // ðŸ”‘ Ø§Ù„Ø­Ø³Ø§Ø¨ Ø§Ù„Ù…Ø³ØªÙ‡Ø¯Ù
+  const [forgotAnswer, setForgotAnswer] = useState("");   // ðŸ”‘ Ø¬ÙˆØ§Ø¨ Ø§Ù„Ø³Ø¤Ø§Ù„ Ø§Ù„Ø³Ø±ÙŠ
+  const [forgotTries, setForgotTries] = useState(0);      // ðŸ”‘ Ø¹Ø¯Ø¯ Ø§Ù„Ù…Ø­Ø§ÙˆÙ„Ø§Øª
   const [newPass1, setNewPass1] = useState("");
   const [newPass2, setNewPass2] = useState("");
-  const [regQuestion, setRegQuestion] = useState("");     // 🔐 سؤال التسجيل
-  const [regAnswer, setRegAnswer] = useState("");         // 🔐 جواب التسجيل
-  const [showSetupQ, setShowSetupQ] = useState(true);     // 🔐 نافذة الحسابات القديمة
+  const [regQuestion, setRegQuestion] = useState("");     // ðŸ” Ø³Ø¤Ø§Ù„ Ø§Ù„ØªØ³Ø¬ÙŠÙ„
+  const [regAnswer, setRegAnswer] = useState("");         // ðŸ” Ø¬ÙˆØ§Ø¨ Ø§Ù„ØªØ³Ø¬ÙŠÙ„
+  const [showSetupQ, setShowSetupQ] = useState(true);     // ðŸ” Ù†Ø§ÙØ°Ø© Ø§Ù„Ø­Ø³Ø§Ø¨Ø§Øª Ø§Ù„Ù‚Ø¯ÙŠÙ…Ø©
   const [setupQuestion, setSetupQuestion] = useState("");
   const [setupAnswer, setSetupAnswer] = useState("");
-  const [setupPass, setSetupPass] = useState("");   // 🔐 تأكيد الهوية قبل حفظ السؤال
-  const [showAdminLogin, setShowAdminLogin] = useState(false);  // 👑 نافذة دخول اللوحة
-  const [adminPassInput, setAdminPassInput] = useState("");     // 👑 كلمة السر المدخلة
-  const [adminPass, setAdminPass] = useState("");               // 👑 محفوظة في الذاكرة فقط
+  const [setupPass, setSetupPass] = useState("");   // ðŸ” ØªØ£ÙƒÙŠØ¯ Ø§Ù„Ù‡ÙˆÙŠØ© Ù‚Ø¨Ù„ Ø­ÙØ¸ Ø§Ù„Ø³Ø¤Ø§Ù„
+  const [showAdminLogin, setShowAdminLogin] = useState(false);  // ðŸ‘‘ Ù†Ø§ÙØ°Ø© Ø¯Ø®ÙˆÙ„ Ø§Ù„Ù„ÙˆØ­Ø©
+  const [adminPassInput, setAdminPassInput] = useState("");     // ðŸ‘‘ ÙƒÙ„Ù…Ø© Ø§Ù„Ø³Ø± Ø§Ù„Ù…Ø¯Ø®Ù„Ø©
+  const [adminPass, setAdminPass] = useState("");               // ðŸ‘‘ Ù…Ø­ÙÙˆØ¸Ø© ÙÙŠ Ø§Ù„Ø°Ø§ÙƒØ±Ø© ÙÙ‚Ø·
   const [adminChecking, setAdminChecking] = useState(false);
-  const [showOwnerCode, setShowOwnerCode] = useState(false);   // 🔑 إظهار كود المالك
-  const [ratingsMap, setRatingsMap] = useState({});      // ⭐ معدلات الملاعب العامة
-  const [myRatings, setMyRatings] = useState([]);        // ⭐ ما قيّمه الزبون
-  const [rateBooking, setRateBooking] = useState(null);  // ⭐ الحجز الجاري تقييمه
+  const [showOwnerCode, setShowOwnerCode] = useState(false);   // ðŸ”‘ Ø¥Ø¸Ù‡Ø§Ø± ÙƒÙˆØ¯ Ø§Ù„Ù…Ø§Ù„Ùƒ
+  const [ratingsMap, setRatingsMap] = useState({});      // â­ Ù…Ø¹Ø¯Ù„Ø§Øª Ø§Ù„Ù…Ù„Ø§Ø¹Ø¨ Ø§Ù„Ø¹Ø§Ù…Ø©
+  const [myRatings, setMyRatings] = useState([]);        // â­ Ù…Ø§ Ù‚ÙŠÙ‘Ù…Ù‡ Ø§Ù„Ø²Ø¨ÙˆÙ†
+  const [rateBooking, setRateBooking] = useState(null);  // â­ Ø§Ù„Ø­Ø¬Ø² Ø§Ù„Ø¬Ø§Ø±ÙŠ ØªÙ‚ÙŠÙŠÙ…Ù‡
   const [rateStars, setRateStars] = useState(0);
   const [rateText, setRateText] = useState("");
-  const [ownerRatings, setOwnerRatings] = useState([]);  // ⭐ تقييمات ملعب المالك
-  const [adminRatings, setAdminRatings] = useState([]);  // ⭐ كل التقييمات للمشرف
-  const [blockedList, setBlockedList] = useState([]);    // 🚫 المواعيد المغلقة
-  const [blockDate, setBlockDate] = useState(today);     // 🚫 تاريخ الإغلاق
-  const [blockHoursSel, setBlockHoursSel] = useState([]);// 🚫 الساعات المختارة
-  const [cart, setCart] = useState([]);                  // 🛒 سلة المواعيد
-  const [showPass, setShowPass] = useState({});          // 👁 إظهار كلمات السر
-  const [sessionPass, setSessionPass] = useState(() => sessionStorage.getItem("mb_sp") || "");   // 🔒 تُمحى بإغلاق التبويب
-  const [myBookingsList, setMyBookingsList] = useState([]);   // 🔒 حجوزات الزبون الكاملة
-  const [favorites, setFavorites] = useState([]);             // ⭐ أرقام الملاعب المفضلة للزبون
+  const [ownerRatings, setOwnerRatings] = useState([]);  // â­ ØªÙ‚ÙŠÙŠÙ…Ø§Øª Ù…Ù„Ø¹Ø¨ Ø§Ù„Ù…Ø§Ù„Ùƒ
+  const [adminRatings, setAdminRatings] = useState([]);  // â­ ÙƒÙ„ Ø§Ù„ØªÙ‚ÙŠÙŠÙ…Ø§Øª Ù„Ù„Ù…Ø´Ø±Ù
+  const [blockedList, setBlockedList] = useState([]);    // ðŸš« Ø§Ù„Ù…ÙˆØ§Ø¹ÙŠØ¯ Ø§Ù„Ù…ØºÙ„Ù‚Ø©
+  const [blockDate, setBlockDate] = useState(today);     // ðŸš« ØªØ§Ø±ÙŠØ® Ø§Ù„Ø¥ØºÙ„Ø§Ù‚
+  const [blockHoursSel, setBlockHoursSel] = useState([]);// ðŸš« Ø§Ù„Ø³Ø§Ø¹Ø§Øª Ø§Ù„Ù…Ø®ØªØ§Ø±Ø©
+  const [cart, setCart] = useState([]);                  // ðŸ›’ Ø³Ù„Ø© Ø§Ù„Ù…ÙˆØ§Ø¹ÙŠØ¯
+  const [showPass, setShowPass] = useState({});          // ðŸ‘ Ø¥Ø¸Ù‡Ø§Ø± ÙƒÙ„Ù…Ø§Øª Ø§Ù„Ø³Ø±
+  const [sessionPass, setSessionPass] = useState(() => sessionStorage.getItem("mb_sp") || "");   // ðŸ”’ ØªÙÙ…Ø­Ù‰ Ø¨Ø¥ØºÙ„Ø§Ù‚ Ø§Ù„ØªØ¨ÙˆÙŠØ¨
+  const [myBookingsList, setMyBookingsList] = useState([]);   // ðŸ”’ Ø­Ø¬ÙˆØ²Ø§Øª Ø§Ù„Ø²Ø¨ÙˆÙ† Ø§Ù„ÙƒØ§Ù…Ù„Ø©
+  const [favorites, setFavorites] = useState([]);             // â­ Ø£Ø±Ù‚Ø§Ù… Ø§Ù„Ù…Ù„Ø§Ø¹Ø¨ Ø§Ù„Ù…ÙØ¶Ù„Ø© Ù„Ù„Ø²Ø¨ÙˆÙ†
 
   const changeLang = (l) => { setLang(l); localStorage.setItem("malaabi_lang", l); };
-  const langLabel = lang === "ar" ? "🌐 ع" : lang === "fr" ? "🌐 FR" : "🌐 EN";
+  const langLabel = lang === "ar" ? "ðŸŒ Ø¹" : lang === "fr" ? "ðŸŒ FR" : "ðŸŒ EN";
 
   const notify = (title, body) => {
     if (!("Notification" in window)) return;
     if (Notification.permission === "granted") new Notification(title, { body, icon: "/icon.png" });
   };
 
-  // (كل الأيقونات — العين، البيت، القلب، الشخص، الجرس، التقويم — انتقلت لمستوى الوحدة أسفل الملف)
+  // (ÙƒÙ„ Ø§Ù„Ø£ÙŠÙ‚ÙˆÙ†Ø§Øª â€” Ø§Ù„Ø¹ÙŠÙ†ØŒ Ø§Ù„Ø¨ÙŠØªØŒ Ø§Ù„Ù‚Ù„Ø¨ØŒ Ø§Ù„Ø´Ø®ØµØŒ Ø§Ù„Ø¬Ø±Ø³ØŒ Ø§Ù„ØªÙ‚ÙˆÙŠÙ… â€” Ø§Ù†ØªÙ‚Ù„Øª Ù„Ù…Ø³ØªÙˆÙ‰ Ø§Ù„ÙˆØ­Ø¯Ø© Ø£Ø³ÙÙ„ Ø§Ù„Ù…Ù„Ù)
 
-  // (BrandName وLogo انتقلا لمستوى الوحدة أسفل الملف — انظر السبب في تعليق StadiumCardView)
+  // (BrandName ÙˆLogo Ø§Ù†ØªÙ‚Ù„Ø§ Ù„Ù…Ø³ØªÙˆÙ‰ Ø§Ù„ÙˆØ­Ø¯Ø© Ø£Ø³ÙÙ„ Ø§Ù„Ù…Ù„Ù â€” Ø§Ù†Ø¸Ø± Ø§Ù„Ø³Ø¨Ø¨ ÙÙŠ ØªØ¹Ù„ÙŠÙ‚ StadiumCardView)
 
-  // 🔒 حقل كلمة سر بزر إظهار — دالة لا مكوّن، حتى لا يفقد التركيز عند الكتابة
+  // ðŸ”’ Ø­Ù‚Ù„ ÙƒÙ„Ù…Ø© Ø³Ø± Ø¨Ø²Ø± Ø¥Ø¸Ù‡Ø§Ø± â€” Ø¯Ø§Ù„Ø© Ù„Ø§ Ù…ÙƒÙˆÙ‘Ù†ØŒ Ø­ØªÙ‰ Ù„Ø§ ÙŠÙÙ‚Ø¯ Ø§Ù„ØªØ±ÙƒÙŠØ² Ø¹Ù†Ø¯ Ø§Ù„ÙƒØªØ§Ø¨Ø©
   const passField = ({ id, value, onChange, placeholder, maxLength = 4, onEnter, extra }) => (
     <div style={{position:"relative", marginBottom:"16px"}}>
       <input
@@ -572,7 +572,7 @@ export default function App() {
     </div>
   );
 
-  // 📋 نسخ نص إلى الحافظة
+  // ðŸ“‹ Ù†Ø³Ø® Ù†Øµ Ø¥Ù„Ù‰ Ø§Ù„Ø­Ø§ÙØ¸Ø©
   const copyText = async (txt) => {
     try {
       await navigator.clipboard.writeText(String(txt));
@@ -590,7 +590,7 @@ export default function App() {
       <button onClick={() => setShowLangMenu(!showLangMenu)} style={{padding:"6px 12px", borderRadius:"8px", border:`1px solid ${COLORS.border}`, cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"12px", background:COLORS.card, color:COLORS.accent}}>{langLabel}</button>
       {showLangMenu && (
         <div style={{position:"absolute", top:"110%", left:0, background:COLORS.card, border:`1px solid ${COLORS.border}`, borderRadius:"10px", overflow:"hidden", zIndex:200, minWidth:"80px"}}>
-          {[["ar","🇲🇷 ع"],["fr","🇫🇷 FR"],["en","🏴 EN"]].map(([l, label]) => (
+          {[["ar","ðŸ‡²ðŸ‡· Ø¹"],["fr","ðŸ‡«ðŸ‡· FR"],["en","ðŸ´ EN"]].map(([l, label]) => (
             <button key={l} onClick={() => { changeLang(l); setShowLangMenu(false); }} style={{display:"block", width:"100%", padding:"8px 16px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"12px", background: lang===l?`${COLORS.accent}22`:COLORS.card, color: lang===l?COLORS.accent:COLORS.muted, textAlign:"right"}}>{label}</button>
           ))}
         </div>
@@ -602,9 +602,9 @@ export default function App() {
     const [w, s, b, r, u] = await Promise.all([
       supabase.from("wilayas").select("*").order("id"),
       supabase.from("stadiums_public").select("*").order("id"),
-      supabase.from("bookings_slots").select("*"),   // 🔒 الساعات فقط — بلا أسماء ولا أرقام
-      supabase.from("stadium_ratings").select("*"),  // ⭐ المعدلات (ثلاثة تقييمات فأكثر)
-      supabase.from("users_count").select("*").maybeSingle(),   // 🔐 عرض عام يُرجع العدد فقط
+      supabase.from("bookings_slots").select("*"),   // ðŸ”’ Ø§Ù„Ø³Ø§Ø¹Ø§Øª ÙÙ‚Ø· â€” Ø¨Ù„Ø§ Ø£Ø³Ù…Ø§Ø¡ ÙˆÙ„Ø§ Ø£Ø±Ù‚Ø§Ù…
+      supabase.from("stadium_ratings").select("*"),  // â­ Ø§Ù„Ù…Ø¹Ø¯Ù„Ø§Øª (Ø«Ù„Ø§Ø«Ø© ØªÙ‚ÙŠÙŠÙ…Ø§Øª ÙØ£ÙƒØ«Ø±)
+      supabase.from("users_count").select("*").maybeSingle(),   // ðŸ” Ø¹Ø±Ø¶ Ø¹Ø§Ù… ÙŠÙØ±Ø¬Ø¹ Ø§Ù„Ø¹Ø¯Ø¯ ÙÙ‚Ø·
     ]);
     if (w.data) setWilayas(w.data.map(x => x.name));
     if (s.data) setStadiums(s.data);
@@ -614,7 +614,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    // 🛟 قراءة آمنة — لو كانت القيمة تالفة نمسحها بدل أن ينهار التطبيق
+    // ðŸ›Ÿ Ù‚Ø±Ø§Ø¡Ø© Ø¢Ù…Ù†Ø© â€” Ù„Ùˆ ÙƒØ§Ù†Øª Ø§Ù„Ù‚ÙŠÙ…Ø© ØªØ§Ù„ÙØ© Ù†Ù…Ø³Ø­Ù‡Ø§ Ø¨Ø¯Ù„ Ø£Ù† ÙŠÙ†Ù‡Ø§Ø± Ø§Ù„ØªØ·Ø¨ÙŠÙ‚
     const readSaved = (k) => {
       try {
         const v = localStorage.getItem(k);
@@ -627,7 +627,7 @@ export default function App() {
     const savedOwner = readSaved("malaabi_owner");
     if (saved) {
       setUser(saved); setScreen("app");
-      // 🔒 نعيد جلب حجوزاته إن كانت كلمة السر ما زالت في جلسة التبويب
+      // ðŸ”’ Ù†Ø¹ÙŠØ¯ Ø¬Ù„Ø¨ Ø­Ø¬ÙˆØ²Ø§ØªÙ‡ Ø¥Ù† ÙƒØ§Ù†Øª ÙƒÙ„Ù…Ø© Ø§Ù„Ø³Ø± Ù…Ø§ Ø²Ø§Ù„Øª ÙÙŠ Ø¬Ù„Ø³Ø© Ø§Ù„ØªØ¨ÙˆÙŠØ¨
       const sp = sessionStorage.getItem("mb_sp");
       if (sp) {
         stadiumApi("client-bookings", { payload: { phone: saved.phone, password: sp } })
@@ -655,30 +655,30 @@ export default function App() {
     if ("Notification" in window) Notification.requestPermission();
   }, []);
 
-  // 🔔 إشعارات صاحب الملعب — حجز جديد لملعبه
+  // ðŸ”” Ø¥Ø´Ø¹Ø§Ø±Ø§Øª ØµØ§Ø­Ø¨ Ø§Ù„Ù…Ù„Ø¹Ø¨ â€” Ø­Ø¬Ø² Ø¬Ø¯ÙŠØ¯ Ù„Ù…Ù„Ø¹Ø¨Ù‡
   useEffect(() => {
     if (!owner) return;
     const ch = supabase.channel("owner-new-" + owner.id)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "bookings", filter: `stadium_id=eq.${owner.id}` }, (p) => {
         setMyBookingsList(prev => prev.some(b => b.id === p.new.id) ? prev : [...prev, p.new]);
-        notify("🔔 " + L("newBooking"), `${p.new.client_name} — ${p.new.date} — ${p.new.hour}:00`);
+        notify("ðŸ”” " + L("newBooking"), `${p.new.client_name} â€” ${p.new.date} â€” ${p.new.hour}:00`);
       }).subscribe();
     return () => supabase.removeChannel(ch);
   }, [owner, lang]);
 
-  // 🔔 إشعارات الزبون — قبول أو رفض
+  // ðŸ”” Ø¥Ø´Ø¹Ø§Ø±Ø§Øª Ø§Ù„Ø²Ø¨ÙˆÙ† â€” Ù‚Ø¨ÙˆÙ„ Ø£Ùˆ Ø±ÙØ¶
   useEffect(() => {
     if (!user) return;
     const ch = supabase.channel("client-upd-" + user.phone)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "bookings", filter: `client_phone=eq.${user.phone}` }, (p) => {
         setMyBookingsList(prev => prev.map(b => b.id === p.new.id ? p.new : b));
-        if (p.new.status === "confirmed") notify("✅ " + L("bookingAccepted"), `${p.new.stadium_name} — ${p.new.hour}:00`);
-        if (p.new.status === "rejected") notify("❌ " + L("bookingRejected"), `${p.new.stadium_name} — ${p.new.hour}:00`);
+        if (p.new.status === "confirmed") notify("âœ… " + L("bookingAccepted"), `${p.new.stadium_name} â€” ${p.new.hour}:00`);
+        if (p.new.status === "rejected") notify("âŒ " + L("bookingRejected"), `${p.new.stadium_name} â€” ${p.new.hour}:00`);
       }).subscribe();
     return () => supabase.removeChannel(ch);
   }, [user, lang]);
 
-  // 🔔 عند فتح تبويب "الحجوزات"، نُعلّم كل الحجوزات المعروضة حالياً كمقروءة — لا تُحسب مجدداً حتى بعد الخروج والدخول
+  // ðŸ”” Ø¹Ù†Ø¯ ÙØªØ­ ØªØ¨ÙˆÙŠØ¨ "Ø§Ù„Ø­Ø¬ÙˆØ²Ø§Øª"ØŒ Ù†ÙØ¹Ù„Ù‘Ù… ÙƒÙ„ Ø§Ù„Ø­Ø¬ÙˆØ²Ø§Øª Ø§Ù„Ù…Ø¹Ø±ÙˆØ¶Ø© Ø­Ø§Ù„ÙŠØ§Ù‹ ÙƒÙ…Ù‚Ø±ÙˆØ¡Ø© â€” Ù„Ø§ ØªÙØ­Ø³Ø¨ Ù…Ø¬Ø¯Ø¯Ø§Ù‹ Ø­ØªÙ‰ Ø¨Ø¹Ø¯ Ø§Ù„Ø®Ø±ÙˆØ¬ ÙˆØ§Ù„Ø¯Ø®ÙˆÙ„
   useEffect(() => {
     if (bottomTab !== "notifs" || !user) return;
     const currentIds = myBookingsList.filter(b => b.status !== "pending").map(b => b.id);
@@ -693,7 +693,7 @@ export default function App() {
 
   const showToast = (msg, color=COLORS.accent) => { setToast({msg, color}); setTimeout(() => setToast(null), 4000); };
 
-  // 📍 تحديد الموقع الحالي — للمشرف عند إضافة/تعديل ملعب
+  // ðŸ“ ØªØ­Ø¯ÙŠØ¯ Ø§Ù„Ù…ÙˆÙ‚Ø¹ Ø§Ù„Ø­Ø§Ù„ÙŠ â€” Ù„Ù„Ù…Ø´Ø±Ù Ø¹Ù†Ø¯ Ø¥Ø¶Ø§ÙØ©/ØªØ¹Ø¯ÙŠÙ„ Ù…Ù„Ø¹Ø¨
   const geoErrorKey = (err) => {
     if (err?.code === 1) return "locationDenied";      // PERMISSION_DENIED
     if (err?.code === 3) return "locationTimeout";      // TIMEOUT
@@ -717,7 +717,7 @@ export default function App() {
     );
   };
 
-  // 📍 تحديد موقع الزبون — لحساب المسافة والترتيب حسب الأقرب
+  // ðŸ“ ØªØ­Ø¯ÙŠØ¯ Ù…ÙˆÙ‚Ø¹ Ø§Ù„Ø²Ø¨ÙˆÙ† â€” Ù„Ø­Ø³Ø§Ø¨ Ø§Ù„Ù…Ø³Ø§ÙØ© ÙˆØ§Ù„ØªØ±ØªÙŠØ¨ Ø­Ø³Ø¨ Ø§Ù„Ø£Ù‚Ø±Ø¨
   const locateMe = () => {
     if (!navigator.geolocation) return showToast(L("noGeo"), "#FF4444");
     showToast(L("locating"), COLORS.accent2);
@@ -731,7 +731,7 @@ export default function App() {
     );
   };
 
-  // 🎯 الأقرب لي — يحدد الموقع ثم يرتب الملاعب حسب المسافة
+  // ðŸŽ¯ Ø§Ù„Ø£Ù‚Ø±Ø¨ Ù„ÙŠ â€” ÙŠØ­Ø¯Ø¯ Ø§Ù„Ù…ÙˆÙ‚Ø¹ Ø«Ù… ÙŠØ±ØªØ¨ Ø§Ù„Ù…Ù„Ø§Ø¹Ø¨ Ø­Ø³Ø¨ Ø§Ù„Ù…Ø³Ø§ÙØ©
   const findNearest = () => {
     if (myPos) { setSortBy("nearest"); return; }
     if (!navigator.geolocation) return showToast(L("noGeo"), "#FF4444");
@@ -747,7 +747,7 @@ export default function App() {
     );
   };
 
-  // 🔒 جلب حجوزات الزبون من الخادم بعد التحقق من هويته
+  // ðŸ”’ Ø¬Ù„Ø¨ Ø­Ø¬ÙˆØ²Ø§Øª Ø§Ù„Ø²Ø¨ÙˆÙ† Ù…Ù† Ø§Ù„Ø®Ø§Ø¯Ù… Ø¨Ø¹Ø¯ Ø§Ù„ØªØ­Ù‚Ù‚ Ù…Ù† Ù‡ÙˆÙŠØªÙ‡
   const loadMyBookings = async (phone, pass) => {
     const ph = phone || user?.phone, pw = pass || sessionPass;
     if (!ph || !pw) return;
@@ -789,7 +789,7 @@ export default function App() {
     showToast(t.accountCreated);
   };
 
-  // 🔑 المرحلة 1 — البحث عن الحساب وجلب سؤاله السري
+  // ðŸ”‘ Ø§Ù„Ù…Ø±Ø­Ù„Ø© 1 â€” Ø§Ù„Ø¨Ø­Ø« Ø¹Ù† Ø§Ù„Ø­Ø³Ø§Ø¨ ÙˆØ¬Ù„Ø¨ Ø³Ø¤Ø§Ù„Ù‡ Ø§Ù„Ø³Ø±ÙŠ
   const forgotFindUser = async () => {
     if (!isValidPhone(forgotPhone)) return showToast(L("invalidPhone"), "#FF4444");
     const res = await authApi("get-question", { phone: forgotPhone });
@@ -800,15 +800,15 @@ export default function App() {
     setForgotStep(2); setForgotTries(0);
   };
 
-  // 🔑 المرحلة 2 — التحقق من الجواب
+  // ðŸ”‘ Ø§Ù„Ù…Ø±Ø­Ù„Ø© 2 â€” Ø§Ù„ØªØ­Ù‚Ù‚ Ù…Ù† Ø§Ù„Ø¬ÙˆØ§Ø¨
   const forgotVerify = async () => {
     if (!forgotAnswer.trim()) return;
     if (forgotTries >= 5) return showToast(L("tooManyTries"), "#FF4444");
-    // التحقق الفعلي يتم في الخادم عند حفظ كلمة السر — هنا ننتقل للمرحلة التالية فقط
+    // Ø§Ù„ØªØ­Ù‚Ù‚ Ø§Ù„ÙØ¹Ù„ÙŠ ÙŠØªÙ… ÙÙŠ Ø§Ù„Ø®Ø§Ø¯Ù… Ø¹Ù†Ø¯ Ø­ÙØ¸ ÙƒÙ„Ù…Ø© Ø§Ù„Ø³Ø± â€” Ù‡Ù†Ø§ Ù†Ù†ØªÙ‚Ù„ Ù„Ù„Ù…Ø±Ø­Ù„Ø© Ø§Ù„ØªØ§Ù„ÙŠØ© ÙÙ‚Ø·
     setForgotStep(3);
   };
 
-  // 🔑 المرحلة 3 — حفظ كلمة سر جديدة
+  // ðŸ”‘ Ø§Ù„Ù…Ø±Ø­Ù„Ø© 3 â€” Ø­ÙØ¸ ÙƒÙ„Ù…Ø© Ø³Ø± Ø¬Ø¯ÙŠØ¯Ø©
   const forgotReset = async () => {
     if (newPass1.length !== 4) return showToast(t.pass4, "#FF4444");
     if (newPass1 !== newPass2) return showToast(L("passMismatch"), "#FF4444");
@@ -831,7 +831,7 @@ export default function App() {
     setForgotAnswer(""); setNewPass1(""); setNewPass2(""); setForgotTries(0);
   };
 
-  // 🔐 حفظ السؤال السري للحسابات القديمة
+  // ðŸ” Ø­ÙØ¸ Ø§Ù„Ø³Ø¤Ø§Ù„ Ø§Ù„Ø³Ø±ÙŠ Ù„Ù„Ø­Ø³Ø§Ø¨Ø§Øª Ø§Ù„Ù‚Ø¯ÙŠÙ…Ø©
   const saveSecurityQ = async () => {
     if (!setupQuestion || !setupAnswer.trim()) return showToast(t.enterAll, "#FF4444");
     if (!/^\d{4}$/.test(setupPass)) return showToast(t.pass4, "#FF4444");
@@ -853,7 +853,7 @@ export default function App() {
     if (res.error === "wrong_code") return showToast(L("wrongCode"), "#FF4444");
     if (res.error === "suspended") return showToast(L("suspended"), "#FF4444");
     if (res.error || !res.stadium) return showToast(L("netError"), "#FF4444");
-    // نحفظ الكود مع بيانات الملعب — يُستعمل للتحقق في كل عملية لاحقة
+    // Ù†Ø­ÙØ¸ Ø§Ù„ÙƒÙˆØ¯ Ù…Ø¹ Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ù…Ù„Ø¹Ø¨ â€” ÙŠÙØ³ØªØ¹Ù…Ù„ Ù„Ù„ØªØ­Ù‚Ù‚ ÙÙŠ ÙƒÙ„ Ø¹Ù…Ù„ÙŠØ© Ù„Ø§Ø­Ù‚Ø©
     const ow = { ...res.stadium, owner_code: code };
     setOwner(ow);
     localStorage.setItem("malaabi_owner", JSON.stringify(ow));
@@ -862,7 +862,7 @@ export default function App() {
     showToast(t.welcome + " " + ow.name);
   };
 
-  // 🔒 جلب حجوزات صاحب الملعب من الخادم
+  // ðŸ”’ Ø¬Ù„Ø¨ Ø­Ø¬ÙˆØ²Ø§Øª ØµØ§Ø­Ø¨ Ø§Ù„Ù…Ù„Ø¹Ø¨ Ù…Ù† Ø§Ù„Ø®Ø§Ø¯Ù…
   const loadOwnerBookings = async (code) => {
     const res = await stadiumApi("owner-bookings", { ownerCode: code || owner?.owner_code });
     if (res.bookings) setMyBookingsList(res.bookings);
@@ -872,7 +872,7 @@ export default function App() {
     }
   };
 
-  // 🔒 فتح لقطة الدفع برابط مؤقت صالح خمس دقائق
+  // ðŸ”’ ÙØªØ­ Ù„Ù‚Ø·Ø© Ø§Ù„Ø¯ÙØ¹ Ø¨Ø±Ø§Ø¨Ø· Ù…Ø¤Ù‚Øª ØµØ§Ù„Ø­ Ø®Ù…Ø³ Ø¯Ù‚Ø§Ø¦Ù‚
   const openProof = async (bookingId) => {
     const res = await stadiumApi("proof-url", {
       ownerCode: owner?.owner_code, adminPass, payload: { bookingId },
@@ -881,15 +881,15 @@ export default function App() {
     window.open(res.url, "_blank");
   };
 
-  // 🔑 تغيير كود صاحب الملعب
+  // ðŸ”‘ ØªØºÙŠÙŠØ± ÙƒÙˆØ¯ ØµØ§Ø­Ø¨ Ø§Ù„Ù…Ù„Ø¹Ø¨
   const changeOwnerCode = async () => {
     const res = await stadiumApi("owner-change-code", { ownerCode: owner?.owner_code });
     if (res.error || !res.owner_code) return showToast(L("netError"), "#FF4444");
     const up = { ...owner, owner_code: res.owner_code };
     setOwner(up); localStorage.setItem("malaabi_owner", JSON.stringify(up));
     loadOwnerBookings(res.owner_code);
-    setShowOwnerCode(true);   // 🔑 نُظهر الكود الجديد ليحفظه
-    showToast("🔑 " + L("newCodeIs") + ": " + res.owner_code);
+    setShowOwnerCode(true);   // ðŸ”‘ Ù†ÙØ¸Ù‡Ø± Ø§Ù„ÙƒÙˆØ¯ Ø§Ù„Ø¬Ø¯ÙŠØ¯ Ù„ÙŠØ­ÙØ¸Ù‡
+    showToast("ðŸ”‘ " + L("newCodeIs") + ": " + res.owner_code);
   };
 
   const handleLogout = () => {
@@ -900,7 +900,7 @@ export default function App() {
     setScreen("login"); setTab("client"); setBottomTab("stadiums");
   };
 
-  // 👑 عشرون ضغطة على الكرة تفتح نافذة دخول لوحة التحكم
+  // ðŸ‘‘ Ø¹Ø´Ø±ÙˆÙ† Ø¶ØºØ·Ø© Ø¹Ù„Ù‰ Ø§Ù„ÙƒØ±Ø© ØªÙØªØ­ Ù†Ø§ÙØ°Ø© Ø¯Ø®ÙˆÙ„ Ù„ÙˆØ­Ø© Ø§Ù„ØªØ­ÙƒÙ…
   const handleLogoClick = () => {
     setLogoClicks(p => {
       const n = p + 1;
@@ -909,7 +909,7 @@ export default function App() {
     });
   };
 
-  // 👑 التحقق من كلمة السر على الخادم — لا شيء منها في الكود
+  // ðŸ‘‘ Ø§Ù„ØªØ­Ù‚Ù‚ Ù…Ù† ÙƒÙ„Ù…Ø© Ø§Ù„Ø³Ø± Ø¹Ù„Ù‰ Ø§Ù„Ø®Ø§Ø¯Ù… â€” Ù„Ø§ Ø´ÙŠØ¡ Ù…Ù†Ù‡Ø§ ÙÙŠ Ø§Ù„ÙƒÙˆØ¯
   const handleAdminLogin = async () => {
     if (!adminPassInput.trim()) return;
     setAdminChecking(true);
@@ -917,7 +917,7 @@ export default function App() {
     setAdminChecking(false);
     if (res.error === "wrong_pass") return showToast(L("wrongPass"), "#FF4444");
     if (res.error) return showToast(L("netError"), "#FF4444");
-    setAdminPass(adminPassInput);      // تبقى في الذاكرة فقط، لا تُحفظ في القرص
+    setAdminPass(adminPassInput);      // ØªØ¨Ù‚Ù‰ ÙÙŠ Ø§Ù„Ø°Ø§ÙƒØ±Ø© ÙÙ‚Ø·ØŒ Ù„Ø§ ØªÙØ­ÙØ¸ ÙÙŠ Ø§Ù„Ù‚Ø±Øµ
     setAdminPassInput("");
     setShowAdminLogin(false);
     setTab("admin");
@@ -925,7 +925,7 @@ export default function App() {
     showToast(L("commanderWelcome"));
   };
 
-  // 👑 جلب البيانات الكاملة للوحة التحكم
+  // ðŸ‘‘ Ø¬Ù„Ø¨ Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„ÙƒØ§Ù…Ù„Ø© Ù„Ù„ÙˆØ­Ø© Ø§Ù„ØªØ­ÙƒÙ…
   const loadAdminData = async (pass) => {
     const res = await stadiumApi("admin-data", { adminPass: pass || adminPass });
     if (res.error) return showToast(L("netError"), "#FF4444");
@@ -935,10 +935,10 @@ export default function App() {
     if (res.ratings) setAdminRatings(res.ratings);
   };
 
-  // 👑 الخروج من اللوحة — تُمحى كلمة السر من الذاكرة
+  // ðŸ‘‘ Ø§Ù„Ø®Ø±ÙˆØ¬ Ù…Ù† Ø§Ù„Ù„ÙˆØ­Ø© â€” ØªÙÙ…Ø­Ù‰ ÙƒÙ„Ù…Ø© Ø§Ù„Ø³Ø± Ù…Ù† Ø§Ù„Ø°Ø§ÙƒØ±Ø©
   const exitAdmin = () => {
     setAdminPass(""); setTab("client");
-    setSearchText(""); setFilterWilaya("الكل"); setSortBy("default");   // 🧹 تنظيف الفلاتر
+    setSearchText(""); setFilterWilaya("Ø§Ù„ÙƒÙ„"); setSortBy("default");   // ðŸ§¹ ØªÙ†Ø¸ÙŠÙ Ø§Ù„ÙÙ„Ø§ØªØ±
     loadData();
   };
 
@@ -955,13 +955,13 @@ export default function App() {
     setUploading(true);
     const fn = `${Date.now()}_${Math.random().toString(36).substring(2,8)}.${file.name.split(".").pop()}`;
     const { error } = await supabase.storage.from("proofs").upload(fn, file);
-    if (error) { setUploading(false); return showToast("خطأ في الرفع", "#FF4444"); }
-    // 🔒 نخزّن اسم الملف فقط — الرابط يُولَّد مؤقتاً عند العرض
+    if (error) { setUploading(false); return showToast("Ø®Ø·Ø£ ÙÙŠ Ø§Ù„Ø±ÙØ¹", "#FF4444"); }
+    // ðŸ”’ Ù†Ø®Ø²Ù‘Ù† Ø§Ø³Ù… Ø§Ù„Ù…Ù„Ù ÙÙ‚Ø· â€” Ø§Ù„Ø±Ø§Ø¨Ø· ÙŠÙÙˆÙ„ÙŽÙ‘Ø¯ Ù…Ø¤Ù‚ØªØ§Ù‹ Ø¹Ù†Ø¯ Ø§Ù„Ø¹Ø±Ø¶
     setProofUrl(fn); setUploading(false);
-    showToast("✅");
+    showToast("âœ…");
   };
 
-  // 🖼 رفع صورة الملعب من ملفات المشرف إلى Supabase Storage
+  // ðŸ–¼ Ø±ÙØ¹ ØµÙˆØ±Ø© Ø§Ù„Ù…Ù„Ø¹Ø¨ Ù…Ù† Ù…Ù„ÙØ§Øª Ø§Ù„Ù…Ø´Ø±Ù Ø¥Ù„Ù‰ Supabase Storage
   const handleUploadStadiumImage = async (file, isEdit = false) => {
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) return showToast(L("imageTooBig"), "#FF4444");
@@ -976,7 +976,7 @@ export default function App() {
     showToast(L("imageUploaded"));
   };
 
-  // 🔒 الحجز يمر بالخادم — سبعة فحوصات قبل الإدخال
+  // ðŸ”’ Ø§Ù„Ø­Ø¬Ø² ÙŠÙ…Ø± Ø¨Ø§Ù„Ø®Ø§Ø¯Ù… â€” Ø³Ø¨Ø¹Ø© ÙØ­ÙˆØµØ§Øª Ù‚Ø¨Ù„ Ø§Ù„Ø¥Ø¯Ø®Ø§Ù„
   const handleBook = async () => {
     if (cart.length === 0 || !selectedPayApp || !transactionNum) return;
     if (!proofUrl) return showToast(L("proofRequired"), "#FF4444");
@@ -1014,7 +1014,7 @@ export default function App() {
     setCart([]);
   };
 
-  // ✅ صاحب الملعب فقط
+  // âœ… ØµØ§Ø­Ø¨ Ø§Ù„Ù…Ù„Ø¹Ø¨ ÙÙ‚Ø·
   const confirmBooking = async (id) => {
     const res = await stadiumApi("confirm-booking", { ownerCode: owner?.owner_code, bookingId: id });
     if (res.error === "unauthorized") return showToast(L("wrongCode"), "#FF4444");
@@ -1030,7 +1030,7 @@ export default function App() {
       setOwner(up); localStorage.setItem("malaabi_owner", JSON.stringify(up));
     }
     setStadiums(p => p.map(s => s.id === owner?.id ? { ...s, balance_due: res.balance_due } : s));
-    showToast("✅ " + t.confirmed + " — " + res.code);
+    showToast("âœ… " + t.confirmed + " â€” " + res.code);
   };
 
   const rejectBooking = async (id) => {
@@ -1045,7 +1045,7 @@ export default function App() {
     const res = await stadiumApi("admin-reset-due", { adminPass, stadiumId: id });
     if (res.error) return showToast(L("netError"), "#FF4444");
     setStadiums(p => p.map(s => s.id === id ? { ...s, balance_due: 0 } : s));
-    showToast("✅ " + L("resetDue"));
+    showToast("âœ… " + L("resetDue"));
   };
 
   const saveRate = async (id) => {
@@ -1054,7 +1054,7 @@ export default function App() {
     const res = await stadiumApi("admin-set-rate", { adminPass, stadiumId: id, payload: { rate: v } });
     if (res.error) return showToast(L("netError"), "#FF4444");
     setStadiums(p => p.map(s => s.id === id ? { ...s, commission_rate: v } : s));
-    showToast("✅");
+    showToast("âœ…");
   };
 
   const toggleSuspend = async (st) => {
@@ -1062,16 +1062,16 @@ export default function App() {
     if (res.error || !res.status) return showToast(L("netError"), "#FF4444");
     const ns = res.status;
     setStadiums(p => p.map(s => s.id === st.id ? { ...s, status: ns } : s));
-    showToast(ns === "suspended" ? "⛔ " + L("suspend") : "✅ " + L("activate"), ns === "suspended" ? "#FF4444" : COLORS.accent);
+    showToast(ns === "suspended" ? "â›” " + L("suspend") : "âœ… " + L("activate"), ns === "suspended" ? "#FF4444" : COLORS.accent);
   };
 
   const openEdit = (st) => {
     setEditStadium(st); setEditName(st.name); setEditWilaya(st.wilaya); setEditHood(st.hood);
     setEditPrice(st.price); setEditOwnerPhone(st.owner_phone || ""); setEditPayments(st.payments || {});
     setEditWorkingHours(st.working_hours || [...ALL_HOURS]);
-    setEditImage(st.image || "");                                 // 🖼 الصورة
-    setEditLat(st.latitude != null ? String(st.latitude) : "");   // 📍 الموقع
-    setEditLng(st.longitude != null ? String(st.longitude) : ""); // 📍 الموقع
+    setEditImage(st.image || "");                                 // ðŸ–¼ Ø§Ù„ØµÙˆØ±Ø©
+    setEditLat(st.latitude != null ? String(st.latitude) : "");   // ðŸ“ Ø§Ù„Ù…ÙˆÙ‚Ø¹
+    setEditLng(st.longitude != null ? String(st.longitude) : ""); // ðŸ“ Ø§Ù„Ù…ÙˆÙ‚Ø¹
   };
 
   const handleEdit = async () => {
@@ -1107,7 +1107,7 @@ export default function App() {
     });
     if (res.error || !res.stadium) return showToast(L("netError"), "#FF4444");
     setStadiums(p => [...p, res.stadium]);
-    showToast("✅ " + L("ownerCodeIs") + ": " + res.stadium.owner_code);
+    showToast("âœ… " + L("ownerCodeIs") + ": " + res.stadium.owner_code);
     setNewName(""); setNewWilayaSelect(""); setNewHood(""); setNewPrice(""); setNewPayments({}); setNewOwnerPhone(""); setNewWorkingHours([...ALL_HOURS]);
     setNewLat(""); setNewLng(""); setNewImage("");
   };
@@ -1120,13 +1120,13 @@ export default function App() {
     showToast(t.wilayaAdded);
   };
 
-  // 🗑 حذف ولاية — مع تحذير إن كانت تحوي ملاعب
+  // ðŸ—‘ Ø­Ø°Ù ÙˆÙ„Ø§ÙŠØ© â€” Ù…Ø¹ ØªØ­Ø°ÙŠØ± Ø¥Ù† ÙƒØ§Ù†Øª ØªØ­ÙˆÙŠ Ù…Ù„Ø§Ø¹Ø¨
   const handleDeleteWilaya = async (name) => {
     const info = await stadiumApi("admin-wilaya-info", { adminPass, payload: { name } });
     if (info.error) return showToast(L("netError"), "#FF4444");
 
     const msg = info.count > 0
-      ? `⚠️ ${name}\n\n${info.count} ${L("wilayaHasStadiums")}`
+      ? `âš ï¸ ${name}\n\n${info.count} ${L("wilayaHasStadiums")}`
       : `${name}\n\n${L("wilayaEmpty")}`;
     if (!confirm(msg)) return;
 
@@ -1135,11 +1135,11 @@ export default function App() {
 
     setWilayas(p => p.filter(w => w !== name));
     setStadiums(p => p.filter(s => s.wilaya !== name));
-    if (filterWilaya === name) setFilterWilaya("الكل");
-    showToast("🗑 " + L("wilayaDeleted") + (res.deletedStadiums ? ` (${res.deletedStadiums})` : ""), "#FF4444");
+    if (filterWilaya === name) setFilterWilaya("Ø§Ù„ÙƒÙ„");
+    showToast("ðŸ—‘ " + L("wilayaDeleted") + (res.deletedStadiums ? ` (${res.deletedStadiums})` : ""), "#FF4444");
   };
 
-  // ⭐ هل انتهى موعد الحجز؟ (وقته + ساعة اللعب)
+  // â­ Ù‡Ù„ Ø§Ù†ØªÙ‡Ù‰ Ù…ÙˆØ¹Ø¯ Ø§Ù„Ø­Ø¬Ø²ØŸ (ÙˆÙ‚ØªÙ‡ + Ø³Ø§Ø¹Ø© Ø§Ù„Ù„Ø¹Ø¨)
   const bookingEnded = (b) => {
     if (!b?.date || b.hour == null) return false;
     const end = new Date(`${b.date}T${String(b.hour).padStart(2, "0")}:00:00`);
@@ -1147,13 +1147,13 @@ export default function App() {
     return Date.now() >= end.getTime();
   };
 
-  // ⭐ هل يستحق هذا الحجز تقييماً الآن؟
+  // â­ Ù‡Ù„ ÙŠØ³ØªØ­Ù‚ Ù‡Ø°Ø§ Ø§Ù„Ø­Ø¬Ø² ØªÙ‚ÙŠÙŠÙ…Ø§Ù‹ Ø§Ù„Ø¢Ù†ØŸ
   const canRate = (b) =>
     b.status === "confirmed" && bookingEnded(b) && !myRatings.some(r => r.booking_id === b.id);
 
   const myRatingOf = (id) => myRatings.find(r => r.booking_id === id);
 
-  // ⭐ جلب تقييمات الزبون
+  // â­ Ø¬Ù„Ø¨ ØªÙ‚ÙŠÙŠÙ…Ø§Øª Ø§Ù„Ø²Ø¨ÙˆÙ†
   const loadMyRatings = async (phone, pass) => {
     const ph = phone || user?.phone, pw = pass || sessionPass;
     if (!ph || !pw) return;
@@ -1161,7 +1161,7 @@ export default function App() {
     if (res.ratings) setMyRatings(res.ratings);
   };
 
-  // ⭐ جلب قائمة الملاعب المفضلة للزبون
+  // â­ Ø¬Ù„Ø¨ Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ù…Ù„Ø§Ø¹Ø¨ Ø§Ù„Ù…ÙØ¶Ù„Ø© Ù„Ù„Ø²Ø¨ÙˆÙ†
   const loadFavorites = async (phone, pass) => {
     const ph = phone || user?.phone, pw = pass || sessionPass;
     if (!ph || !pw) return;
@@ -1169,10 +1169,10 @@ export default function App() {
     if (res.favorites) setFavorites(res.favorites);
   };
 
-  // ⭐ إضافة/إزالة ملعب من المفضلة
+  // â­ Ø¥Ø¶Ø§ÙØ©/Ø¥Ø²Ø§Ù„Ø© Ù…Ù„Ø¹Ø¨ Ù…Ù† Ø§Ù„Ù…ÙØ¶Ù„Ø©
   const toggleFavorite = async (stadiumId) => {
     if (!user || !sessionPass) return showToast(L("needRelogin"), "#FF4444");
-    // تحديث فوري في الواجهة، ثم تأكيد من الخادم
+    // ØªØ­Ø¯ÙŠØ« ÙÙˆØ±ÙŠ ÙÙŠ Ø§Ù„ÙˆØ§Ø¬Ù‡Ø©ØŒ Ø«Ù… ØªØ£ÙƒÙŠØ¯ Ù…Ù† Ø§Ù„Ø®Ø§Ø¯Ù…
     const wasFav = favorites.includes(stadiumId);
     setFavorites(p => wasFav ? p.filter(id => id !== stadiumId) : [...p, stadiumId]);
     const res = await stadiumApi("toggle-favorite", {
@@ -1185,7 +1185,7 @@ export default function App() {
     showToast(res.favorited ? L("addedFav") : L("removedFav"), res.favorited ? "#FF4081" : COLORS.muted);
   };
 
-  // ⭐ إرسال تقييم
+  // â­ Ø¥Ø±Ø³Ø§Ù„ ØªÙ‚ÙŠÙŠÙ…
   const submitRating = async () => {
     if (!rateStars) return showToast(L("pickStars"), "#FF4444");
     const res = await stadiumApi("rate-booking", {
@@ -1200,11 +1200,11 @@ export default function App() {
 
     setMyRatings(p => [...p, { booking_id: rateBooking.id, stars: rateStars, comment: rateText }]);
     setRateBooking(null); setRateStars(0); setRateText("");
-    loadData();   // تحديث المعدلات المعروضة
+    loadData();   // ØªØ­Ø¯ÙŠØ« Ø§Ù„Ù…Ø¹Ø¯Ù„Ø§Øª Ø§Ù„Ù…Ø¹Ø±ÙˆØ¶Ø©
     showToast(L("rateThanks"), "#FFD700");
   };
 
-  // ⭐ تقييمات ملعب المالك
+  // â­ ØªÙ‚ÙŠÙŠÙ…Ø§Øª Ù…Ù„Ø¹Ø¨ Ø§Ù„Ù…Ø§Ù„Ùƒ
   const loadOwnerRatings = async () => {
     const res = await stadiumApi("stadium-ratings", {
       ownerCode: owner?.owner_code, payload: { stadiumId: owner?.id },
@@ -1212,32 +1212,32 @@ export default function App() {
     if (res.ratings) setOwnerRatings(res.ratings);
   };
 
-  // 🗑 حذف تقييم — المشرف فقط
+  // ðŸ—‘ Ø­Ø°Ù ØªÙ‚ÙŠÙŠÙ… â€” Ø§Ù„Ù…Ø´Ø±Ù ÙÙ‚Ø·
   const deleteRating = async (id) => {
-    if (!confirm(t.deleteConfirm + "؟")) return;
+    if (!confirm(t.deleteConfirm + "ØŸ")) return;
     const res = await stadiumApi("admin-delete-rating", { adminPass, payload: { ratingId: id } });
     if (res.error) return showToast(L("netError"), "#FF4444");
     setAdminRatings(p => p.filter(r => r.id !== id));
-    showToast("🗑", "#FF4444");
+    showToast("ðŸ—‘", "#FF4444");
   };
 
-  // 🛒 مفتاح الموعد
+  // ðŸ›’ Ù…ÙØªØ§Ø­ Ø§Ù„Ù…ÙˆØ¹Ø¯
   const inCart = (d, h) => cart.some(c => c.date === d && c.hour === h);
 
-  // 🛒 إضافة أو إزالة موعد من السلة
+  // ðŸ›’ Ø¥Ø¶Ø§ÙØ© Ø£Ùˆ Ø¥Ø²Ø§Ù„Ø© Ù…ÙˆØ¹Ø¯ Ù…Ù† Ø§Ù„Ø³Ù„Ø©
   const toggleCartSlot = (d, h) => {
     if (inCart(d, h)) return setCart(p => p.filter(c => !(c.date === d && c.hour === h)));
     if (cart.length >= 70) return showToast(L("maxSlots"), "#FF4444");
     setCart(p => [...p, { date: d, hour: h }].sort((a,b) => a.date === b.date ? a.hour - b.hour : a.date < b.date ? -1 : 1));
   };
 
-  // 🚫 جلب المواعيد المغلقة
+  // ðŸš« Ø¬Ù„Ø¨ Ø§Ù„Ù…ÙˆØ§Ø¹ÙŠØ¯ Ø§Ù„Ù…ØºÙ„Ù‚Ø©
   const loadBlocked = async (code) => {
     const res = await stadiumApi("owner-blocked", { ownerCode: code || owner?.owner_code });
     if (res.blocked) setBlockedList(res.blocked);
   };
 
-  // 🚫 إغلاق الساعات المختارة
+  // ðŸš« Ø¥ØºÙ„Ø§Ù‚ Ø§Ù„Ø³Ø§Ø¹Ø§Øª Ø§Ù„Ù…Ø®ØªØ§Ø±Ø©
   const saveBlockedHours = async () => {
     if (blockHoursSel.length === 0) return;
     const res = await stadiumApi("owner-block-hours", {
@@ -1252,7 +1252,7 @@ export default function App() {
     showToast(L("blockDone"), "#FF6D00");
   };
 
-  // 🚫 إلغاء إغلاق موعد
+  // ðŸš« Ø¥Ù„ØºØ§Ø¡ Ø¥ØºÙ„Ø§Ù‚ Ù…ÙˆØ¹Ø¯
   const unblockSlot = async (id) => {
     const res = await stadiumApi("owner-unblock", {
       ownerCode: owner?.owner_code, payload: { ids: [id] },
@@ -1263,7 +1263,7 @@ export default function App() {
     showToast(L("unblockDone"));
   };
 
-  // 🔁 قبول أو رفض مجموعة حجوزات
+  // ðŸ” Ù‚Ø¨ÙˆÙ„ Ø£Ùˆ Ø±ÙØ¶ Ù…Ø¬Ù…ÙˆØ¹Ø© Ø­Ø¬ÙˆØ²Ø§Øª
   const handleGroup = async (groupId, accept) => {
     const res = await stadiumApi("handle-group", {
       ownerCode: owner?.owner_code, payload: { groupId, accept },
@@ -1275,7 +1275,7 @@ export default function App() {
         : b));
       const up = { ...owner, balance_due: res.balance_due };
       setOwner(up); localStorage.setItem("malaabi_owner", JSON.stringify(up));
-      showToast("✅ " + t.confirmed + " — " + res.code);
+      showToast("âœ… " + t.confirmed + " â€” " + res.code);
     } else {
       setMyBookingsList(p => p.map(b => b.group_id === groupId
         ? { ...b, status: "rejected", handled_by: "owner" } : b));
@@ -1291,18 +1291,18 @@ export default function App() {
   const isBooked = (sid, d, h) => bookings.some(b => b.stadium_id === sid && b.date === d && b.hour === h && b.status !== "rejected");
 
   const confirmedBookings = bookings.filter(b => b.status === "confirmed");
-  // 🔒 حجوزات الزبون تأتي من الخادم — جدول الحجوزات لم يعد مقروءاً مباشرة
+  // ðŸ”’ Ø­Ø¬ÙˆØ²Ø§Øª Ø§Ù„Ø²Ø¨ÙˆÙ† ØªØ£ØªÙŠ Ù…Ù† Ø§Ù„Ø®Ø§Ø¯Ù… â€” Ø¬Ø¯ÙˆÙ„ Ø§Ù„Ø­Ø¬ÙˆØ²Ø§Øª Ù„Ù… ÙŠØ¹Ø¯ Ù…Ù‚Ø±ÙˆØ¡Ø§Ù‹ Ù…Ø¨Ø§Ø´Ø±Ø©
   const myBookings = user ? myBookingsList : [];
   const myConfirmedBookings = myBookings.filter(b => b.status === "confirmed");
   const unreadNotifs = myBookings.filter(b => b.status !== "pending" && !readNotifIds.includes(b.id)).length;
-  const pendingRatingsCount = myBookings.filter(b => canRate(b)).length;   // 🔔 عدد الحجوزات التي تستحق تقييماً الآن
+  const pendingRatingsCount = myBookings.filter(b => canRate(b)).length;   // ðŸ”” Ø¹Ø¯Ø¯ Ø§Ù„Ø­Ø¬ÙˆØ²Ø§Øª Ø§Ù„ØªÙŠ ØªØ³ØªØ­Ù‚ ØªÙ‚ÙŠÙŠÙ…Ø§Ù‹ Ø§Ù„Ø¢Ù†
   const totalDues = stadiums.reduce((a,s) => a + (s.balance_due || 0), 0);
 
-  // 📏 المسافة بين الزبون والملعب
+  // ðŸ“ Ø§Ù„Ù…Ø³Ø§ÙØ© Ø¨ÙŠÙ† Ø§Ù„Ø²Ø¨ÙˆÙ† ÙˆØ§Ù„Ù…Ù„Ø¹Ø¨
   const stadiumDistance = (s) => (myPos && hasLocation(s)) ? distanceKm(myPos.lat, myPos.lng, s.latitude, s.longitude) : null;
 
   let filteredStadiums = stadiums.filter(s => s.status !== "suspended");
-  if (filterWilaya !== "الكل") filteredStadiums = filteredStadiums.filter(s => s.wilaya === filterWilaya);
+  if (filterWilaya !== "Ø§Ù„ÙƒÙ„") filteredStadiums = filteredStadiums.filter(s => s.wilaya === filterWilaya);
   if (searchText) filteredStadiums = filteredStadiums.filter(s =>
     s.name.toLowerCase().includes(searchText.toLowerCase()) ||
     s.hood.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -1312,7 +1312,7 @@ export default function App() {
   if (sortBy === "rating") filteredStadiums = [...filteredStadiums].sort((a,b) =>
     (ratingsMap[b.id]?.avg_stars ?? 0) - (ratingsMap[a.id]?.avg_stars ?? 0));
   if (sortBy === "popular") filteredStadiums = [...filteredStadiums].sort((a,b) => confirmedBookings.filter(x => x.stadium_id === b.id).length - confirmedBookings.filter(x => x.stadium_id === a.id).length);
-  // 📍 الترتيب حسب الأقرب
+  // ðŸ“ Ø§Ù„ØªØ±ØªÙŠØ¨ Ø­Ø³Ø¨ Ø§Ù„Ø£Ù‚Ø±Ø¨
   if (sortBy === "nearest" && myPos) filteredStadiums = [...filteredStadiums].sort((a,b) => {
     const da = stadiumDistance(a), db = stadiumDistance(b);
     if (da == null) return 1;
@@ -1321,18 +1321,18 @@ export default function App() {
   });
 
   const pendingBookings = bookings.filter(b => b.status === "pending");
-  // 🔒 حجوزات صاحب الملعب تأتي من الخادم بعد التحقق من كوده
+  // ðŸ”’ Ø­Ø¬ÙˆØ²Ø§Øª ØµØ§Ø­Ø¨ Ø§Ù„Ù…Ù„Ø¹Ø¨ ØªØ£ØªÙŠ Ù…Ù† Ø§Ù„Ø®Ø§Ø¯Ù… Ø¨Ø¹Ø¯ Ø§Ù„ØªØ­Ù‚Ù‚ Ù…Ù† ÙƒÙˆØ¯Ù‡
   const ownerBookings = owner ? myBookingsList : [];
   const ownerPending = ownerBookings.filter(b => b.status === "pending");
   const payApp = selectedPayApp ? PAYMENT_APPS.find(p => p.id === selectedPayApp) : null;
   const stadiumPayNum = selected && payApp ? (selected.payments?.[selectedPayApp] || "") : "";
   const stadiumHours = selected ? (selected.working_hours || ALL_HOURS) : ALL_HOURS;
-  // 🛒 المبلغ الإجمالي = السعر × عدد المواعيد
+  // ðŸ›’ Ø§Ù„Ù…Ø¨Ù„Øº Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ = Ø§Ù„Ø³Ø¹Ø± Ã— Ø¹Ø¯Ø¯ Ø§Ù„Ù…ÙˆØ§Ø¹ÙŠØ¯
   const totalPrice = (selected?.price || 0) * cart.length;
 
   const inp = { width:"100%", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"10px", padding:"12px 16px", color:"#fff", fontSize:"15px", fontFamily:"inherit", marginBottom:"16px", boxSizing:"border-box", outline:"none" };
   const lbl = { color:COLORS.muted, fontSize:"13px", marginBottom:"6px", display:"block" };
-  // 🎨 قائمة منسدلة بلون التطبيق — الخلفية والكتابة والخيارات
+  // ðŸŽ¨ Ù‚Ø§Ø¦Ù…Ø© Ù…Ù†Ø³Ø¯Ù„Ø© Ø¨Ù„ÙˆÙ† Ø§Ù„ØªØ·Ø¨ÙŠÙ‚ â€” Ø§Ù„Ø®Ù„ÙÙŠØ© ÙˆØ§Ù„ÙƒØªØ§Ø¨Ø© ÙˆØ§Ù„Ø®ÙŠØ§Ø±Ø§Øª
   const sel = { ...inp, background:COLORS.bg, color:"#fff", WebkitAppearance:"none", appearance:"none",
     backgroundImage:`url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238892A4' d='M6 8L0 0h12z'/%3E%3C/svg%3E")`,
     backgroundRepeat:"no-repeat", backgroundPosition: isRTL ? "left 16px center" : "right 16px center",
@@ -1341,10 +1341,10 @@ export default function App() {
 
   const BottomNav = () => {
     const items = [
-      { id:"stadiums", label: lang==="ar"?"الملاعب":lang==="fr"?"Accueil":"Home" },
-      { id:"notifs", label: lang==="ar"?"الحجوزات":lang==="fr"?"Réservations":"Reservations", badge: unreadNotifs },
+      { id:"stadiums", label: lang==="ar"?"Ø§Ù„Ù…Ù„Ø§Ø¹Ø¨":lang==="fr"?"Accueil":"Home" },
+      { id:"notifs", label: lang==="ar"?"Ø§Ù„Ø­Ø¬ÙˆØ²Ø§Øª":lang==="fr"?"RÃ©servations":"Reservations", badge: unreadNotifs },
       { id:"favorites", label: L("favorites"), badge: favorites.length },
-      { id:"profile", label: lang==="ar"?"حسابي":lang==="fr"?"Profil":"Profile" },
+      { id:"profile", label: lang==="ar"?"Ø­Ø³Ø§Ø¨ÙŠ":lang==="fr"?"Profil":"Profile" },
     ];
     return (
       <div style={{position:"fixed", bottom:0, left:0, right:0, background:COLORS.card, borderTop:`1px solid ${COLORS.border}`, display:"flex", zIndex:50, paddingBottom:"8px"}}>
@@ -1371,9 +1371,9 @@ export default function App() {
     );
   };
 
-  // 🏟 بطاقة ملعب — تعريفها خارج المكوّن الرئيسي أسفل الملف (لتفادي إعادة الرسم غير الضرورية)
+  // ðŸŸ Ø¨Ø·Ø§Ù‚Ø© Ù…Ù„Ø¹Ø¨ â€” ØªØ¹Ø±ÙŠÙÙ‡Ø§ Ø®Ø§Ø±Ø¬ Ø§Ù„Ù…ÙƒÙˆÙ‘Ù† Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠ Ø£Ø³ÙÙ„ Ø§Ù„Ù…Ù„Ù (Ù„ØªÙØ§Ø¯ÙŠ Ø¥Ø¹Ø§Ø¯Ø© Ø§Ù„Ø±Ø³Ù… ØºÙŠØ± Ø§Ù„Ø¶Ø±ÙˆØ±ÙŠØ©)
 
-  // ✅ شاشة الدخول — 3 خيارات
+  // âœ… Ø´Ø§Ø´Ø© Ø§Ù„Ø¯Ø®ÙˆÙ„ â€” 3 Ø®ÙŠØ§Ø±Ø§Øª
   let mainContent = null;
   if (screen === "login" || screen === "register" || screen === "ownerLogin") {
     const isReg = screen === "register";
@@ -1384,7 +1384,7 @@ export default function App() {
         <div style={{position:"fixed", top:"16px", left:"16px", zIndex:999}}><LangButton/></div>
         <div style={{width:"100%", maxWidth:"400px"}}>
           <div style={{textAlign:"center", marginBottom:"32px"}}>
-            <div style={{marginTop:"-18px", marginBottom:"8px"}}><Logo size={84} glow={0.24}/></div>
+            <div style={{marginTop:"-45px", marginBottom:"8px"}}><Logo size={84} glow={0.24}/></div>
             <div><BrandName text={t.appName}/></div>
             <div style={{color:COLORS.muted, marginTop:"8px", fontSize:"15px"}}>{t.appSlogan}</div>
           </div>
@@ -1392,11 +1392,11 @@ export default function App() {
             {isOwner ? (
               <>
                 <div style={{textAlign:"center", marginBottom:"18px"}}>
-                  <div style={{fontSize:"40px", marginBottom:"6px"}}>🏟</div>
+                  <div style={{fontSize:"40px", marginBottom:"6px"}}>ðŸŸ</div>
                   <div style={{fontWeight:"800", fontSize:"17px", color:"#FF6D00"}}>{L("ownerLogin")}</div>
                 </div>
                 <label style={lbl}>{L("ownerCode")}</label>
-                <input style={{...inp, letterSpacing:"4px", textAlign:"center", fontWeight:"800", fontSize:"18px"}} placeholder="••••••••" value={ownerCodeInput} onChange={e => setOwnerCodeInput(e.target.value.toUpperCase())}/>
+                <input style={{...inp, letterSpacing:"4px", textAlign:"center", fontWeight:"800", fontSize:"18px"}} placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" value={ownerCodeInput} onChange={e => setOwnerCodeInput(e.target.value.toUpperCase())}/>
                 <button onClick={handleOwnerLogin} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#FF6D00,#FF4081)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"16px", cursor:"pointer", fontFamily:"inherit", color:"#fff"}}>{t.enterApp}</button>
                 <button onClick={() => setScreen("login")} style={{width:"100%", padding:"12px", background:"transparent", border:"none", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", marginTop:"10px", fontSize:"13px"}}>{L("backToLogin")}</button>
               </>
@@ -1409,7 +1409,7 @@ export default function App() {
                 <input style={inp} placeholder={t.enter8} maxLength={8} value={regPhone} onChange={e => setRegPhone(cleanPhone(e.target.value))}/>
                 <label style={lbl}>{t.password}</label>
                 {passField({ id:"reg", value:regPass, placeholder:t.enter4, onChange:e => setRegPass(e.target.value.replace(/\D/g,"")) })}
-                <label style={lbl}>🔐 {L("securityQ")}</label>
+                <label style={lbl}>ðŸ” {L("securityQ")}</label>
                 <select style={sel} value={regQuestion} onChange={e => setRegQuestion(e.target.value)}>
                   <option style={opt} value="">{L("chooseQ")}</option>
                   {SECURITY_QUESTIONS.map(q => <option style={opt} key={q.id} value={q.id}>{q[lang]}</option>)}
@@ -1418,7 +1418,7 @@ export default function App() {
                   <>
                     <label style={lbl}>{L("yourAnswer")}</label>
                     <input style={{...inp, marginBottom:"6px"}} value={regAnswer} onChange={e => setRegAnswer(e.target.value)}/>
-                    <div style={{color:"#FF6D00", fontSize:"12px", marginBottom:"16px"}}>⚠️ {L("answerHint")}</div>
+                    <div style={{color:"#FF6D00", fontSize:"12px", marginBottom:"16px"}}>âš ï¸ {L("answerHint")}</div>
                   </>
                 )}
                 <button onClick={handleRegister} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#80D030,#80D030)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"16px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{t.createAccount}</button>
@@ -1432,33 +1432,33 @@ export default function App() {
                 <div style={{marginBottom:"10px"}}>{passField({ id:"login", value:loginPass, placeholder:t.enter4, onEnter:handleLogin, onChange:e => setLoginPass(e.target.value.replace(/\D/g,"")), extra:{marginBottom:0} })}</div>
                 <button onClick={handleLogin} style={{width:"100%", padding:"14px", background:"linear-gradient(135deg,#80D030,#80D030)", border:"none", borderRadius:"12px", fontWeight:"800", fontSize:"16px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{t.enterApp}</button>
 
-                {/* 🔑 نسيت كلمة السر */}
+                {/* ðŸ”‘ Ù†Ø³ÙŠØª ÙƒÙ„Ù…Ø© Ø§Ù„Ø³Ø± */}
                 <button onClick={() => { setShowForgot(true); setForgotPhone(loginPhone); }} style={{display:"block", width:"100%", padding:"12px", background:"transparent", border:"none", color:COLORS.accent2, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", fontSize:"13px"}}>{L("forgotPass")}</button>
 
-                {/* ➖ فاصل */}
+                {/* âž– ÙØ§ØµÙ„ */}
                 <div style={{display:"flex", alignItems:"center", gap:"12px", margin:"6px 0 18px"}}>
                   <div style={{flex:1, height:"1px", background:COLORS.border}}></div>
-                  <div style={{color:COLORS.muted, fontSize:"12px"}}>{lang==="ar" ? "أو" : lang==="fr" ? "ou" : "or"}</div>
+                  <div style={{color:COLORS.muted, fontSize:"12px"}}>{lang==="ar" ? "Ø£Ùˆ" : lang==="fr" ? "ou" : "or"}</div>
                   <div style={{flex:1, height:"1px", background:COLORS.border}}></div>
                 </div>
 
-                {/* ➕ إنشاء حساب جديد */}
+                {/* âž• Ø¥Ù†Ø´Ø§Ø¡ Ø­Ø³Ø§Ø¨ Ø¬Ø¯ÙŠØ¯ */}
                 <button onClick={() => setScreen("register")} style={{width:"100%", padding:"14px", background:"transparent", border:`2px solid ${COLORS.accent}`, borderRadius:"12px", color:COLORS.accent, fontWeight:"800", fontSize:"15px", cursor:"pointer", fontFamily:"inherit"}}>{L("createNewAccount")}</button>
 
-                {/* 🏟 دخول أصحاب الملاعب */}
+                {/* ðŸŸ Ø¯Ø®ÙˆÙ„ Ø£ØµØ­Ø§Ø¨ Ø§Ù„Ù…Ù„Ø§Ø¹Ø¨ */}
                 <button onClick={() => setScreen("ownerLogin")} style={{width:"100%", padding:"12px", background:"#FF6D0015", border:"1px solid #FF6D0044", borderRadius:"12px", color:"#FF6D00", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", marginTop:"12px", fontSize:"13px"}}>{L("ownerEntry")}</button>
               </>
             )}
-            <button onClick={() => setShowAbout(true)} style={{width:"100%", padding:"12px", background:"transparent", border:"none", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", marginTop:"8px", fontSize:"13px"}}>{lang==="ar" ? "تعرف علينا" : lang==="fr" ? "À propos" : "About us"}</button>
+            <button onClick={() => setShowAbout(true)} style={{width:"100%", padding:"12px", background:"transparent", border:"none", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", marginTop:"8px", fontSize:"13px"}}>{lang==="ar" ? "ØªØ¹Ø±Ù Ø¹Ù„ÙŠÙ†Ø§" : lang==="fr" ? "Ã€ propos" : "About us"}</button>
           </div>
         </div>
 
-        {/* 🔑 نافذة استعادة كلمة السر — 3 مراحل */}
+        {/* ðŸ”‘ Ù†Ø§ÙØ°Ø© Ø§Ø³ØªØ¹Ø§Ø¯Ø© ÙƒÙ„Ù…Ø© Ø§Ù„Ø³Ø± â€” 3 Ù…Ø±Ø§Ø­Ù„ */}
         {showForgot && (
           <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && closeForgot()}>
             <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"400px", padding:"28px"}}>
               <div style={{textAlign:"center", marginBottom:"18px"}}>
-                <div style={{fontSize:"42px", marginBottom:"8px"}}>{forgotStep===1?"🔑":forgotStep===2?"🔐":"✅"}</div>
+                <div style={{fontSize:"42px", marginBottom:"8px"}}>{forgotStep===1?"ðŸ”‘":forgotStep===2?"ðŸ”":"âœ…"}</div>
                 <div style={{fontSize:"18px", fontWeight:"800", color:COLORS.accent}}>{L("forgotTitle")}</div>
                 <div style={{display:"flex", gap:"6px", justifyContent:"center", marginTop:"12px"}}>
                   {[1,2,3].map(n => <div key={n} style={{width:"28px", height:"4px", borderRadius:"4px", background: forgotStep>=n?COLORS.accent:COLORS.border}}></div>)}
@@ -1477,7 +1477,7 @@ export default function App() {
               {forgotStep===2 && forgotUser && (
                 <>
                   <div style={{background:COLORS.bg, borderRadius:"12px", padding:"14px", marginBottom:"16px"}}>
-                    <div style={{color:COLORS.muted, fontSize:"11px", marginBottom:"6px"}}>🔐 {L("securityQ")}</div>
+                    <div style={{color:COLORS.muted, fontSize:"11px", marginBottom:"6px"}}>ðŸ” {L("securityQ")}</div>
                     <div style={{fontWeight:"700", fontSize:"14px", lineHeight:"1.6"}}>{qText(forgotUser.security_question, lang)}</div>
                   </div>
                   <label style={lbl}>{L("yourAnswer")}</label>
@@ -1496,7 +1496,7 @@ export default function App() {
                 </>
               )}
 
-              <button onClick={closeForgot} style={{width:"100%", padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", marginTop:"10px"}}>{lang==="ar" ? "اغلاق" : lang==="fr" ? "Fermer" : "Close"}</button>
+              <button onClick={closeForgot} style={{width:"100%", padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", marginTop:"10px"}}>{lang==="ar" ? "Ø§ØºÙ„Ø§Ù‚" : lang==="fr" ? "Fermer" : "Close"}</button>
             </div>
           </div>
         )}
@@ -1504,20 +1504,20 @@ export default function App() {
         {showAbout && (
           <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.88)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px", backdropFilter:"blur(4px)"}} onClick={e => e.target===e.currentTarget && setShowAbout(false)}>
             <div style={{background:`linear-gradient(160deg, ${COLORS.card}, #060905)`, borderRadius:"28px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"440px", maxHeight:"88vh", overflow:"hidden", boxShadow:"0 30px 80px rgba(0,0,0,0.5)"}}>
-              {/* 🏟 رأسية بتوهج أخضر وشعار حقيقي */}
+              {/* ðŸŸ Ø±Ø£Ø³ÙŠØ© Ø¨ØªÙˆÙ‡Ø¬ Ø£Ø®Ø¶Ø± ÙˆØ´Ø¹Ø§Ø± Ø­Ù‚ÙŠÙ‚ÙŠ */}
               <div style={{position:"relative", padding:"36px 28px 24px", textAlign:"center", overflow:"hidden"}}>
                 <div style={{position:"relative", margin:"0 auto 14px"}}><Logo size={72} glow={0.12}/></div>
                 <div style={{position:"relative"}}><BrandName text="malaabi" size="26px"/></div>
-                <div style={{position:"relative", color:COLORS.accent, fontSize:"12px", fontWeight:"700", marginTop:"6px", letterSpacing:"0.5px"}}>{lang==="ar" ? "احجز ملعبك بسهولة" : lang==="fr" ? "Réservez facilement" : "Book your field easily"}</div>
+                <div style={{position:"relative", color:COLORS.accent, fontSize:"12px", fontWeight:"700", marginTop:"6px", letterSpacing:"0.5px"}}>{lang==="ar" ? "Ø§Ø­Ø¬Ø² Ù…Ù„Ø¹Ø¨Ùƒ Ø¨Ø³Ù‡ÙˆÙ„Ø©" : lang==="fr" ? "RÃ©servez facilement" : "Book your field easily"}</div>
               </div>
 
-              {/* 📜 النص — قابل للتمرير إن طال */}
+              {/* ðŸ“œ Ø§Ù„Ù†Øµ â€” Ù‚Ø§Ø¨Ù„ Ù„Ù„ØªÙ…Ø±ÙŠØ± Ø¥Ù† Ø·Ø§Ù„ */}
               <div style={{padding:"4px 28px 28px", overflowY:"auto", maxHeight:"52vh"}}>
                 <div style={{color:"#D7DCE5", fontSize:"14px", lineHeight:"2.1", textAlign:lang==="ar"?"right":"left", whiteSpace:"pre-line"}}>{aboutText[lang]}</div>
               </div>
 
               <div style={{padding:"0 28px 28px"}}>
-                <button onClick={() => setShowAbout(false)} style={{width:"100%", padding:"13px", background:"linear-gradient(135deg,#80D030,#80D030)", border:"none", borderRadius:"12px", color:"#0B0E08", fontWeight:"800", fontSize:"14px", cursor:"pointer", fontFamily:"inherit"}}>{lang==="ar" ? "حسناً، فهمت" : lang==="fr" ? "Compris" : "Got it"}</button>
+                <button onClick={() => setShowAbout(false)} style={{width:"100%", padding:"13px", background:"linear-gradient(135deg,#80D030,#80D030)", border:"none", borderRadius:"12px", color:"#0B0E08", fontWeight:"800", fontSize:"14px", cursor:"pointer", fontFamily:"inherit"}}>{lang==="ar" ? "Ø­Ø³Ù†Ø§Ù‹ØŒ ÙÙ‡Ù…Øª" : lang==="fr" ? "Compris" : "Got it"}</button>
               </div>
             </div>
           </div>
@@ -1525,15 +1525,15 @@ export default function App() {
         {toast && <div style={{position:"fixed", bottom:"24px", left:"50%", transform:"translateX(-50%)", background:toast.color, color:"#fff", padding:"14px 28px", borderRadius:"16px", fontWeight:"700", zIndex:999, maxWidth:"90%", textAlign:"center"}}>{toast.msg}</div>}
       </div>
     );
-  // ✅ واجهة صاحب الملعب
+  // âœ… ÙˆØ§Ø¬Ù‡Ø© ØµØ§Ø­Ø¨ Ø§Ù„Ù…Ù„Ø¹Ø¨
   } else if (screen === "owner" && owner) {
-    const st = owner;   // 🔐 بياناته الكاملة تأتي من stadium-api لا من العرض العام
+    const st = owner;   // ðŸ” Ø¨ÙŠØ§Ù†Ø§ØªÙ‡ Ø§Ù„ÙƒØ§Ù…Ù„Ø© ØªØ£ØªÙŠ Ù…Ù† stadium-api Ù„Ø§ Ù…Ù† Ø§Ù„Ø¹Ø±Ø¶ Ø§Ù„Ø¹Ø§Ù…
     const conf = ownerBookings.filter(b => b.status === "confirmed");
     mainContent = (
       <div style={{minHeight:"100vh", background:COLORS.bg, fontFamily:"Tajawal,sans-serif", direction:isRTL?"rtl":"ltr", color:"#fff", paddingBottom:"24px"}}>
         <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet"/>
         <div style={{background:COLORS.card, borderBottom:`1px solid ${COLORS.border}`, padding:"12px 16px", display:"flex", justifyContent:"space-between", alignItems:"center", position:"sticky", top:0, zIndex:50}}>
-          <div style={{fontSize:"17px", fontWeight:"800", color:"#FF6D00"}}>🏟 {st.name}</div>
+          <div style={{fontSize:"17px", fontWeight:"800", color:"#FF6D00"}}>ðŸŸ {st.name}</div>
           <div style={{display:"flex", alignItems:"center", gap:"6px"}}>
             <LangButton/>
             <button onClick={handleLogout} style={{padding:"5px 10px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"8px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{t.logout}</button>
@@ -1545,14 +1545,14 @@ export default function App() {
             <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"6px"}}>{L("dueAmount")}</div>
             <div style={{fontSize:"40px", fontWeight:"900", color:"#FF6D00", marginBottom:"10px"}}>{st.balance_due || 0}</div>
             <div style={{display:"inline-block", background:COLORS.bg, borderRadius:"20px", padding:"6px 16px", fontSize:"12px", color:COLORS.muted}}>
-              {L("commission")}: <span style={{color:"#FF6D00", fontWeight:"800"}}>{st.commission_rate ?? 12}%</span> 🔒
+              {L("commission")}: <span style={{color:"#FF6D00", fontWeight:"800"}}>{st.commission_rate ?? 12}%</span> ðŸ”’
             </div>
           </div>
 
-          {/* 📍 موقع الملعب — عرض لصاحب الملعب */}
+          {/* ðŸ“ Ù…ÙˆÙ‚Ø¹ Ø§Ù„Ù…Ù„Ø¹Ø¨ â€” Ø¹Ø±Ø¶ Ù„ØµØ§Ø­Ø¨ Ø§Ù„Ù…Ù„Ø¹Ø¨ */}
           <div style={{background:COLORS.card, borderRadius:"14px", padding:"16px", marginBottom:"16px", border:`1px solid ${COLORS.border}`, display:"flex", justifyContent:"space-between", alignItems:"center", gap:"10px"}}>
             <div>
-              <div style={{color:COLORS.muted, fontSize:"12px", marginBottom:"4px"}}>📍 {L("location")}</div>
+              <div style={{color:COLORS.muted, fontSize:"12px", marginBottom:"4px"}}>ðŸ“ {L("location")}</div>
               <div style={{fontWeight:"700", fontSize:"14px", color: hasLocation(st) ? COLORS.accent : COLORS.muted}}>
                 {hasLocation(st) ? `${st.latitude}, ${st.longitude}` : L("noLocation")}
               </div>
@@ -1562,28 +1562,28 @@ export default function App() {
             )}
           </div>
 
-          {/* 🔑 زر إظهار الكود وزر تغييره — متقابلان */}
+          {/* ðŸ”‘ Ø²Ø± Ø¥Ø¸Ù‡Ø§Ø± Ø§Ù„ÙƒÙˆØ¯ ÙˆØ²Ø± ØªØºÙŠÙŠØ±Ù‡ â€” Ù…ØªÙ‚Ø§Ø¨Ù„Ø§Ù† */}
           <div style={{display:"flex", gap:"8px", marginBottom:"16px"}}>
             <button onClick={() => setShowOwnerCode(v => !v)} style={{flex:1, padding:"11px 8px", background:"#80D03015", color:COLORS.accent, border:"1px solid #80D03044", borderRadius:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>
-              🔑 {showOwnerCode ? <b style={{letterSpacing:"2px", fontSize:"13px"}}>{owner?.owner_code}</b> : `${L("myCode")} • ••••••••`}
+              ðŸ”‘ {showOwnerCode ? <b style={{letterSpacing:"2px", fontSize:"13px"}}>{owner?.owner_code}</b> : `${L("myCode")} â€¢ â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢`}
             </button>
             <button onClick={() => { if (confirm(L("confirmChangeCode"))) changeOwnerCode(); }} style={{flex:1, padding:"11px 8px", background:"#7C4DFF15", color:"#7C4DFF", border:"1px solid #7C4DFF44", borderRadius:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{L("changeCode")}</button>
           </div>
 
           <div style={{display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:"12px", marginBottom:"20px"}}>
             <div style={{background:COLORS.card, borderRadius:"14px", padding:"16px", border:`1px solid ${COLORS.border}`, textAlign:"center"}}>
-              <div style={{fontSize:"26px"}}>✅</div>
+              <div style={{fontSize:"26px"}}>âœ…</div>
               <div style={{fontSize:"26px", fontWeight:"800", color:COLORS.accent}}>{conf.length}</div>
               <div style={{color:COLORS.muted, fontSize:"11px"}}>{t.totalConfirmed}</div>
             </div>
             <div style={{background:COLORS.card, borderRadius:"14px", padding:"16px", border:`1px solid ${COLORS.border}`, textAlign:"center"}}>
-              <div style={{fontSize:"26px"}}>⏳</div>
+              <div style={{fontSize:"26px"}}>â³</div>
               <div style={{fontSize:"26px", fontWeight:"800", color:"#FF6D00"}}>{ownerPending.length}</div>
               <div style={{color:COLORS.muted, fontSize:"11px"}}>{t.totalPending}</div>
             </div>
           </div>
 
-          {/* 🚫 إغلاق مواعيد مؤقتاً */}
+          {/* ðŸš« Ø¥ØºÙ„Ø§Ù‚ Ù…ÙˆØ§Ø¹ÙŠØ¯ Ù…Ø¤Ù‚ØªØ§Ù‹ */}
           <div style={{background:COLORS.card, borderRadius:"16px", border:"1px solid #FF6D0033", padding:"18px", marginBottom:"20px"}}>
             <div style={{fontSize:"15px", fontWeight:"800", color:"#FF6D00", marginBottom:"14px"}}>{L("blockHours")}</div>
 
@@ -1602,7 +1602,7 @@ export default function App() {
                     style={{padding:"7px 3px", borderRadius:"9px", border: sel?"2px solid #FF4444":`2px solid ${COLORS.border}`, background: isTaken?COLORS.bg : isBlocked?"#FF444422" : sel?"#FF444433":COLORS.bg, color: isTaken?"#374151" : isBlocked?"#FF6B6B" : sel?"#FF4444":COLORS.muted, cursor:(isTaken||isBlocked)?"not-allowed":"pointer", fontSize:"11px", fontWeight:"700", fontFamily:"inherit"}}>
                     {h}:00
                     {isTaken && <span style={{display:"block", fontSize:"8px"}}>{L("bookedHour")}</span>}
-                    {isBlocked && <span style={{display:"block", fontSize:"8px"}}>🚫</span>}
+                    {isBlocked && <span style={{display:"block", fontSize:"8px"}}>ðŸš«</span>}
                   </button>
                 );
               })}
@@ -1619,19 +1619,19 @@ export default function App() {
               <div style={{display:"flex", flexWrap:"wrap", gap:"6px"}}>
                 {blockedList.map(b => (
                   <div key={b.id} style={{background:"#FF444418", color:"#FF6B6B", padding:"5px 6px 5px 11px", borderRadius:"18px", fontSize:"11px", fontWeight:"700", display:"flex", alignItems:"center", gap:"6px"}}>
-                    {b.date} • {b.hour}:00
-                    <button onClick={() => unblockSlot(b.id)} style={{width:"18px", height:"18px", borderRadius:"50%", background:"#FF444433", color:"#FF6B6B", border:"none", cursor:"pointer", fontFamily:"inherit", fontSize:"10px", lineHeight:"1", display:"flex", alignItems:"center", justifyContent:"center", padding:0}}>✕</button>
+                    {b.date} â€¢ {b.hour}:00
+                    <button onClick={() => unblockSlot(b.id)} style={{width:"18px", height:"18px", borderRadius:"50%", background:"#FF444433", color:"#FF6B6B", border:"none", cursor:"pointer", fontFamily:"inherit", fontSize:"10px", lineHeight:"1", display:"flex", alignItems:"center", justifyContent:"center", padding:0}}>âœ•</button>
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          <div style={{fontSize:"18px", fontWeight:"800", marginBottom:"14px"}}>📋 {t.requests}</div>
+          <div style={{fontSize:"18px", fontWeight:"800", marginBottom:"14px"}}>ðŸ“‹ {t.requests}</div>
           {ownerPending.length === 0 ? (
             <div style={{textAlign:"center", padding:"50px", color:COLORS.muted, background:COLORS.card, borderRadius:"16px", border:`1px solid ${COLORS.border}`}}>{t.noPending}</div>
           ) : Object.values(ownerPending.reduce((acc, b) => {
-            // 🔁 نجمع مواعيد الحجز المتكرر في بطاقة واحدة
+            // ðŸ” Ù†Ø¬Ù…Ø¹ Ù…ÙˆØ§Ø¹ÙŠØ¯ Ø§Ù„Ø­Ø¬Ø² Ø§Ù„Ù…ØªÙƒØ±Ø± ÙÙŠ Ø¨Ø·Ø§Ù‚Ø© ÙˆØ§Ø­Ø¯Ø©
             const k = b.group_id || `s${b.id}`;
             if (!acc[k]) acc[k] = { ...b, _group: [] };
             acc[k]._group.push(b);
@@ -1644,16 +1644,16 @@ export default function App() {
                 <div style={{display:"flex", justifyContent:"space-between", marginBottom:"10px"}}>
                   <div>
                     <div style={{fontWeight:"700", fontSize:"15px"}}>{b.client_name}</div>
-                    <div style={{color:COLORS.muted, fontSize:"13px"}}>📞 {b.client_phone}</div>
+                    <div style={{color:COLORS.muted, fontSize:"13px"}}>ðŸ“ž {b.client_phone}</div>
                     {isGroup ? (
                       <>
-                        <div style={{color:"#7C4DFF", fontSize:"12px", fontWeight:"800", marginTop:"3px"}}>🔁 {L("groupBooking")} — {b._group.length} {L("sessions")}</div>
+                        <div style={{color:"#7C4DFF", fontSize:"12px", fontWeight:"800", marginTop:"3px"}}>ðŸ” {L("groupBooking")} â€” {b._group.length} {L("sessions")}</div>
                         {b._group.map(g => (
-                          <div key={g.id} style={{color:COLORS.muted, fontSize:"12px"}}>📅 {g.date} — {g.hour}:00</div>
+                          <div key={g.id} style={{color:COLORS.muted, fontSize:"12px"}}>ðŸ“… {g.date} â€” {g.hour}:00</div>
                         ))}
                       </>
                     ) : (
-                      <div style={{color:COLORS.muted, fontSize:"13px"}}>📅 {b.date} — {b.hour}:00</div>
+                      <div style={{color:COLORS.muted, fontSize:"13px"}}>ðŸ“… {b.date} â€” {b.hour}:00</div>
                     )}
                   </div>
                   <div style={{background:`${pa?.color}22`, color:pa?.color, padding:"4px 10px", borderRadius:"20px", fontSize:"12px", fontWeight:"700", height:"fit-content"}}>{pa?.name}</div>
@@ -1668,10 +1668,10 @@ export default function App() {
             );
           })}
 
-          {/* ⭐ تقييمات الملعب */}
+          {/* â­ ØªÙ‚ÙŠÙŠÙ…Ø§Øª Ø§Ù„Ù…Ù„Ø¹Ø¨ */}
           <div style={{fontSize:"18px", fontWeight:"800", margin:"24px 0 14px", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
-            <span>⭐ {L("ratings")}</span>
-            <button onClick={loadOwnerRatings} style={{padding:"6px 12px", background:"#FFD70018", color:"#FFD700", border:"1px solid #FFD70033", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>🔄</button>
+            <span>â­ {L("ratings")}</span>
+            <button onClick={loadOwnerRatings} style={{padding:"6px 12px", background:"#FFD70018", color:"#FFD700", border:"1px solid #FFD70033", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>ðŸ”„</button>
           </div>
           {ownerRatings.length === 0 ? (
             <div style={{textAlign:"center", padding:"24px", color:COLORS.muted, background:COLORS.card, borderRadius:"14px", border:`1px solid ${COLORS.border}`, fontSize:"13px"}}>{L("noRatings")}</div>
@@ -1687,7 +1687,7 @@ export default function App() {
                 <div key={r.id} style={{background:COLORS.card, borderRadius:"12px", padding:"14px", marginBottom:"8px", border:`1px solid ${COLORS.border}`}}>
                   <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
                     <div style={{fontWeight:"700", fontSize:"14px"}}>{r.client_name}</div>
-                    <div style={{fontSize:"13px"}}>{"⭐".repeat(r.stars)}</div>
+                    <div style={{fontSize:"13px"}}>{"â­".repeat(r.stars)}</div>
                   </div>
                   {r.comment && <div style={{color:COLORS.muted, fontSize:"13px", marginTop:"6px", lineHeight:"1.7"}}>{r.comment}</div>}
                 </div>
@@ -1695,14 +1695,14 @@ export default function App() {
             </>
           )}
 
-          <div style={{fontSize:"18px", fontWeight:"800", margin:"24px 0 14px"}}>📜 {t.myBookingsTitle}</div>
+          <div style={{fontSize:"18px", fontWeight:"800", margin:"24px 0 14px"}}>ðŸ“œ {t.myBookingsTitle}</div>
           {ownerBookings.filter(b => b.status !== "pending").slice().reverse().map((b,i) => {
             const sc = b.status==="confirmed"?COLORS.accent:"#FF4444";
             return (
               <div key={i} style={{background:COLORS.card, borderRadius:"12px", padding:"14px", marginBottom:"10px", border:`1px solid ${sc}33`, display:"flex", justifyContent:"space-between", alignItems:"center"}}>
                 <div>
                   <div style={{fontWeight:"700"}}>{b.client_name}</div>
-                  <div style={{color:COLORS.muted, fontSize:"12px"}}>📅 {b.date} — {b.hour}:00</div>
+                  <div style={{color:COLORS.muted, fontSize:"12px"}}>ðŸ“… {b.date} â€” {b.hour}:00</div>
                   {b.status === "confirmed" && <div style={{color:"#FF6D00", fontSize:"12px", marginTop:"3px"}}>{L("commission")}: {b.commission || 0}</div>}
                   {b.status === "confirmed" && b.code && (
                     <div style={{marginTop:"5px", background:`${COLORS.accent}18`, borderRadius:"8px", padding:"4px 10px", display:"inline-block"}}>
@@ -1749,7 +1749,7 @@ export default function App() {
                 <div style={{background:`linear-gradient(135deg, ${COLORS.card}, #0a1628)`, borderRadius:"16px", padding:"20px 16px", marginBottom:"16px", border:`1px solid ${COLORS.border}`}}>
                   <div style={{fontSize:"16px", fontWeight:"800", marginBottom:"10px", color:"#fff"}}>{L("findField")}</div>
                   <div style={{position:"relative", marginBottom:"8px"}}>
-                    <span style={{position:"absolute", insetInlineStart:"14px", top:"50%", transform:"translateY(-50%)", fontSize:"16px", pointerEvents:"none"}}>📍</span>
+                    <span style={{position:"absolute", insetInlineStart:"14px", top:"50%", transform:"translateY(-50%)", fontSize:"16px", pointerEvents:"none"}}>ðŸ“</span>
                     <input style={{...inp, marginBottom:0, background:COLORS.bg, color:"#fff", WebkitAppearance:"none", appearance:"none", paddingInlineStart:"40px"}} type="text" name="malaabi-search" autoComplete="off" placeholder={t.search} value={searchText} onChange={e => setSearchText(e.target.value)}/>
                   </div>
                   <select style={{...sel, marginTop:"8px", marginBottom:"8px"}} value={sortBy} onChange={e => { const v = e.target.value; if (v === "nearest") return findNearest(); setSortBy(v); }}>
@@ -1757,10 +1757,10 @@ export default function App() {
                     <option style={opt} value="price_asc">{t.sortPriceAsc}</option>
                     <option style={opt} value="price_desc">{t.sortPriceDesc}</option>
                     <option style={opt} value="popular">{t.sortPopular}</option>
-                    <option style={opt} value="rating">⭐ {L("sortRating")}</option>
-                    <option style={opt} value="nearest">📍 {L("sortNearest")}</option>
+                    <option style={opt} value="rating">â­ {L("sortRating")}</option>
+                    <option style={opt} value="nearest">ðŸ“ {L("sortNearest")}</option>
                   </select>
-                  {/* 🎯 زر الأقرب لي */}
+                  {/* ðŸŽ¯ Ø²Ø± Ø§Ù„Ø£Ù‚Ø±Ø¨ Ù„ÙŠ */}
                   <div style={{display:"flex", gap:"8px"}}>
                     <button onClick={findNearest} style={{flex:2, padding:"12px", background: sortBy==="nearest"?"linear-gradient(135deg,#80D030,#80D030)":COLORS.bg, color: sortBy==="nearest"?"#000":COLORS.accent, border:`1px solid ${sortBy==="nearest"?"transparent":COLORS.border}`, borderRadius:"10px", fontWeight:"800", cursor:"pointer", fontFamily:"inherit", fontSize:"14px"}}>
                       {L("nearestBtn")}
@@ -1775,13 +1775,13 @@ export default function App() {
 
                 <div style={{display:"flex", gap:"8px", flexWrap:"wrap", marginBottom:"16px"}}>
                   {[t.all, ...wilayas].map((w, i) => {
-                    const act = i === 0 ? filterWilaya === "الكل" : filterWilaya === w;
-                    return <button key={w} onClick={() => setFilterWilaya(i === 0 ? "الكل" : w)} style={{padding:"6px 14px", borderRadius:"20px", border:`1px solid ${act ? COLORS.accent : COLORS.border}`, cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"13px", background: act?"linear-gradient(135deg,#80D030,#80D030)":COLORS.card, color: act?"#000":COLORS.muted}}>{w}</button>;
+                    const act = i === 0 ? filterWilaya === "Ø§Ù„ÙƒÙ„" : filterWilaya === w;
+                    return <button key={w} onClick={() => setFilterWilaya(i === 0 ? "Ø§Ù„ÙƒÙ„" : w)} style={{padding:"6px 14px", borderRadius:"20px", border:`1px solid ${act ? COLORS.accent : COLORS.border}`, cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"13px", background: act?"linear-gradient(135deg,#80D030,#80D030)":COLORS.card, color: act?"#000":COLORS.muted}}>{w}</button>;
                   })}
                 </div>
                 {filteredStadiums.length===0 ? (
                   <div style={{textAlign:"center", padding:"80px 20px", color:COLORS.muted}}>
-                    <div style={{fontSize:"60px", marginBottom:"16px"}}>🏟</div><div>{t.noStadiums}</div>
+                    <div style={{fontSize:"60px", marginBottom:"16px"}}>ðŸŸ</div><div>{t.noStadiums}</div>
                   </div>
                 ) : (
                   <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))", gap:"16px"}}>
@@ -1797,10 +1797,10 @@ export default function App() {
 
             {bottomTab==="favorites" && (
               <div>
-                <div style={{fontSize:"20px", fontWeight:"800", marginBottom:"20px"}}>❤️ {L("favorites")}</div>
+                <div style={{fontSize:"20px", fontWeight:"800", marginBottom:"20px"}}>â¤ï¸ {L("favorites")}</div>
                 {favorites.length===0 ? (
                   <div style={{textAlign:"center", padding:"60px 20px", color:COLORS.muted}}>
-                    <div style={{fontSize:"48px", marginBottom:"12px"}}>🤍</div>
+                    <div style={{fontSize:"48px", marginBottom:"12px"}}>ðŸ¤</div>
                     <div style={{fontWeight:"700", marginBottom:"6px"}}>{L("noFavorites")}</div>
                     <div style={{fontSize:"13px"}}>{L("noFavoritesHint")}</div>
                   </div>
@@ -1818,15 +1818,15 @@ export default function App() {
 
             {bottomTab==="notifs" && (
               <div>
-                <div style={{fontSize:"20px", fontWeight:"800", marginBottom:"20px"}}>📅 {lang==="ar"?"الحجوزات":lang==="fr"?"Réservations":"Reservations"}</div>
+                <div style={{fontSize:"20px", fontWeight:"800", marginBottom:"20px"}}>ðŸ“… {lang==="ar"?"Ø§Ù„Ø­Ø¬ÙˆØ²Ø§Øª":lang==="fr"?"RÃ©servations":"Reservations"}</div>
                 {myBookings.length===0 ? (
                   <div style={{textAlign:"center", padding:"60px", color:COLORS.muted}}>
-                    <div style={{fontSize:"48px", marginBottom:"12px"}}>📅</div>
-                    <div>{lang==="ar"?"لا توجد حجوزات":"No reservations"}</div>
+                    <div style={{fontSize:"48px", marginBottom:"12px"}}>ðŸ“…</div>
+                    <div>{lang==="ar"?"Ù„Ø§ ØªÙˆØ¬Ø¯ Ø­Ø¬ÙˆØ²Ø§Øª":"No reservations"}</div>
                   </div>
                 ) : myBookings.slice().reverse().map((b,i) => {
                   const sc = b.status==="confirmed"?COLORS.accent:b.status==="rejected"?"#FF4444":"#FF6D00";
-                  const si = b.status==="confirmed"?"✅":b.status==="rejected"?"❌":"⏳";
+                  const si = b.status==="confirmed"?"âœ…":b.status==="rejected"?"âŒ":"â³";
                   const stx = b.status==="confirmed"?L("bookingAccepted"):b.status==="rejected"?L("bookingRejected"):L("waiting");
                   const bst = stadiums.find(x => x.id === b.stadium_id);
                   return (
@@ -1835,7 +1835,7 @@ export default function App() {
                       <div style={{flex:1}}>
                         <div style={{fontWeight:"700", color:sc, marginBottom:"4px"}}>{stx}</div>
                         <div style={{color:"#fff", fontWeight:"600"}}>{b.stadium_name}</div>
-                        <div style={{color:COLORS.muted, fontSize:"13px"}}>📅 {b.date} — {b.hour}:00</div>
+                        <div style={{color:COLORS.muted, fontSize:"13px"}}>ðŸ“… {b.date} â€” {b.hour}:00</div>
                         {b.status==="confirmed" && b.code && (
                           <div style={{marginTop:"8px", background:`${COLORS.accent}22`, borderRadius:"8px", padding:"6px 10px", display:"inline-block"}}>
                             <span style={{color:COLORS.muted, fontSize:"11px"}}>{t.code}: </span>
@@ -1844,11 +1844,11 @@ export default function App() {
                         )}
                         {myRatingOf(b.id) && (
                           <div style={{marginTop:"8px", fontSize:"12px", color:"#FFD700"}}>
-                            {L("yourRating")}: {"⭐".repeat(myRatingOf(b.id).stars)}
+                            {L("yourRating")}: {"â­".repeat(myRatingOf(b.id).stars)}
                           </div>
                         )}
 
-                        {/* 🧭 اتجاهات الملعب في الحجز المقبول */}
+                        {/* ðŸ§­ Ø§ØªØ¬Ø§Ù‡Ø§Øª Ø§Ù„Ù…Ù„Ø¹Ø¨ ÙÙŠ Ø§Ù„Ø­Ø¬Ø² Ø§Ù„Ù…Ù‚Ø¨ÙˆÙ„ */}
                         {b.status==="confirmed" && hasLocation(bst) && (
                           <button onClick={() => window.open(directionsLink(bst.latitude, bst.longitude), "_blank")} style={{marginTop:"8px", display:"block", padding:"8px 14px", background:"#80D03022", color:COLORS.accent2, border:"1px solid #80D03044", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{L("directions")}</button>
                         )}
@@ -1863,19 +1863,19 @@ export default function App() {
 
         {tab==="admin" && (
           <>
-            <div style={{fontSize:"24px", fontWeight:"800", marginBottom:"16px"}}>لوحة التحكم</div>
+            <div style={{fontSize:"24px", fontWeight:"800", marginBottom:"16px"}}>Ù„ÙˆØ­Ø© Ø§Ù„ØªØ­ÙƒÙ…</div>
             <div style={{display:"flex", gap:"5px", marginBottom:"16px", background:COLORS.card, borderRadius:"12px", padding:"4px"}}>
-              {[["bookings",L("allBookings"),"#FF6D00"],["dues",L("dues"),"#FF4081"],["ratings","⭐","#FFD700"],["stadiums",t.stadiums,"#7C4DFF"],["stats",t.stats,COLORS.accent],["add",t.addStadium,COLORS.accent2]].map(([k,lab,c]) => (
+              {[["bookings",L("allBookings"),"#FF6D00"],["dues",L("dues"),"#FF4081"],["ratings","â­","#FFD700"],["stadiums",t.stadiums,"#7C4DFF"],["stats",t.stats,COLORS.accent],["add",t.addStadium,COLORS.accent2]].map(([k,lab,c]) => (
                 <button key={k} onClick={() => setAdminTab(k)} style={{flex:1, padding:"8px 2px", borderRadius:"8px", border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:"700", fontSize:"11px", background: adminTab===k?c:"transparent", color: adminTab===k?"#fff":COLORS.muted}}>{lab}</button>
               ))}
             </div>
 
-            {/* 👁 مشاهدة فقط */}
+            {/* ðŸ‘ Ù…Ø´Ø§Ù‡Ø¯Ø© ÙÙ‚Ø· */}
             {adminTab==="bookings" && (
               <div>
-                <div style={{background:"#80D03015", border:"1px solid #80D03033", borderRadius:"12px", padding:"12px", marginBottom:"16px", textAlign:"center", color:COLORS.accent2, fontSize:"13px", fontWeight:"700"}}>👁 {L("viewOnly")}</div>
+                <div style={{background:"#80D03015", border:"1px solid #80D03033", borderRadius:"12px", padding:"12px", marginBottom:"16px", textAlign:"center", color:COLORS.accent2, fontSize:"13px", fontWeight:"700"}}>ðŸ‘ {L("viewOnly")}</div>
                 <div style={{display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"10px", marginBottom:"18px"}}>
-                  {[["⏳",pendingBookings.length,L("waiting"),"#FF6D00"],["✅",confirmedBookings.length,L("accepted2"),COLORS.accent],["❌",bookings.filter(b=>b.status==="rejected").length,L("rejected2"),"#FF4444"]].map(([ic,v,lb,c],i)=>(
+                  {[["â³",pendingBookings.length,L("waiting"),"#FF6D00"],["âœ…",confirmedBookings.length,L("accepted2"),COLORS.accent],["âŒ",bookings.filter(b=>b.status==="rejected").length,L("rejected2"),"#FF4444"]].map(([ic,v,lb,c],i)=>(
                     <div key={i} style={{background:COLORS.card, borderRadius:"12px", padding:"14px 8px", border:`1px solid ${c}33`, textAlign:"center"}}>
                       <div style={{fontSize:"20px"}}>{ic}</div>
                       <div style={{fontSize:"22px", fontWeight:"800", color:c}}>{v}</div>
@@ -1886,16 +1886,16 @@ export default function App() {
                 {bookings.slice().reverse().map((b,i) => {
                   const pa = PAYMENT_APPS.find(p => p.id===b.pay_app);
                   const sc = b.status==="confirmed"?COLORS.accent:b.status==="rejected"?"#FF4444":"#FF6D00";
-                  const si = b.status==="confirmed"?"✅":b.status==="rejected"?"❌":"⏳";
+                  const si = b.status==="confirmed"?"âœ…":b.status==="rejected"?"âŒ":"â³";
                   const stx = b.status==="confirmed"?L("accepted2"):b.status==="rejected"?L("rejected2"):L("waiting");
                   return (
                     <div key={i} style={{background:COLORS.card, borderRadius:"14px", padding:"16px", marginBottom:"12px", border:`1px solid ${sc}44`}}>
                       <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"10px"}}>
                         <div>
                           <div style={{fontWeight:"700", fontSize:"15px"}}>{b.client_name}</div>
-                          <div style={{color:COLORS.muted, fontSize:"13px"}}>📞 {b.client_phone}</div>
-                          <div style={{color:COLORS.muted, fontSize:"13px"}}>🏟 {b.stadium_name}</div>
-                          <div style={{color:COLORS.muted, fontSize:"13px"}}>📅 {b.date} — {b.hour}:00</div>
+                          <div style={{color:COLORS.muted, fontSize:"13px"}}>ðŸ“ž {b.client_phone}</div>
+                          <div style={{color:COLORS.muted, fontSize:"13px"}}>ðŸŸ {b.stadium_name}</div>
+                          <div style={{color:COLORS.muted, fontSize:"13px"}}>ðŸ“… {b.date} â€” {b.hour}:00</div>
                         </div>
                         <div style={{background:`${sc}22`, color:sc, padding:"6px 12px", borderRadius:"20px", fontSize:"12px", fontWeight:"800", whiteSpace:"nowrap"}}>{si} {stx}</div>
                       </div>
@@ -1910,7 +1910,7 @@ export default function App() {
                           <span style={{color:COLORS.accent, fontWeight:"800", letterSpacing:"3px", fontSize:"14px"}}>{b.code}</span>
                         </div>
                       )}
-                      {b.status !== "pending" && <div style={{color:"#7C4DFF", fontSize:"12px", marginTop:"8px", textAlign:"center"}}>{L("handledBy")}: <b>{L("owner")}</b>{b.commission ? ` — ${L("commission")}: ${b.commission}` : ""}</div>}
+                      {b.status !== "pending" && <div style={{color:"#7C4DFF", fontSize:"12px", marginTop:"8px", textAlign:"center"}}>{L("handledBy")}: <b>{L("owner")}</b>{b.commission ? ` â€” ${L("commission")}: ${b.commission}` : ""}</div>}
                     </div>
                   );
                 })}
@@ -1928,8 +1928,8 @@ export default function App() {
                     <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"12px"}}>
                       <div>
                         <div style={{fontWeight:"800", fontSize:"16px"}}>{s.name}</div>
-                        <div style={{color:COLORS.muted, fontSize:"12px"}}>📍 {s.wilaya} — {s.hood}</div>
-                        <div style={{color:COLORS.accent2, fontSize:"12px", marginTop:"4px"}}>🔑 <b style={{letterSpacing:"1px"}}>{s.owner_code || "—"}</b></div>
+                        <div style={{color:COLORS.muted, fontSize:"12px"}}>ðŸ“ {s.wilaya} â€” {s.hood}</div>
+                        <div style={{color:COLORS.accent2, fontSize:"12px", marginTop:"4px"}}>ðŸ”‘ <b style={{letterSpacing:"1px"}}>{s.owner_code || "â€”"}</b></div>
                       </div>
                       <div style={{background: s.status==="suspended"?"#FF444422":"#80D03022", color: s.status==="suspended"?"#FF4444":COLORS.accent, padding:"4px 12px", borderRadius:"20px", fontSize:"11px", fontWeight:"700"}}>{s.status==="suspended"?L("suspendedS"):L("active")}</div>
                     </div>
@@ -1941,13 +1941,13 @@ export default function App() {
                       <div style={{display:"flex", alignItems:"center", gap:"6px"}}>
                         <input type="number" value={rateEdit[s.id] ?? (s.commission_rate ?? 12)} onChange={e => setRateEdit(p => ({...p, [s.id]: e.target.value}))} style={{width:"56px", background:COLORS.card, border:`1px solid ${COLORS.border}`, borderRadius:"8px", padding:"8px", color:"#fff", fontFamily:"inherit", textAlign:"center", fontWeight:"700"}}/>
                         <span style={{color:COLORS.muted, fontSize:"13px"}}>%</span>
-                        <button onClick={() => saveRate(s.id)} style={{padding:"8px 12px", background:COLORS.accent2, border:"none", borderRadius:"8px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", color:"#000", fontSize:"12px"}}>💾</button>
+                        <button onClick={() => saveRate(s.id)} style={{padding:"8px 12px", background:COLORS.accent2, border:"none", borderRadius:"8px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", color:"#000", fontSize:"12px"}}>ðŸ’¾</button>
                       </div>
                     </div>
                     <div style={{display:"flex", gap:"8px"}}>
-                      <button onClick={() => resetDue(s.id)} style={{flex:1, padding:"10px", background:"#80D03022", color:COLORS.accent, border:"1px solid #80D03044", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>💰 {L("resetDue")}</button>
-                      <button onClick={() => toggleSuspend(s)} style={{flex:1, padding:"10px", background: s.status==="suspended"?"#80D03022":"#FF6D0022", color: s.status==="suspended"?COLORS.accent2:"#FF6D00", border:`1px solid ${s.status==="suspended"?"#80D03044":"#FF6D0044"}`, borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{s.status==="suspended"?"▶ "+L("activate"):"⛔ "+L("suspend")}</button>
-                      <button onClick={() => setConfirmDelete(s)} style={{padding:"10px 14px", background:"#FF444422", color:"#FF4444", border:"1px solid #FF444444", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>🗑</button>
+                      <button onClick={() => resetDue(s.id)} style={{flex:1, padding:"10px", background:"#80D03022", color:COLORS.accent, border:"1px solid #80D03044", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>ðŸ’° {L("resetDue")}</button>
+                      <button onClick={() => toggleSuspend(s)} style={{flex:1, padding:"10px", background: s.status==="suspended"?"#80D03022":"#FF6D0022", color: s.status==="suspended"?COLORS.accent2:"#FF6D00", border:`1px solid ${s.status==="suspended"?"#80D03044":"#FF6D0044"}`, borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{s.status==="suspended"?"â–¶ "+L("activate"):"â›” "+L("suspend")}</button>
+                      <button onClick={() => setConfirmDelete(s)} style={{padding:"10px 14px", background:"#FF444422", color:"#FF4444", border:"1px solid #FF444444", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>ðŸ—‘</button>
                     </div>
                   </div>
                 ))}
@@ -1958,7 +1958,7 @@ export default function App() {
               <div>
                 {adminRatings.length === 0 ? (
                   <div style={{textAlign:"center", padding:"60px", color:COLORS.muted}}>
-                    <div style={{fontSize:"48px", marginBottom:"12px"}}>⭐</div>
+                    <div style={{fontSize:"48px", marginBottom:"12px"}}>â­</div>
                     <div>{L("noRatings")}</div>
                   </div>
                 ) : adminRatings.map(r => {
@@ -1968,12 +1968,12 @@ export default function App() {
                       <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"6px"}}>
                         <div>
                           <div style={{fontWeight:"700", fontSize:"14px"}}>{r.client_name}</div>
-                          <div style={{color:COLORS.muted, fontSize:"12px"}}>🏟 {st?.name || r.stadium_id}</div>
+                          <div style={{color:COLORS.muted, fontSize:"12px"}}>ðŸŸ {st?.name || r.stadium_id}</div>
                         </div>
-                        <div style={{fontSize:"13px"}}>{"⭐".repeat(r.stars)}</div>
+                        <div style={{fontSize:"13px"}}>{"â­".repeat(r.stars)}</div>
                       </div>
                       {r.comment && <div style={{color:COLORS.muted, fontSize:"13px", lineHeight:"1.7", marginBottom:"8px"}}>{r.comment}</div>}
-                      <button onClick={() => deleteRating(r.id)} style={{padding:"7px 14px", background:"#FF444422", color:"#FF4444", border:"1px solid #FF444444", borderRadius:"9px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"11px"}}>🗑 {t.delete}</button>
+                      <button onClick={() => deleteRating(r.id)} style={{padding:"7px 14px", background:"#FF444422", color:"#FF4444", border:"1px solid #FF444444", borderRadius:"9px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"11px"}}>ðŸ—‘ {t.delete}</button>
                     </div>
                   );
                 })}
@@ -1988,16 +1988,16 @@ export default function App() {
                     <div key={s.id} style={{background:COLORS.card, borderRadius:"12px", padding:"16px", marginBottom:"10px", display:"flex", justifyContent:"space-between", alignItems:"center", border:`1px solid ${COLORS.border}`}}>
                       <div>
                         <div style={{fontWeight:"700"}}>{s.name}</div>
-                        <div style={{color:COLORS.muted, fontSize:"13px"}}>📍 {s.wilaya} - {s.hood} - {s.price}</div>
-                        <div style={{color:COLORS.accent, fontSize:"13px", marginTop:"4px"}}>✅ {c}</div>
-                        <div style={{color:COLORS.accent2, fontSize:"12px"}}>🔑 {s.owner_code || "—"}</div>
-                        {/* 📍 حالة الموقع */}
+                        <div style={{color:COLORS.muted, fontSize:"13px"}}>ðŸ“ {s.wilaya} - {s.hood} - {s.price}</div>
+                        <div style={{color:COLORS.accent, fontSize:"13px", marginTop:"4px"}}>âœ… {c}</div>
+                        <div style={{color:COLORS.accent2, fontSize:"12px"}}>ðŸ”‘ {s.owner_code || "â€”"}</div>
+                        {/* ðŸ“ Ø­Ø§Ù„Ø© Ø§Ù„Ù…ÙˆÙ‚Ø¹ */}
                         <div style={{color: hasLocation(s)?COLORS.accent:"#FF6D00", fontSize:"12px", marginTop:"2px"}}>
-                          {hasLocation(s) ? `📍 ${Number(s.latitude).toFixed(4)}, ${Number(s.longitude).toFixed(4)}` : "⚠️ " + L("noLocation")}
+                          {hasLocation(s) ? `ðŸ“ ${Number(s.latitude).toFixed(4)}, ${Number(s.longitude).toFixed(4)}` : "âš ï¸ " + L("noLocation")}
                         </div>
                       </div>
                       <div style={{display:"flex", gap:"8px", flexWrap:"wrap", justifyContent:"flex-end"}}>
-                        {hasLocation(s) && <button onClick={() => window.open(mapsLink(s.latitude, s.longitude), "_blank")} style={{padding:"8px 12px", background:"#80D03022", color:COLORS.accent, border:"1px solid #80D03044", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>🗺</button>}
+                        {hasLocation(s) && <button onClick={() => window.open(mapsLink(s.latitude, s.longitude), "_blank")} style={{padding:"8px 12px", background:"#80D03022", color:COLORS.accent, border:"1px solid #80D03044", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>ðŸ—º</button>}
                         <button onClick={() => openEdit(s)} style={{padding:"8px 12px", background:"#80D03022", color:COLORS.accent2, border:"1px solid #80D03044", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{t.edit}</button>
                         <button onClick={() => setConfirmDelete(s)} style={{padding:"8px 12px", background:"#FF444422", color:"#FF4444", border:"1px solid #FF444444", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px"}}>{t.delete}</button>
                       </div>
@@ -2011,10 +2011,10 @@ export default function App() {
               <div>
                 <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))", gap:"12px", marginBottom:"20px"}}>
                   {[
-                    { l:t.totalUsers, v:usersCount, i:"👥", c:COLORS.accent },
-                    { l:t.totalStadiums, v:stadiums.length, i:"🏟", c:COLORS.accent2 },
-                    { l:t.totalConfirmed, v:confirmedBookings.length, i:"✅", c:"#7C4DFF" },
-                    { l:L("totalDues"), v:totalDues, i:"💰", c:"#FF4081" },
+                    { l:t.totalUsers, v:usersCount, i:"ðŸ‘¥", c:COLORS.accent },
+                    { l:t.totalStadiums, v:stadiums.length, i:"ðŸŸ", c:COLORS.accent2 },
+                    { l:t.totalConfirmed, v:confirmedBookings.length, i:"âœ…", c:"#7C4DFF" },
+                    { l:L("totalDues"), v:totalDues, i:"ðŸ’°", c:"#FF4081" },
                   ].map((s,i) => (
                     <div key={i} style={{background:COLORS.card, borderRadius:"14px", padding:"16px", border:`1px solid ${s.c}33`}}>
                       <div style={{fontSize:"28px", marginBottom:"6px"}}>{s.i}</div>
@@ -2056,7 +2056,7 @@ export default function App() {
                     {wilayas.map(w => (
                       <div key={w} style={{background:"#80D03022", color:COLORS.accent2, padding:"4px 6px 4px 12px", borderRadius:"20px", fontSize:"12px", fontWeight:"700", display:"flex", alignItems:"center", gap:"6px"}}>
                         {w}
-                        <button onClick={() => handleDeleteWilaya(w)} title={L("delWilaya")} style={{width:"20px", height:"20px", borderRadius:"50%", background:"#FF444433", color:"#FF6B6B", border:"none", cursor:"pointer", fontFamily:"inherit", fontSize:"11px", lineHeight:"1", display:"flex", alignItems:"center", justifyContent:"center", padding:0}}>✕</button>
+                        <button onClick={() => handleDeleteWilaya(w)} title={L("delWilaya")} style={{width:"20px", height:"20px", borderRadius:"50%", background:"#FF444433", color:"#FF6B6B", border:"none", cursor:"pointer", fontFamily:"inherit", fontSize:"11px", lineHeight:"1", display:"flex", alignItems:"center", justifyContent:"center", padding:0}}>âœ•</button>
                       </div>
                     ))}
                   </div>
@@ -2077,7 +2077,7 @@ export default function App() {
                   <label style={lbl}>{t.ownerPhone}</label>
                   <input style={inp} maxLength={8} value={newOwnerPhone} onChange={e => setNewOwnerPhone(cleanPhone(e.target.value))}/>
 
-                  <label style={lbl}>🖼 {L("imageUrl")}</label>
+                  <label style={lbl}>ðŸ–¼ {L("imageUrl")}</label>
                   <label style={{display:"block", width:"100%", padding:"14px", background: newImage?"#80D03022":COLORS.bg, border:`2px dashed ${newImage?COLORS.accent:COLORS.border}`, borderRadius:"12px", color: newImage?COLORS.accent:COLORS.muted, fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px", textAlign:"center", marginBottom:"10px", boxSizing:"border-box"}}>
                     {uploadingImg ? L("uploading") : newImage ? L("imageUploaded") : L("uploadImage")}
                     <input type="file" accept="image/*" style={{display:"none"}} onChange={e => handleUploadStadiumImage(e.target.files[0], false)}/>
@@ -2091,8 +2091,8 @@ export default function App() {
                     </>
                   )}
 
-                  {/* 📍 موقع الملعب */}
-                  <div style={{fontWeight:"700", color:"#FF6D00", margin:"12px 0 10px"}}>📍 {L("location")}</div>
+                  {/* ðŸ“ Ù…ÙˆÙ‚Ø¹ Ø§Ù„Ù…Ù„Ø¹Ø¨ */}
+                  <div style={{fontWeight:"700", color:"#FF6D00", margin:"12px 0 10px"}}>ðŸ“ {L("location")}</div>
                   <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px"}}>
                     <div>
                       <label style={lbl}>Latitude</label>
@@ -2134,7 +2134,7 @@ export default function App() {
       {editStadium && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setEditStadium(null)}>
           <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"520px", maxHeight:"90vh", overflow:"auto", padding:"24px"}}>
-            <div style={{fontSize:"18px", fontWeight:"800", color:COLORS.accent2, marginBottom:"20px"}}>✏️ {editStadium.name}</div>
+            <div style={{fontSize:"18px", fontWeight:"800", color:COLORS.accent2, marginBottom:"20px"}}>âœï¸ {editStadium.name}</div>
             <label style={lbl}>{t.stadiumName}</label>
             <input style={inp} value={editName} onChange={e => setEditName(e.target.value)}/>
             <label style={lbl}>{t.wilaya}</label>
@@ -2148,7 +2148,7 @@ export default function App() {
             <label style={lbl}>{t.ownerPhone}</label>
             <input style={inp} maxLength={8} value={editOwnerPhone} onChange={e => setEditOwnerPhone(cleanPhone(e.target.value))}/>
 
-            <label style={lbl}>🖼 {L("imageUrl")}</label>
+            <label style={lbl}>ðŸ–¼ {L("imageUrl")}</label>
             <label style={{display:"block", width:"100%", padding:"14px", background: editImage?"#80D03022":COLORS.bg, border:`2px dashed ${editImage?COLORS.accent:COLORS.border}`, borderRadius:"12px", color: editImage?COLORS.accent:COLORS.muted, fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px", textAlign:"center", marginBottom:"10px", boxSizing:"border-box"}}>
               {uploadingImg ? L("uploading") : editImage ? L("imageUploaded") : L("uploadImage")}
               <input type="file" accept="image/*" style={{display:"none"}} onChange={e => handleUploadStadiumImage(e.target.files[0], true)}/>
@@ -2158,8 +2158,8 @@ export default function App() {
             <img src={editImage.trim() || stadiumImage(editStadium)} alt="" onError={e => onImgError(e, editStadium.id || 0)} style={{width:"100%", height:"120px", objectFit:"cover", borderRadius:"12px", marginBottom:"8px"}}/>
             {editImage.trim() && <button onClick={() => setEditImage("")} style={{width:"100%", padding:"9px", background:"#FF444422", color:"#FF4444", border:"1px solid #FF444444", borderRadius:"10px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"12px", marginBottom:"16px"}}>{L("removeImage")}</button>}
 
-            {/* 📍 تعديل موقع الملعب */}
-            <div style={{fontWeight:"700", color:"#FF6D00", margin:"12px 0 10px"}}>📍 {L("location")}</div>
+            {/* ðŸ“ ØªØ¹Ø¯ÙŠÙ„ Ù…ÙˆÙ‚Ø¹ Ø§Ù„Ù…Ù„Ø¹Ø¨ */}
+            <div style={{fontWeight:"700", color:"#FF6D00", margin:"12px 0 10px"}}>ðŸ“ {L("location")}</div>
             <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px"}}>
               <div>
                 <label style={lbl}>Latitude</label>
@@ -2199,22 +2199,22 @@ export default function App() {
       {showProfile && user && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setShowProfile(false)}>
           <div style={{background:`linear-gradient(160deg, ${COLORS.card}, #060905)`, borderRadius:"26px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"400px", overflow:"hidden"}}>
-            {/* 👤 رأسية بتوهج خفيف واسم بارز */}
+            {/* ðŸ‘¤ Ø±Ø£Ø³ÙŠØ© Ø¨ØªÙˆÙ‡Ø¬ Ø®ÙÙŠÙ ÙˆØ§Ø³Ù… Ø¨Ø§Ø±Ø² */}
             <div style={{position:"relative", padding:"32px 28px 22px", textAlign:"center", overflow:"hidden"}}>
               <div style={{position:"absolute", top:"-70px", left:"50%", transform:"translateX(-50%)", width:"200px", height:"200px", background:"radial-gradient(circle, #80D03026, transparent 70%)", pointerEvents:"none"}}></div>
-              <div style={{position:"relative", width:"64px", height:"64px", margin:"0 auto 12px", borderRadius:"50%", background:"linear-gradient(135deg,#80D030,#80D030)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"28px"}}>👤</div>
+              <div style={{position:"relative", width:"64px", height:"64px", margin:"0 auto 12px", borderRadius:"50%", background:"linear-gradient(135deg,#80D030,#80D030)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"28px"}}>ðŸ‘¤</div>
               <div style={{position:"relative", fontSize:"19px", fontWeight:"800", color:"#fff"}}>{user.name}</div>
-              <div style={{position:"relative", color:COLORS.muted, fontSize:"13px", marginTop:"4px"}}>📞 {user.phone}</div>
+              <div style={{position:"relative", color:COLORS.muted, fontSize:"13px", marginTop:"4px"}}>ðŸ“ž {user.phone}</div>
             </div>
 
             <div style={{padding:"4px 24px 24px"}}>
-              {/* ✅ إحصائية الحجوزات المؤكَّدة */}
+              {/* âœ… Ø¥Ø­ØµØ§Ø¦ÙŠØ© Ø§Ù„Ø­Ø¬ÙˆØ²Ø§Øª Ø§Ù„Ù…Ø¤ÙƒÙŽÙ‘Ø¯Ø© */}
               <div style={{background:COLORS.bg, borderRadius:"16px", padding:"18px", marginBottom:"18px", textAlign:"center", border:`1px solid ${COLORS.border}`}}>
                 <div style={{fontSize:"32px", fontWeight:"900", color:COLORS.accent, lineHeight:1}}>{myConfirmedBookings.length}</div>
                 <div style={{color:COLORS.muted, fontSize:"12px", marginTop:"6px"}}>{t.acceptedBookings}</div>
               </div>
 
-              <button onClick={() => { setShowProfile(false); handleLogout(); }} style={{width:"100%", padding:"13px", background:"#FF444415", border:"1px solid #FF444444", borderRadius:"14px", color:"#FF6B6B", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"14px", marginBottom:"10px"}}>🚪 {t.logout}</button>
+              <button onClick={() => { setShowProfile(false); handleLogout(); }} style={{width:"100%", padding:"13px", background:"#FF444415", border:"1px solid #FF444444", borderRadius:"14px", color:"#FF6B6B", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"14px", marginBottom:"10px"}}>ðŸšª {t.logout}</button>
               <button onClick={() => setShowProfile(false)} style={{width:"100%", padding:"12px", background:"transparent", border:"none", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>{t.close}</button>
             </div>
           </div>
@@ -2224,12 +2224,12 @@ export default function App() {
       {selected && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && closeModal()}>
           <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"520px", maxHeight:"90vh", overflow:"auto", padding:"24px"}}>
-            <div style={{fontSize:"18px", fontWeight:"800", color:selected.color, marginBottom:"4px"}}>🏟 {selected.name}</div>
-            <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"12px"}}>📍 {selected.wilaya} - {selected.hood} - {selected.price}</div>
-            {/* 🧭 اتجاهات الملعب داخل نافذة الحجز */}
+            <div style={{fontSize:"18px", fontWeight:"800", color:selected.color, marginBottom:"4px"}}>ðŸŸ {selected.name}</div>
+            <div style={{color:COLORS.muted, fontSize:"13px", marginBottom:"12px"}}>ðŸ“ {selected.wilaya} - {selected.hood} - {selected.price}</div>
+            {/* ðŸ§­ Ø§ØªØ¬Ø§Ù‡Ø§Øª Ø§Ù„Ù…Ù„Ø¹Ø¨ Ø¯Ø§Ø®Ù„ Ù†Ø§ÙØ°Ø© Ø§Ù„Ø­Ø¬Ø² */}
             {hasLocation(selected) && (
               <button onClick={() => window.open(directionsLink(selected.latitude, selected.longitude), "_blank")} style={{width:"100%", padding:"11px", background:"#80D03022", color:COLORS.accent2, border:"1px solid #80D03044", borderRadius:"12px", fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px", marginBottom:"16px"}}>
-                {L("directions")}{stadiumDistance(selected) != null ? ` — ${stadiumDistance(selected).toFixed(1)} ${L("kmAway")}` : ""}
+                {L("directions")}{stadiumDistance(selected) != null ? ` â€” ${stadiumDistance(selected).toFixed(1)} ${L("kmAway")}` : ""}
               </button>
             )}
             {step===1 && (
@@ -2250,10 +2250,10 @@ export default function App() {
                   })}
                 </div>
 
-                {/* 🛒 السلة */}
+                {/* ðŸ›’ Ø§Ù„Ø³Ù„Ø© */}
                 <div style={{background:COLORS.bg, borderRadius:"14px", padding:"14px", marginBottom:"16px"}}>
                   <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom: cart.length?"10px":0}}>
-                    <span style={{fontSize:"13px", fontWeight:"800"}}>🛒 {L("myCart")} {cart.length>0 && `(${cart.length})`}</span>
+                    <span style={{fontSize:"13px", fontWeight:"800"}}>ðŸ›’ {L("myCart")} {cart.length>0 && `(${cart.length})`}</span>
                     {cart.length>0 && <span style={{color:COLORS.accent, fontWeight:"900", fontSize:"19px"}}>{totalPrice}</span>}
                   </div>
 
@@ -2263,8 +2263,8 @@ export default function App() {
                     <div style={{maxHeight:"170px", overflowY:"auto", display:"flex", flexWrap:"wrap", gap:"6px"}}>
                       {cart.map(c => (
                         <div key={`${c.date}-${c.hour}`} style={{background:`${selected.color}22`, color:selected.color, padding:"5px 6px 5px 11px", borderRadius:"18px", fontSize:"11px", fontWeight:"700", display:"flex", alignItems:"center", gap:"6px"}}>
-                          {c.date.slice(5)} • {c.hour}:00
-                          <button onClick={() => toggleCartSlot(c.date, c.hour)} style={{width:"17px", height:"17px", borderRadius:"50%", background:"#FF444433", color:"#FF6B6B", border:"none", cursor:"pointer", fontFamily:"inherit", fontSize:"10px", lineHeight:"1", display:"flex", alignItems:"center", justifyContent:"center", padding:0}}>✕</button>
+                          {c.date.slice(5)} â€¢ {c.hour}:00
+                          <button onClick={() => toggleCartSlot(c.date, c.hour)} style={{width:"17px", height:"17px", borderRadius:"50%", background:"#FF444433", color:"#FF6B6B", border:"none", cursor:"pointer", fontFamily:"inherit", fontSize:"10px", lineHeight:"1", display:"flex", alignItems:"center", justifyContent:"center", padding:0}}>âœ•</button>
                         </div>
                       ))}
                     </div>
@@ -2289,7 +2289,7 @@ export default function App() {
                       {t.sendAmount} <strong style={{color:COLORS.accent, fontSize:"19px"}}>{totalPrice}</strong>
                       {cart.length>1 && <span style={{color:"#7C4DFF", fontSize:"11px"}}> ({cart.length} {L("sessions")})</span>}
                     </div>
-                    {/* 📋 رقم الدفع قابل للنسخ */}
+                    {/* ðŸ“‹ Ø±Ù‚Ù… Ø§Ù„Ø¯ÙØ¹ Ù‚Ø§Ø¨Ù„ Ù„Ù„Ù†Ø³Ø® */}
                     <div onClick={() => copyText(stadiumPayNum)} style={{display:"flex", alignItems:"center", justifyContent:"space-between", gap:"10px", background:`${payApp?.color}18`, border:`1px solid ${payApp?.color}44`, borderRadius:"11px", padding:"11px 14px", cursor:"pointer"}}>
                       <span style={{fontSize:"20px", fontWeight:"800", color:payApp?.color, letterSpacing:"2px"}}>{stadiumPayNum}</span>
                       <span style={{display:"flex", alignItems:"center", gap:"5px", color:payApp?.color, fontSize:"11px", fontWeight:"700", whiteSpace:"nowrap"}}>
@@ -2307,7 +2307,7 @@ export default function App() {
                 <input style={inp} placeholder={t.enterSerial} maxLength={19} value={transactionNum} onChange={e => setTransactionNum(e.target.value)}/>
                 <label style={lbl}>{L("proof")}</label>
                 <label style={{display:"block", width:"100%", padding:"14px", background: proofUrl?"#80D03022":COLORS.bg, border:`2px dashed ${proofUrl?COLORS.accent:COLORS.border}`, borderRadius:"12px", color: proofUrl?COLORS.accent:COLORS.muted, fontWeight:"700", cursor:"pointer", fontFamily:"inherit", fontSize:"13px", textAlign:"center", marginBottom:"16px", boxSizing:"border-box"}}>
-                  {uploading ? L("uploading") : proofUrl ? "✅ " + L("proof") : L("uploadProof")}
+                  {uploading ? L("uploading") : proofUrl ? "âœ… " + L("proof") : L("uploadProof")}
                   <input type="file" accept="image/*" style={{display:"none"}} onChange={e => handleUploadProof(e.target.files[0])}/>
                 </label>
                 <div style={{display:"flex", gap:"12px"}}>
@@ -2323,9 +2323,9 @@ export default function App() {
       {confirmDelete && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}}>
           <div style={{background:COLORS.card, borderRadius:"24px", border:"1px solid #FF444444", width:"100%", maxWidth:"400px", padding:"28px", textAlign:"center"}}>
-            <div style={{fontSize:"40px", marginBottom:"12px"}}>🗑</div>
+            <div style={{fontSize:"40px", marginBottom:"12px"}}>ðŸ—‘</div>
             <div style={{fontSize:"16px", fontWeight:"800", marginBottom:"8px"}}>{t.deleteStadium}</div>
-            <div style={{color:COLORS.muted, marginBottom:"20px"}}>{t.deleteConfirm} {confirmDelete.name}؟</div>
+            <div style={{color:COLORS.muted, marginBottom:"20px"}}>{t.deleteConfirm} {confirmDelete.name}ØŸ</div>
             <div style={{display:"flex", gap:"12px"}}>
               <button onClick={() => setConfirmDelete(null)} style={{flex:1, padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>{t.cancel}</button>
               <button onClick={() => handleDelete(confirmDelete.id)} style={{flex:1, padding:"12px", background:"#FF4444", border:"none", borderRadius:"12px", color:"#fff", fontWeight:"700", cursor:"pointer", fontFamily:"inherit"}}>{t.delete}</button>
@@ -2334,43 +2334,43 @@ export default function App() {
         </div>
       )}
 
-      {/* 🔔 نافذة إشعارات التقييم — منفصلة عن الحجوزات، تُظهر فقط ما يستحق تقييماً */}
+      {/* ðŸ”” Ù†Ø§ÙØ°Ø© Ø¥Ø´Ø¹Ø§Ø±Ø§Øª Ø§Ù„ØªÙ‚ÙŠÙŠÙ… â€” Ù…Ù†ÙØµÙ„Ø© Ø¹Ù† Ø§Ù„Ø­Ø¬ÙˆØ²Ø§ØªØŒ ØªÙØ¸Ù‡Ø± ÙÙ‚Ø· Ù…Ø§ ÙŠØ³ØªØ­Ù‚ ØªÙ‚ÙŠÙŠÙ…Ø§Ù‹ */}
       {showRateNotifs && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:150, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setShowRateNotifs(false)}>
           <div style={{background:COLORS.card, borderRadius:"24px", border:`1px solid ${COLORS.border}`, width:"100%", maxWidth:"420px", maxHeight:"78vh", display:"flex", flexDirection:"column"}}>
-            <div style={{padding:"20px 20px 12px", fontSize:"18px", fontWeight:"800", display:"flex", alignItems:"center", gap:"8px"}}>🔔 {lang==="ar"?"الإشعارات":lang==="fr"?"Notifications":"Notifications"}</div>
+            <div style={{padding:"20px 20px 12px", fontSize:"18px", fontWeight:"800", display:"flex", alignItems:"center", gap:"8px"}}>ðŸ”” {lang==="ar"?"Ø§Ù„Ø¥Ø´Ø¹Ø§Ø±Ø§Øª":lang==="fr"?"Notifications":"Notifications"}</div>
             <div style={{overflowY:"auto", padding:"0 20px 20px"}}>
               {myBookings.filter(b => canRate(b)).length === 0 ? (
                 <div style={{textAlign:"center", padding:"40px 10px", color:COLORS.muted}}>
-                  <div style={{fontSize:"40px", marginBottom:"10px"}}>🔔</div>
-                  <div style={{fontSize:"13px"}}>{lang==="ar"?"لا توجد إشعارات جديدة":lang==="fr"?"Aucune nouvelle notification":"No new notifications"}</div>
+                  <div style={{fontSize:"40px", marginBottom:"10px"}}>ðŸ””</div>
+                  <div style={{fontSize:"13px"}}>{lang==="ar"?"Ù„Ø§ ØªÙˆØ¬Ø¯ Ø¥Ø´Ø¹Ø§Ø±Ø§Øª Ø¬Ø¯ÙŠØ¯Ø©":lang==="fr"?"Aucune nouvelle notification":"No new notifications"}</div>
                 </div>
               ) : myBookings.filter(b => canRate(b)).map((b,i) => (
                 <div key={i} style={{background:"#FFD70012", border:"1px solid #FFD70033", borderRadius:"12px", padding:"14px", marginBottom:"10px"}}>
                   <div style={{fontWeight:"700", fontSize:"14px", marginBottom:"2px"}}>{b.stadium_name}</div>
-                  <div style={{color:COLORS.muted, fontSize:"12px", marginBottom:"10px"}}>📅 {b.date} — {b.hour}:00</div>
+                  <div style={{color:COLORS.muted, fontSize:"12px", marginBottom:"10px"}}>ðŸ“… {b.date} â€” {b.hour}:00</div>
                   <div style={{fontSize:"12px", color:"#FFD700", fontWeight:"700", marginBottom:"8px"}}>{L("rateTitle")}</div>
                   <button onClick={() => { setRateBooking(b); setRateStars(0); setRateText(""); setShowRateNotifs(false); }} style={{width:"100%", padding:"10px", background:"linear-gradient(135deg,#FFD700,#FF9500)", border:"none", borderRadius:"10px", fontWeight:"800", fontSize:"13px", cursor:"pointer", fontFamily:"inherit", color:"#000"}}>{L("rateNow")}</button>
                 </div>
               ))}
             </div>
             <div style={{padding:"0 20px 20px"}}>
-              <button onClick={() => setShowRateNotifs(false)} style={{width:"100%", padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>{lang==="ar"?"إغلاق":lang==="fr"?"Fermer":"Close"}</button>
+              <button onClick={() => setShowRateNotifs(false)} style={{width:"100%", padding:"12px", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:"12px", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit"}}>{lang==="ar"?"Ø¥ØºÙ„Ø§Ù‚":lang==="fr"?"Fermer":"Close"}</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ⭐ نافذة التقييم */}
+      {/* â­ Ù†Ø§ÙØ°Ø© Ø§Ù„ØªÙ‚ÙŠÙŠÙ… */}
       {rateBooking && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.88)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}} onClick={e => e.target===e.currentTarget && setRateBooking(null)}>
           <div style={{background:COLORS.card, borderRadius:"24px", border:"1px solid #FFD70033", width:"100%", maxWidth:"400px", padding:"28px", textAlign:"center"}}>
             <div style={{fontSize:"15px", fontWeight:"800", marginBottom:"4px"}}>{rateBooking.stadium_name}</div>
-            <div style={{color:COLORS.muted, fontSize:"12px", marginBottom:"18px"}}>📅 {rateBooking.date} — {rateBooking.hour}:00</div>
+            <div style={{color:COLORS.muted, fontSize:"12px", marginBottom:"18px"}}>ðŸ“… {rateBooking.date} â€” {rateBooking.hour}:00</div>
 
             <div style={{display:"flex", gap:"8px", justifyContent:"center", marginBottom:"18px"}}>
               {[1,2,3,4,5].map(n => (
-                <button key={n} onClick={() => setRateStars(n)} style={{background:"none", border:"none", cursor:"pointer", fontSize:"36px", padding:0, lineHeight:1, filter: n <= rateStars ? "none" : "grayscale(1) opacity(0.35)", transition:"filter .15s"}}>⭐</button>
+                <button key={n} onClick={() => setRateStars(n)} style={{background:"none", border:"none", cursor:"pointer", fontSize:"36px", padding:0, lineHeight:1, filter: n <= rateStars ? "none" : "grayscale(1) opacity(0.35)", transition:"filter .15s"}}>â­</button>
               ))}
             </div>
 
@@ -2388,13 +2388,13 @@ export default function App() {
         </div>
       )}
 
-      {/* 👑 نافذة دخول لوحة التحكم */}
+      {/* ðŸ‘‘ Ù†Ø§ÙØ°Ø© Ø¯Ø®ÙˆÙ„ Ù„ÙˆØ­Ø© Ø§Ù„ØªØ­ÙƒÙ… */}
       {showAdminLogin && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.92)", zIndex:300, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px", backdropFilter:"blur(6px)"}} onClick={e => e.target===e.currentTarget && setShowAdminLogin(false)}>
           <div style={{background:`linear-gradient(160deg, ${COLORS.card}, #0a1020)`, borderRadius:"28px", border:"1px solid #7C4DFF44", width:"100%", maxWidth:"380px", padding:"36px 28px", textAlign:"center", boxShadow:"0 30px 80px rgba(124,77,255,0.25)"}}>
-            <div style={{width:"72px", height:"72px", margin:"0 auto 18px", borderRadius:"50%", background:"linear-gradient(135deg,#7C4DFF,#80D030)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"34px", boxShadow:"0 10px 30px rgba(124,77,255,0.4)"}}>👑</div>
+            <div style={{width:"72px", height:"72px", margin:"0 auto 18px", borderRadius:"50%", background:"linear-gradient(135deg,#7C4DFF,#80D030)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"34px", boxShadow:"0 10px 30px rgba(124,77,255,0.4)"}}>ðŸ‘‘</div>
             <div style={{fontSize:"20px", fontWeight:"900", marginBottom:"6px", background:"linear-gradient(135deg,#7C4DFF,#80D030)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>{L("adminTitle")}</div>
-            <div style={{color:COLORS.muted, fontSize:"12px", marginBottom:"24px"}}>🔒 {L("adminPassLabel")}</div>
+            <div style={{color:COLORS.muted, fontSize:"12px", marginBottom:"24px"}}>ðŸ”’ {L("adminPassLabel")}</div>
 
             <div style={{position:"relative", marginBottom:"18px"}}>
               <input
@@ -2406,7 +2406,7 @@ export default function App() {
                 onChange={e => setAdminPassInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && handleAdminLogin()}
                 style={{width:"100%", background:COLORS.bg, border:"1px solid #7C4DFF44", borderRadius:"14px", padding:"15px 46px", color:"#fff", fontSize:"17px", fontFamily:"inherit", textAlign:"center", letterSpacing:"3px", boxSizing:"border-box", outline:"none"}}
-                placeholder="••••••••"
+                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
               />
               <button type="button" onClick={() => setShowPass(p => ({ ...p, admin: !p.admin }))}
                 style={{position:"absolute", insetInlineEnd:"14px", top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color: showPass.admin ? "#7C4DFF" : COLORS.muted, padding:"4px", display:"flex", alignItems:"center"}}>
@@ -2418,18 +2418,18 @@ export default function App() {
               {adminChecking ? L("checking") : L("adminEnter")}
             </button>
             <button onClick={() => { setShowAdminLogin(false); setAdminPassInput(""); }} style={{width:"100%", padding:"12px", background:"transparent", border:"none", color:COLORS.muted, fontWeight:"600", cursor:"pointer", fontFamily:"inherit", marginTop:"8px", fontSize:"13px"}}>
-              {lang==="ar" ? "إلغاء" : lang==="fr" ? "Annuler" : "Cancel"}
+              {lang==="ar" ? "Ø¥Ù„ØºØ§Ø¡" : lang==="fr" ? "Annuler" : "Cancel"}
             </button>
           </div>
         </div>
       )}
 
-      {/* 🔐 تذكير الحسابات القديمة بتحديد سؤال سري */}
+      {/* ðŸ” ØªØ°ÙƒÙŠØ± Ø§Ù„Ø­Ø³Ø§Ø¨Ø§Øª Ø§Ù„Ù‚Ø¯ÙŠÙ…Ø© Ø¨ØªØ­Ø¯ÙŠØ¯ Ø³Ø¤Ø§Ù„ Ø³Ø±ÙŠ */}
       {user && !user.security_question && showSetupQ && tab==="client" && (
         <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.88)", zIndex:150, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px"}}>
           <div style={{background:COLORS.card, borderRadius:"24px", border:"1px solid #FF6D0044", width:"100%", maxWidth:"400px", padding:"28px"}}>
             <div style={{textAlign:"center", marginBottom:"16px"}}>
-              <div style={{fontSize:"42px", marginBottom:"8px"}}>🔐</div>
+              <div style={{fontSize:"42px", marginBottom:"8px"}}>ðŸ”</div>
               <div style={{fontSize:"18px", fontWeight:"800", color:"#FF6D00"}}>{L("setupQTitle")}</div>
             </div>
             <div style={{color:COLORS.muted, fontSize:"13px", lineHeight:"1.9", marginBottom:"18px", textAlign:lang==="ar"?"right":"left"}}>{L("setupQDesc")}</div>
@@ -2442,8 +2442,8 @@ export default function App() {
               <>
                 <label style={lbl}>{L("yourAnswer")}</label>
                 <input style={{...inp, marginBottom:"6px"}} value={setupAnswer} onChange={e => setSetupAnswer(e.target.value)}/>
-                <div style={{color:"#FF6D00", fontSize:"12px", marginBottom:"14px"}}>⚠️ {L("answerHint")}</div>
-                <label style={lbl}>🔒 {L("confirmIdentity")}</label>
+                <div style={{color:"#FF6D00", fontSize:"12px", marginBottom:"14px"}}>âš ï¸ {L("answerHint")}</div>
+                <label style={lbl}>ðŸ”’ {L("confirmIdentity")}</label>
                 {passField({ id:"setup", value:setupPass, placeholder:t.enter4, onChange:e => setSetupPass(e.target.value.replace(/\D/g,"")) })}
               </>
             )}
@@ -2460,3 +2460,4 @@ export default function App() {
 
   return mainContent;
 }
+
