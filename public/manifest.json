@@ -13,6 +13,12 @@
   "background_color": "#0D0D0D",
   "icons": [
     {
+      "src": "/splash-logo.png",
+      "sizes": "1200x1200",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
       "src": "/icon.png",
       "sizes": "512x512",
       "type": "image/png",
