@@ -67,14 +67,17 @@
 
     <script>
       // إخفاء طبقة الإقلاع فور جاهزية الصفحة
-      window.addEventListener('load', function () {
+      function hideBoot() {
+        var r = document.getElementById('root');
+        if (!r || r.children.length === 0) { return setTimeout(hideBoot, 60); }
         var b = document.getElementById('boot');
         if (b) {
           b.style.transition = 'opacity .5s';
           b.style.opacity = '0';
           setTimeout(function () { b.remove(); }, 300);
         }
-      });
+      }
+      window.addEventListener('load', hideBoot);
 
       // تسجيل Service Worker
       if ('serviceWorker' in navigator) {
