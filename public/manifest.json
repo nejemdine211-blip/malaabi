@@ -1,31 +1,43 @@
 {
-    "id":  "/",
-    "name":  "Malaabi",
-    "short_name":  "Malaabi",
-    "description":  "تطبيق ملاعبي لتنظيم وحجز الملاعب الرياضية بسهولة وسرعة.",
-    "start_url":  "/",
-    "scope":  "/",
-    "lang":  "ar",
-    "dir":  "rtl",
-    "display":  "standalone",
-    "orientation":  "portrait",
-    "theme_color":  "#0D0D0D",
-    "background_color":  "#0D0D0D",
-    "icons":  [
-                  {
-                      "src":  "/icon.png",
-                      "sizes":  "512x512",
-                      "type":  "image/png",
-                      "purpose":  "any"
-                  }
-              ],
-    "screenshots":  [
-                        {
-                            "src":  "/screenshot1.png",
-                            "sizes":  "1080x1920",
-                            "type":  "image/png",
-                            "form_factor":  "narrow",
-                            "label":  "الصفحة الرئيسية لتطبيق ملاعبي"
-                        }
-                    ]
+  "id": "/",
+  "name": "Malaabi",
+  "short_name": "Malaabi",
+  "description": "تطبيق ملاعبي لتنظيم وحجز الملاعب الرياضية بسهولة وسرعة.",
+  "start_url": "/",
+  "scope": "/",
+  "lang": "ar",
+  "dir": "rtl",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0D0D0D",
+  "background_color": "#0D0D0D",
+  "icons": [
+    {
+      "src": "/splash-logo.png",
+      "sizes": "1200x1200",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/maskable_icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot1.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "الصفحة الرئيسية لتطبيق ملاعبي"
+    }
+  ]
 }
