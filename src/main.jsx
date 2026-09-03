@@ -27,6 +27,11 @@ OneSignal.init({
   }
 })
 
+// اختبار Sentry — يُحذف لاحقًا
+setTimeout(() => {
+  Sentry.captureException(new Error('اختبار ملاعبي — تحقق من الرصد'))
+}, 3000)
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <App />
