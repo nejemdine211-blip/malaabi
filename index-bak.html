@@ -86,11 +86,6 @@
         }
       }
       window.addEventListener('load', hideBoot);
-    if (document.readyState === 'complete') { hideBoot(); }
-    setTimeout(function () {
-      var b = document.getElementById('boot');
-      if (b) { b.remove(); }
-    }, 6000);
 
       // تسجيل Service Worker
       if ('serviceWorker' in navigator) {
